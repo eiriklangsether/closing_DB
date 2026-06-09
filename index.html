@@ -21,19 +21,24 @@
     .logo-icon svg{width:16px;height:16px}
     .header-right{font-size:12px;color:var(--text-muted)}
     main{max-width:860px;margin:0 auto;padding:2.5rem 2rem}
-    .page-title{font-size:22px;font-weight:500;margin-bottom:4px}
-    .page-sub{font-size:14px;color:var(--text-secondary);margin-bottom:.5rem}
+    .page-title{font-size:22px;font-weight:500;margin-bottom:6px}
+    .page-desc{font-size:14px;color:var(--text-secondary);margin-bottom:4px;line-height:1.5}
     .last-updated{font-size:12px;color:var(--text-muted);margin-bottom:2rem}
-    .entity-section{margin-bottom:2rem}
-    .entity-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
-    .entity-name{font-size:14px;font-weight:500;color:var(--text-primary)}
+    .summary-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:2rem}
+    .sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.875rem 1.25rem}
+    .sc-label{font-size:11px;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
+    .sc-value{font-size:18px;font-weight:500}
+    .section-title{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:.75rem;display:block}
+    .entity-section{margin-bottom:1.75rem}
+    .entity-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.625rem}
+    .entity-name{font-size:14px;font-weight:500}
     .entity-sub{font-size:12px;color:var(--text-muted)}
-    .checks{display:flex;flex-direction:column;gap:8px}
-    .check-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.875rem 1.25rem;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
+    .checks{display:flex;flex-direction:column;gap:6px}
+    .check-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.75rem 1.125rem;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
     .check-left{display:flex;flex-direction:column;gap:3px;flex:1}
-    .check-name{font-size:13px;font-weight:500;color:var(--text-primary)}
+    .check-name{font-size:13px;font-weight:500}
     .check-note{font-size:12px;color:var(--text-secondary);line-height:1.4}
-    .badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:4px 10px;border-radius:99px;white-space:nowrap;flex-shrink:0}
+    .badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:4px 10px;border-radius:99px;white-space:nowrap;flex-shrink:0;cursor:default}
     .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
     .badge-ok{background:var(--green-bg);color:var(--green-text)}.badge-ok .dot{background:var(--green-dot)}
     .badge-warn{background:var(--amber-bg);color:var(--amber-text)}.badge-warn .dot{background:var(--amber-dot)}
@@ -41,11 +46,23 @@
     .badge-neutral{background:var(--bg);color:var(--text-muted);border:1px solid var(--border)}.badge-neutral .dot{background:var(--text-muted)}
     .badge-na{background:var(--bg);color:var(--text-muted);border:1px solid var(--border)}
     .divider{border:none;border-top:1px solid var(--border);margin:1.5rem 0}
-    .summary-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:2rem}
-    .sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.875rem 1.25rem}
-    .sc-label{font-size:11px;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
-    .sc-value{font-size:18px;font-weight:500}
+    /* Manual checklist */
+    .checklist-section{margin-bottom:2rem}
+    .checklist-items{display:flex;flex-direction:column;gap:6px}
+    .checklist-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.75rem 1.125rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;cursor:pointer;transition:background .1s}
+    .checklist-item:hover{background:#fafaf8}
+    .checklist-item.done{border-color:rgba(99,153,34,.25);background:var(--green-bg)}
+    .checklist-left{display:flex;flex-direction:column;gap:2px}
+    .checklist-name{font-size:13px;font-weight:500}
+    .checklist-name.done-text{color:var(--green-text)}
+    .checklist-sub{font-size:12px;color:var(--text-muted)}
+    .toggle-btn{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:4px 12px;border-radius:99px;border:none;cursor:pointer;font-family:inherit;transition:all .15s}
+    .toggle-btn.mark-done{background:var(--bg);color:var(--text-secondary);border:1px solid var(--border)}
+    .toggle-btn.mark-done:hover{background:var(--green-bg);color:var(--green-text);border-color:rgba(99,153,34,.3)}
+    .toggle-btn.mark-undone{background:var(--green-bg);color:var(--green-text);border:1px solid rgba(99,153,34,.25)}
+    .toggle-btn.mark-undone:hover{background:#d9edca}
     .empty{text-align:center;padding:3rem;color:var(--text-muted);font-size:14px}
+    .saving-indicator{font-size:11px;color:var(--text-muted);margin-left:8px;display:none}
   </style>
 </head>
 <body>
@@ -60,12 +77,15 @@
 </header>
 
 <main>
-  <div class="page-title">Monthly close</div>
-  <div class="page-sub">Group — all entities · Data pushed from Claude</div>
+  <div class="page-title">Monthly close tracker</div>
+  <div class="page-desc">Track how complete the monthly closing process is across all entities. Accounting checks are updated by Claude — manual steps are marked by the finance team.</div>
+  <div class="last-updated" id="lastUpdated">Loading…</div>
   <div id="app"><div class="empty">Loading…</div></div>
 </main>
 
 <script>
+const SECRET = 'finance2026';
+
 async function load() {
   try {
     const res = await fetch('/api/data', { credentials: 'include' });
@@ -73,6 +93,7 @@ async function load() {
     const json = await res.json();
     if (!json.ok || !json.data) {
       document.getElementById('app').innerHTML = '<div class="empty">No data yet. Run "update dashboard" in Claude to push the first snapshot.</div>';
+      document.getElementById('lastUpdated').textContent = '';
       return;
     }
     render(json.data);
@@ -81,11 +102,26 @@ async function load() {
   }
 }
 
-function badge(status, label) {
-  const map = { ok:'ok', warn:'warn', err:'err', pending:'neutral', na:'na' };
-  const cls = map[status] || 'neutral';
-  const labels = { ok:'Done', warn:'Check', err:'Flag', pending:'Pending', na:'N/A' };
-  return `<span class="badge badge-${cls}"><span class="dot"></span>${label || labels[status] || status}</span>`;
+function norwayTime(isoStr) {
+  if (!isoStr) return '—';
+  return new Date(isoStr).toLocaleString('nb-NO', {
+    timeZone: 'Europe/Oslo',
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
+function badge(status) {
+  const map = {
+    ok: ['badge-ok','Done'],
+    warn: ['badge-warn','Check'],
+    err: ['badge-err','Flag'],
+    pending: ['badge-neutral','Pending'],
+    manual: ['badge-na','Manual'],
+    na: ['badge-na','N/A']
+  };
+  const [cls, label] = map[status] || ['badge-neutral', status];
+  return `<span class="badge ${cls}"><span class="dot"></span>${label}</span>`;
 }
 
 function renderEntity(e) {
@@ -98,11 +134,11 @@ function renderEntity(e) {
       </div>
       ${badge(c.status)}
     </div>`).join('');
-
-  const allOk = (e.checks||[]).filter(c=>c.status!=='na').every(c=>c.status==='ok');
-  const passed = (e.checks||[]).filter(c=>c.status==='ok').length;
-  const total = (e.checks||[]).filter(c=>c.status!=='na').length;
-
+  const done = (e.checks||[]).filter(c=>c.status==='ok').length;
+  const total = (e.checks||[]).filter(c=>!['na','manual'].includes(c.status)).length;
+  const anyErr = (e.checks||[]).some(c=>c.status==='err');
+  const anyWarn = (e.checks||[]).some(c=>c.status==='warn'||c.status==='pending');
+  const overallBadge = done===total && total>0 ? badge('ok') : anyErr ? badge('err') : anyWarn ? badge('warn') : badge('pending');
   return `
     <div class="entity-section">
       <div class="entity-header">
@@ -110,37 +146,89 @@ function renderEntity(e) {
           <div class="entity-name">${e.name}</div>
           <div class="entity-sub">${e.system} · ${e.country}</div>
         </div>
-        ${badge(allOk?'ok':(e.checks||[]).some(c=>c.status==='err')?'err':'warn', `${passed}/${total} done`)}
+        ${overallBadge}
       </div>
-      <div class="checks">${checks || '<div class="check-card"><div class="check-left"><div class="check-name" style="color:var(--text-muted)">No checks configured</div></div></div>'}</div>
+      <div class="checks">${checks}</div>
     </div>`;
 }
 
-function render(d) {
-  const updated = d.updatedAt ? new Date(d.updatedAt).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+let currentData = null;
 
-  const allChecks = [...(d.no?.checks||[]), ...(d.se?.checks||[]), ...(d.us?.checks||[])];
-  const totalDone = allChecks.filter(c=>c.status==='ok').length;
-  const totalActive = allChecks.filter(c=>c.status!=='na').length;
-  const hasFlag = allChecks.some(c=>c.status==='err');
-  const hasWarn = allChecks.some(c=>c.status==='warn');
-  const overallStatus = hasFlag?'err':hasWarn?'warn':totalDone===totalActive?'ok':'neutral';
-  const overallColors = {ok:'var(--green-text)',warn:'var(--amber-text)',err:'var(--red-text)',neutral:'var(--text-primary)'};
+async function toggleManual(key) {
+  if (!currentData) return;
+  if (!currentData.manual) currentData.manual = {};
+  const was = currentData.manual[key] || false;
+  currentData.manual[key] = !was;
+  currentData.manualUpdatedAt = new Date().toISOString();
+  renderManualSection(currentData.manual, currentData.manualChecklist || []);
+  // persist
+  try {
+    await fetch('/api/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-dashboard-secret': SECRET },
+      credentials: 'include',
+      body: JSON.stringify(currentData)
+    });
+  } catch(e) { console.error('Save failed', e); }
+}
+
+function renderManualSection(manual, checklist) {
+  const el = document.getElementById('manual-section');
+  if (!el) return;
+  const doneCount = checklist.filter(c => manual[c.key]).length;
+  const items = checklist.map(c => {
+    const done = !!manual[c.key];
+    return `
+      <div class="checklist-item ${done?'done':''}" onclick="toggleManual('${c.key}')">
+        <div class="checklist-left">
+          <div class="checklist-name ${done?'done-text':''}">${c.label}</div>
+          ${c.sub ? `<div class="checklist-sub">${c.sub}</div>` : ''}
+        </div>
+        <button class="toggle-btn ${done?'mark-undone':'mark-done'}" onclick="event.stopPropagation();toggleManual('${c.key}')">
+          ${done ? '✓ Done' : 'Mark done'}
+        </button>
+      </div>`;
+  }).join('');
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+      <span class="section-title" style="margin-bottom:0">Manual close steps</span>
+      <span style="font-size:12px;color:var(--text-muted)">${doneCount}/${checklist.length} complete</span>
+    </div>
+    <div class="checklist-items">${items}</div>`;
+}
+
+function render(d) {
+  currentData = d;
+  const updated = norwayTime(d.updatedAt);
+  document.getElementById('lastUpdated').textContent = `Accounting checks last updated: ${updated} · ${d.period || ''}`;
+
+  const allAutoChecks = [...(d.no?.checks||[]), ...(d.se?.checks||[]), ...(d.us?.checks||[])];
+  const autoDone = allAutoChecks.filter(c=>c.status==='ok').length;
+  const autoTotal = allAutoChecks.filter(c=>!['na','manual'].includes(c.status)).length;
+  const manualChecklist = d.manualChecklist || [];
+  const manual = d.manual || {};
+  const manualDone = manualChecklist.filter(c=>manual[c.key]).length;
+  const totalDone = autoDone + manualDone;
+  const totalItems = autoTotal + manualChecklist.length;
 
   document.getElementById('app').innerHTML = `
-    <div class="last-updated">Last updated: ${updated} · ${d.period || ''}</div>
     <div class="summary-bar">
       <div class="sc"><div class="sc-label">Period</div><div class="sc-value" style="font-size:15px">${d.period||'—'}</div></div>
-      <div class="sc"><div class="sc-label">Overall</div><div class="sc-value" style="font-size:15px;color:${overallColors[overallStatus]}">${totalDone}/${totalActive} done</div></div>
-      <div class="sc"><div class="sc-label">Norway</div><div class="sc-value" style="font-size:15px">${(d.no?.checks||[]).filter(c=>c.status==='ok').length}/${(d.no?.checks||[]).filter(c=>c.status!=='na').length}</div></div>
-      <div class="sc"><div class="sc-label">Sweden</div><div class="sc-value" style="font-size:15px">${(d.se?.checks||[]).filter(c=>c.status==='ok').length}/${(d.se?.checks||[]).filter(c=>c.status!=='na').length}</div></div>
-      <div class="sc"><div class="sc-label">US</div><div class="sc-value" style="font-size:15px;color:var(--text-muted)">${(d.us?.checks||[]).filter(c=>c.status==='ok').length}/${(d.us?.checks||[]).filter(c=>c.status!=='na').length}</div></div>
+      <div class="sc"><div class="sc-label">Total progress</div><div class="sc-value" style="font-size:15px">${totalDone}/${totalItems}</div></div>
+      <div class="sc"><div class="sc-label">Accounting</div><div class="sc-value" style="font-size:15px">${autoDone}/${autoTotal}</div></div>
+      <div class="sc"><div class="sc-label">Manual steps</div><div class="sc-value" style="font-size:15px">${manualDone}/${manualChecklist.length}</div></div>
     </div>
+
+    <span class="section-title">Accounting checks — auto updated by Claude</span>
     ${renderEntity(d.no)}
     <hr class="divider"/>
     ${renderEntity(d.se)}
     <hr class="divider"/>
-    ${renderEntity(d.us)}`;
+    ${renderEntity(d.us)}
+    <hr class="divider"/>
+    <div id="manual-section"></div>`;
+
+  renderManualSection(manual, manualChecklist);
 }
 
 load();
