@@ -4,20 +4,25 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const kv = await fetch(`${process.env.KV_REST_API_URL}/get/dashboard`, {
-    headers: {
-      Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}`,
-    },
-  });
+  try {
+    const kv = await fetch(`${process.env.KV_REST_API_URL}/get/dashboard`, {
+      headers: {
+        Authorization: `Bearer ${process.env.KV_REST_API_TOKEN}`,
+      },
+    });
 
-  if (!kv.ok) {
-    return res.status(500).json({ error: 'Failed to read from KV store' });
+    const json = await kv.json();
+    const result = json.result;
+    
+    if (result === null || result === undefined) {
+      return res.status(200).json({ ok: true, data: null });
+    }
+
+    const data = typeof result === 'string' ? JSON.parse(result) : result;
+    const finalData = data?.value ? (typeof data.value === 'string' ? JSON.parse(data.value) : data.value) : data;
+
+    return res.status(200).json({ ok: true, data: finalData });
+  } catch(e) {
+    return res.status(200).json({ ok: false, error: e.message });
   }
-
-  const { result } = await kv.json();
-  if (!result) {
-    return res.status(200).json({ ok: true, data: null });
-  }
-
-  return res.status(200).json({ ok: true, data: JSON.parse(result) });
 }
