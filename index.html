@@ -91,14 +91,7 @@
 <script>
 const SECRET = 'finance2026';
 
-// Auth check — redirect to login if cookie not set
-function getCookie(name) {
-  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-  return match ? match[2] : null;
-}
-if (!getCookie('dashboard-auth')) {
-  window.location.href = '/login.html';
-}
+// Auth is handled server-side via cookie — data.js returns 401 if not logged in
 
 function fmt(n) {
   if (n == null || isNaN(n)) return '—';
@@ -114,7 +107,11 @@ function badge(type, text) {
 
 async function load() {
   try {
-    const res = await fetch('/api/data', { headers: { 'x-dashboard-secret': SECRET } });
+    const res = await fetch('/api/data');
+    if (res.status === 401) {
+      window.location.href = '/login.html';
+      return;
+    }
     const json = await res.json();
     if (!json.ok || !json.data) {
       document.getElementById('app').innerHTML = `<div class="empty">No data yet. Run "update dashboard" in Claude to push the first snapshot.</div>`;
