@@ -33,7 +33,6 @@
       background: var(--bg);
       color: var(--text-primary);
       min-height: 100vh;
-      padding: 0;
     }
 
     header {
@@ -52,7 +51,6 @@
       gap: 10px;
       font-size: 15px;
       font-weight: 500;
-      color: var(--text-primary);
     }
 
     .logo-icon {
@@ -67,29 +65,16 @@
 
     .logo-icon svg { width: 16px; height: 16px; }
 
-    .header-right {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
+    .header-right { font-size: 12px; color: var(--text-muted); }
 
     main {
-      max-width: 900px;
+      max-width: 760px;
       margin: 0 auto;
       padding: 2.5rem 2rem;
     }
 
-    .page-title {
-      font-size: 22px;
-      font-weight: 500;
-      color: var(--text-primary);
-      margin-bottom: 4px;
-    }
-
-    .page-sub {
-      font-size: 14px;
-      color: var(--text-secondary);
-      margin-bottom: 2rem;
-    }
+    .page-title { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+    .page-sub { font-size: 14px; color: var(--text-secondary); margin-bottom: 2rem; }
 
     .refresh-row {
       display: flex;
@@ -118,16 +103,15 @@
       border-radius: var(--radius-sm);
       padding: 5px 12px;
       cursor: pointer;
-      transition: background 0.15s;
     }
     .refresh-btn:hover { background: var(--bg); }
     .refresh-btn svg { width: 13px; height: 13px; }
 
     .cards {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 12px;
-      margin-bottom: 2.5rem;
+      margin-bottom: 2rem;
     }
 
     .card {
@@ -135,7 +119,6 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 1.25rem 1.5rem;
-      transition: box-shadow 0.15s;
     }
 
     .card-top {
@@ -145,17 +128,8 @@
       margin-bottom: 1rem;
     }
 
-    .card-entity {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-bottom: 3px;
-    }
-
-    .card-name {
-      font-size: 15px;
-      font-weight: 500;
-      color: var(--text-primary);
-    }
+    .card-entity { font-size: 13px; color: var(--text-muted); margin-bottom: 3px; }
+    .card-name { font-size: 15px; font-weight: 500; }
 
     .status-badge {
       display: flex;
@@ -165,37 +139,23 @@
       font-weight: 500;
       padding: 4px 10px;
       border-radius: 99px;
+      white-space: nowrap;
     }
 
-    .status-badge .dot {
+    .dot {
       width: 7px;
       height: 7px;
       border-radius: 50%;
       flex-shrink: 0;
     }
 
-    .badge-checking {
-      background: var(--amber-bg);
-      color: var(--amber-text);
-    }
+    .badge-checking { background: var(--amber-bg); color: var(--amber-text); }
     .badge-checking .dot { background: var(--amber-dot); animation: pulse 1.2s ease-in-out infinite; }
-
-    .badge-connected {
-      background: var(--green-bg);
-      color: var(--green-text);
-    }
+    .badge-connected { background: var(--green-bg); color: var(--green-text); }
     .badge-connected .dot { background: var(--green-dot); }
-
-    .badge-disconnected {
-      background: var(--red-bg);
-      color: var(--red-text);
-    }
+    .badge-disconnected { background: var(--red-bg); color: var(--red-text); }
     .badge-disconnected .dot { background: var(--red-dot); }
-
-    .badge-unconfigured {
-      background: var(--bg);
-      color: var(--text-muted);
-    }
+    .badge-unconfigured { background: var(--bg); color: var(--text-muted); }
     .badge-unconfigured .dot { background: var(--text-muted); }
 
     @keyframes pulse {
@@ -203,91 +163,21 @@
       50% { opacity: 0.3; }
     }
 
-    .card-detail {
-      font-size: 12px;
-      color: var(--text-secondary);
-      line-height: 1.5;
-    }
+    .card-detail { font-size: 12px; color: var(--text-secondary); }
 
-    .card-detail .detail-row {
+    .detail-row {
       display: flex;
       justify-content: space-between;
-      padding: 3px 0;
+      padding: 5px 0;
       border-top: 1px solid var(--border);
     }
-
-    .card-detail .detail-row:first-child { border-top: none; }
 
     .detail-label { color: var(--text-muted); }
     .detail-value { font-weight: 500; color: var(--text-primary); }
     .detail-value.ok { color: var(--green-text); }
     .detail-value.err { color: var(--red-text); }
 
-    .last-checked {
-      font-size: 11px;
-      color: var(--text-muted);
-      text-align: right;
-      margin-top: 2rem;
-    }
-
-    .divider {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 2rem 0;
-    }
-
-    .info-section h2 {
-      font-size: 15px;
-      font-weight: 500;
-      margin-bottom: .5rem;
-    }
-
-    .info-section p {
-      font-size: 13px;
-      color: var(--text-secondary);
-      line-height: 1.6;
-    }
-
-    .info-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 10px;
-      margin-top: 1rem;
-    }
-
-    .info-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 1rem 1.25rem;
-    }
-
-    .info-card .ic-label {
-      font-size: 11px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: .04em;
-      margin-bottom: 4px;
-    }
-
-    .info-card .ic-value {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-primary);
-    }
-
-    .tag {
-      display: inline-flex;
-      align-items: center;
-      font-size: 11px;
-      padding: 2px 7px;
-      border-radius: 4px;
-      background: var(--bg);
-      color: var(--text-muted);
-      border: 1px solid var(--border);
-      margin-left: 6px;
-      vertical-align: middle;
-    }
+    .last-checked { font-size: 11px; color: var(--text-muted); text-align: right; }
   </style>
 </head>
 <body>
@@ -308,7 +198,7 @@
 
 <main>
   <div class="page-title">System connectivity</div>
-  <div class="page-sub">Live connection status across all accounting systems</div>
+  <div class="page-sub">Live connection status across accounting systems</div>
 
   <div class="refresh-row">
     <span class="section-label">Accounting systems</span>
@@ -323,125 +213,49 @@
 
   <div class="cards">
 
-    <!-- Tripletex -->
-    <div class="card" id="card-tripletex">
+    <div class="card">
       <div class="card-top">
         <div>
           <div class="card-entity">Dogu SalesScreen AS · Norway</div>
           <div class="card-name">Tripletex</div>
         </div>
         <div class="status-badge badge-checking" id="badge-tripletex">
-          <div class="dot"></div>
-          <span>Checking</span>
+          <div class="dot"></div><span>Checking</span>
         </div>
       </div>
-      <div class="card-detail" id="detail-tripletex">
-        <div class="detail-row">
-          <span class="detail-label">Response</span>
-          <span class="detail-value" id="tt-response">—</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Latency</span>
-          <span class="detail-value" id="tt-latency">—</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">HTTP status</span>
-          <span class="detail-value" id="tt-http">—</span>
-        </div>
+      <div class="card-detail">
+        <div class="detail-row"><span class="detail-label">Response</span><span class="detail-value" id="tt-response">—</span></div>
+        <div class="detail-row"><span class="detail-label">Latency</span><span class="detail-value" id="tt-latency">—</span></div>
+        <div class="detail-row"><span class="detail-label">HTTP status</span><span class="detail-value" id="tt-http">—</span></div>
       </div>
     </div>
 
-    <!-- Fortnox -->
-    <div class="card" id="card-fortnox">
-      <div class="card-top">
-        <div>
-          <div class="card-entity">SalesScreen AB · Sweden</div>
-          <div class="card-name">Fortnox</div>
-        </div>
-        <div class="status-badge badge-checking" id="badge-fortnox">
-          <div class="dot"></div>
-          <span>Checking</span>
-        </div>
-      </div>
-      <div class="card-detail" id="detail-fortnox">
-        <div class="detail-row">
-          <span class="detail-label">Response</span>
-          <span class="detail-value" id="fn-response">—</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Latency</span>
-          <span class="detail-value" id="fn-latency">—</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">HTTP status</span>
-          <span class="detail-value" id="fn-http">—</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- QuickBooks -->
-    <div class="card" id="card-quickbooks">
+    <div class="card">
       <div class="card-top">
         <div>
           <div class="card-entity">SalesScreen Inc. · United States</div>
           <div class="card-name">QuickBooks</div>
         </div>
         <div class="status-badge badge-checking" id="badge-quickbooks">
-          <div class="dot"></div>
-          <span>Checking</span>
+          <div class="dot"></div><span>Checking</span>
         </div>
       </div>
-      <div class="card-detail" id="detail-quickbooks">
-        <div class="detail-row">
-          <span class="detail-label">Response</span>
-          <span class="detail-value" id="qb-response">—</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">Latency</span>
-          <span class="detail-value" id="qb-latency">—</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">HTTP status</span>
-          <span class="detail-value" id="qb-http">—</span>
-        </div>
+      <div class="card-detail">
+        <div class="detail-row"><span class="detail-label">Response</span><span class="detail-value" id="qb-response">—</span></div>
+        <div class="detail-row"><span class="detail-label">Latency</span><span class="detail-value" id="qb-latency">—</span></div>
+        <div class="detail-row"><span class="detail-label">HTTP status</span><span class="detail-value" id="qb-http">—</span></div>
       </div>
     </div>
 
   </div>
 
-  <div class="last-checked" id="last-checked">Checking…</div>
-
-  <hr class="divider" />
-
-  <div class="info-section">
-    <h2>Group entities</h2>
-    <p>Three entities in scope. All financial controls run against Dogu SalesScreen AS as the primary entity.</p>
-    <div class="info-grid">
-      <div class="info-card">
-        <div class="ic-label">Norway</div>
-        <div class="ic-value">Dogu SalesScreen AS <span class="tag">Primary</span></div>
-      </div>
-      <div class="info-card">
-        <div class="ic-label">Sweden</div>
-        <div class="ic-value">SalesScreen AB</div>
-      </div>
-      <div class="info-card">
-        <div class="ic-label">United States</div>
-        <div class="ic-value">SalesScreen Inc.</div>
-      </div>
-      <div class="info-card">
-        <div class="ic-label">Netherlands</div>
-        <div class="ic-value">SalesScreen Europe B.V. <span class="tag">No connection</span></div>
-      </div>
-    </div>
-  </div>
-
+  <div class="last-checked" id="last-checked"></div>
 </main>
 
 <script>
-  const SECRET = jsconst SECRET = 'salesscreenclosing';
+  const SECRET = 'salesscreenclosing';
 
-  async function ping(endpoint, ids) {
+  async function ping(endpoint) {
     const t0 = Date.now();
     try {
       const res = await fetch(`/api/${endpoint}`, {
@@ -457,42 +271,32 @@
 
   function setCard(key, result) {
     const badge = document.getElementById(`badge-${key}`);
-    const resEl = document.getElementById(`${key.replace('quickbooks','qb').replace('tripletex','tt').replace('fortnox','fn')}-response`);
-    const latEl = document.getElementById(`${key.replace('quickbooks','qb').replace('tripletex','tt').replace('fortnox','fn')}-latency`);
-    const httpEl = document.getElementById(`${key.replace('quickbooks','qb').replace('tripletex','tt').replace('fortnox','fn')}-http`);
-
-    const pfx = { tripletex: 'tt', fortnox: 'fn', quickbooks: 'qb' }[key];
+    const pfx = key === 'tripletex' ? 'tt' : 'qb';
     const rEl = document.getElementById(`${pfx}-response`);
     const lEl = document.getElementById(`${pfx}-latency`);
     const hEl = document.getElementById(`${pfx}-http`);
 
-    if (result === null) {
-      badge.className = 'status-badge badge-unconfigured';
-      badge.innerHTML = '<div class="dot"></div><span>Not configured</span>';
-      if (rEl) { rEl.textContent = 'Token not set'; rEl.className = 'detail-value err'; }
-      if (lEl) lEl.textContent = '—';
-      if (hEl) hEl.textContent = '—';
-      return;
-    }
-
-    if (result.ok) {
-      badge.className = 'status-badge badge-connected';
-      badge.innerHTML = '<div class="dot"></div><span>Connected</span>';
-      if (rEl) { rEl.textContent = 'OK'; rEl.className = 'detail-value ok'; }
-    } else {
+    if (!result.ok) {
       badge.className = 'status-badge badge-disconnected';
       badge.innerHTML = '<div class="dot"></div><span>Disconnected</span>';
-      if (rEl) { rEl.textContent = result.error || 'Auth error'; rEl.className = 'detail-value err'; }
+      rEl.textContent = result.error || 'Auth error';
+      rEl.className = 'detail-value err';
+    } else {
+      badge.className = 'status-badge badge-connected';
+      badge.innerHTML = '<div class="dot"></div><span>Connected</span>';
+      rEl.textContent = 'OK';
+      rEl.className = 'detail-value ok';
     }
-    if (lEl) lEl.textContent = result.latency != null ? `${result.latency} ms` : '—';
-    if (hEl) { hEl.textContent = result.http || '—'; hEl.className = result.ok ? 'detail-value ok' : 'detail-value err'; }
+    lEl.textContent = result.latency != null ? `${result.latency} ms` : '—';
+    hEl.textContent = result.http || '—';
+    hEl.className = result.ok ? 'detail-value ok' : 'detail-value err';
   }
 
   function setChecking(key) {
     const badge = document.getElementById(`badge-${key}`);
     badge.className = 'status-badge badge-checking';
     badge.innerHTML = '<div class="dot"></div><span>Checking</span>';
-    const pfx = { tripletex: 'tt', fortnox: 'fn', quickbooks: 'qb' }[key];
+    const pfx = key === 'tripletex' ? 'tt' : 'qb';
     ['response','latency','http'].forEach(f => {
       const el = document.getElementById(`${pfx}-${f}`);
       if (el) { el.textContent = '—'; el.className = 'detail-value'; }
@@ -500,19 +304,11 @@
   }
 
   async function checkAll() {
-    ['tripletex','fortnox','quickbooks'].forEach(setChecking);
+    ['tripletex','quickbooks'].forEach(setChecking);
     document.getElementById('last-checked').textContent = 'Checking…';
-
-    const [tt, fn, qb] = await Promise.all([
-      ping('tripletex'),
-      ping('fortnox'),
-      ping('quickbooks'),
-    ]);
-
+    const [tt, qb] = await Promise.all([ping('tripletex'), ping('quickbooks')]);
     setCard('tripletex', tt);
-    setCard('fortnox', fn);
     setCard('quickbooks', qb);
-
     const now = new Date();
     document.getElementById('last-checked').textContent =
       `Last checked: ${now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
