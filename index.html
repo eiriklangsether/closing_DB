@@ -7,69 +7,88 @@
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
-      --bg:#f5f5f3;--surface:#fff;--border:rgba(0,0,0,0.08);
-      --text-primary:#1a1a1a;--text-secondary:#6b6b6b;--text-muted:#9b9b9b;
-      --green-bg:#eaf3de;--green-text:#3b6d11;--green-dot:#639922;
-      --red-bg:#fcebeb;--red-text:#a32d2d;--red-dot:#e24b4a;
-      --amber-bg:#faeeda;--amber-text:#854f0b;--amber-dot:#ef9f27;
-      --blue:#185fa5;--radius:12px;--radius-sm:8px;
+      /* SalesScreen brand palette */
+      --teal:#1EAFAA;
+      --dark-teal:#114B5C;
+      --cranberry:#D63C60;
+      --cranberry-light:#DC5171;
+      --teal-lighter:#DAEDEC;
+      --teal-light:#A7D6D4;
+      --black:#1A1A1A;
+
+      --bg:#F4F8F8;
+      --surface:#ffffff;
+      --border:rgba(17,75,92,0.12);
+      --text-primary:#1A1A1A;
+      --text-secondary:#3a5a63;
+      --text-muted:#7a9ba3;
+
+      --green-bg:#e6f5f4;--green-text:#0d6b65;--green-dot:#1EAFAA;
+      --red-bg:#fce8ee;--red-text:#a01f3c;--red-dot:#D63C60;
+      --amber-bg:#fff0e6;--amber-text:#8a4a10;--amber-dot:#e07b30;
+
+      --radius:12px;--radius-sm:8px;
     }
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text-primary);min-height:100vh}
-    header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between}
-    .logo{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:500}
-    .logo-icon{width:28px;height:28px;background:var(--blue);border-radius:6px;display:flex;align-items:center;justify-content:center}
-    .logo-icon svg{width:16px;height:16px}
-    .header-right{font-size:12px;color:var(--text-muted)}
+    header{background:var(--dark-teal);padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between}
+    .logo{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;color:#fff}
+    .logo-icon{width:28px;height:28px;display:flex;align-items:center;justify-content:center}
+    .logo-icon svg{width:22px;height:22px}
+    .header-right{font-size:12px;color:var(--teal-light);letter-spacing:.02em}
     main{max-width:860px;margin:0 auto;padding:2.5rem 2rem}
-    .page-title{font-size:22px;font-weight:500;margin-bottom:6px}
-    .page-desc{font-size:14px;color:var(--text-secondary);margin-bottom:4px;line-height:1.5}
-    .last-updated{font-size:12px;color:var(--text-muted);margin-bottom:2rem}
+    .page-title{font-size:22px;font-weight:700;color:var(--dark-teal);margin-bottom:6px;letter-spacing:-.01em}
+    .page-desc{font-size:14px;color:var(--text-secondary);margin-bottom:4px;line-height:1.6;max-width:620px}
+    .last-updated{font-size:12px;color:var(--text-muted);margin-bottom:2rem;margin-top:4px}
     .summary-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:2rem}
     .sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.875rem 1.25rem}
-    .sc-label{font-size:11px;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
-    .sc-value{font-size:18px;font-weight:500}
-    .section-title{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:.75rem;display:block}
-    .entity-section{margin-bottom:1.75rem}
+    .sc-label{font-size:11px;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;font-weight:500}
+    .sc-value{font-size:18px;font-weight:600;color:var(--dark-teal)}
+    .section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:.75rem;display:block}
+    .entity-section{margin-bottom:1.5rem}
     .entity-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.625rem}
-    .entity-name{font-size:14px;font-weight:500}
-    .entity-sub{font-size:12px;color:var(--text-muted)}
+    .entity-name{font-size:14px;font-weight:600;color:var(--dark-teal)}
+    .entity-sub{font-size:12px;color:var(--text-muted);margin-top:1px}
     .checks{display:flex;flex-direction:column;gap:6px}
     .check-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.75rem 1.125rem;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
     .check-left{display:flex;flex-direction:column;gap:3px;flex:1}
-    .check-name{font-size:13px;font-weight:500}
+    .check-name{font-size:13px;font-weight:500;color:var(--text-primary)}
     .check-note{font-size:12px;color:var(--text-secondary);line-height:1.4}
-    .badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:4px 10px;border-radius:99px;white-space:nowrap;flex-shrink:0;cursor:default}
+    .badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:99px;white-space:nowrap;flex-shrink:0;letter-spacing:.02em}
     .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
     .badge-ok{background:var(--green-bg);color:var(--green-text)}.badge-ok .dot{background:var(--green-dot)}
     .badge-warn{background:var(--amber-bg);color:var(--amber-text)}.badge-warn .dot{background:var(--amber-dot)}
     .badge-err{background:var(--red-bg);color:var(--red-text)}.badge-err .dot{background:var(--red-dot)}
-    .badge-neutral{background:var(--bg);color:var(--text-muted);border:1px solid var(--border)}.badge-neutral .dot{background:var(--text-muted)}
-    .badge-na{background:var(--bg);color:var(--text-muted);border:1px solid var(--border)}
+    .badge-neutral{background:var(--teal-lighter);color:var(--dark-teal);border:1px solid var(--teal-light)}.badge-neutral .dot{background:var(--teal)}
+    .badge-na{background:#f0f4f5;color:var(--text-muted);border:1px solid var(--border)}.badge-na .dot{background:var(--text-muted)}
+    .badge-manual{background:#f0f4f5;color:var(--text-secondary);border:1px solid var(--border)}.badge-manual .dot{background:var(--teal-light)}
     .divider{border:none;border-top:1px solid var(--border);margin:1.5rem 0}
     /* Manual checklist */
-    .checklist-section{margin-bottom:2rem}
     .checklist-items{display:flex;flex-direction:column;gap:6px}
     .checklist-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.75rem 1.125rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;cursor:pointer;transition:background .1s}
-    .checklist-item:hover{background:#fafaf8}
-    .checklist-item.done{border-color:rgba(99,153,34,.25);background:var(--green-bg)}
+    .checklist-item:hover{background:#f7fbfb}
+    .checklist-item.done{border-color:rgba(30,175,170,.3);background:var(--green-bg)}
     .checklist-left{display:flex;flex-direction:column;gap:2px}
-    .checklist-name{font-size:13px;font-weight:500}
+    .checklist-name{font-size:13px;font-weight:500;color:var(--text-primary)}
     .checklist-name.done-text{color:var(--green-text)}
     .checklist-sub{font-size:12px;color:var(--text-muted)}
-    .toggle-btn{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:4px 12px;border-radius:99px;border:none;cursor:pointer;font-family:inherit;transition:all .15s}
-    .toggle-btn.mark-done{background:var(--bg);color:var(--text-secondary);border:1px solid var(--border)}
-    .toggle-btn.mark-done:hover{background:var(--green-bg);color:var(--green-text);border-color:rgba(99,153,34,.3)}
-    .toggle-btn.mark-undone{background:var(--green-bg);color:var(--green-text);border:1px solid rgba(99,153,34,.25)}
-    .toggle-btn.mark-undone:hover{background:#d9edca}
+    .toggle-btn{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 12px;border-radius:99px;border:none;cursor:pointer;font-family:inherit;transition:all .15s;letter-spacing:.02em}
+    .toggle-btn.mark-done{background:var(--teal-lighter);color:var(--dark-teal);border:1px solid var(--teal-light)}
+    .toggle-btn.mark-done:hover{background:var(--teal-light);color:var(--dark-teal)}
+    .toggle-btn.mark-undone{background:var(--green-bg);color:var(--green-text);border:1px solid rgba(30,175,170,.3)}
+    .toggle-btn.mark-undone:hover{background:#d0eeed}
     .empty{text-align:center;padding:3rem;color:var(--text-muted);font-size:14px}
-    .saving-indicator{font-size:11px;color:var(--text-muted);margin-left:8px;display:none}
+    .section-header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
   </style>
 </head>
 <body>
 <header>
   <div class="logo">
     <div class="logo-icon">
-      <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="8" width="3" height="6" rx="1" fill="white"/><rect x="6.5" y="5" width="3" height="9" rx="1" fill="white"/><rect x="11" y="2" width="3" height="12" rx="1" fill="white"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="12" width="5" height="10" rx="1.5" fill="#1EAFAA"/>
+        <rect x="9.5" y="7" width="5" height="15" rx="1.5" fill="#A7D6D4"/>
+        <rect x="17" y="2" width="5" height="20" rx="1.5" fill="#DAEDEC"/>
+      </svg>
     </div>
     SalesScreen Finance
   </div>
@@ -78,7 +97,7 @@
 
 <main>
   <div class="page-title">Monthly close tracker</div>
-  <div class="page-desc">Track how complete the monthly closing process is across all entities. Accounting checks are updated by Claude — manual steps are marked by the finance team.</div>
+  <div class="page-desc">Track how complete the monthly closing process is across all entities. Accounting checks are updated automatically by Claude — manual steps are marked by the finance team.</div>
   <div class="last-updated" id="lastUpdated">Loading…</div>
   <div id="app"><div class="empty">Loading…</div></div>
 </main>
@@ -113,12 +132,12 @@ function norwayTime(isoStr) {
 
 function badge(status) {
   const map = {
-    ok: ['badge-ok','Done'],
-    warn: ['badge-warn','Check'],
-    err: ['badge-err','Flag'],
+    ok:      ['badge-ok','Done'],
+    warn:    ['badge-warn','Check'],
+    err:     ['badge-err','Flag'],
     pending: ['badge-neutral','Pending'],
-    manual: ['badge-na','Manual'],
-    na: ['badge-na','N/A']
+    manual:  ['badge-manual','Manual'],
+    na:      ['badge-na','N/A']
   };
   const [cls, label] = map[status] || ['badge-neutral', status];
   return `<span class="badge ${cls}"><span class="dot"></span>${label}</span>`;
@@ -137,7 +156,7 @@ function renderEntity(e) {
   const done = (e.checks||[]).filter(c=>c.status==='ok').length;
   const total = (e.checks||[]).filter(c=>!['na','manual'].includes(c.status)).length;
   const anyErr = (e.checks||[]).some(c=>c.status==='err');
-  const anyWarn = (e.checks||[]).some(c=>c.status==='warn'||c.status==='pending');
+  const anyWarn = (e.checks||[]).some(c=>['warn','pending'].includes(c.status));
   const overallBadge = done===total && total>0 ? badge('ok') : anyErr ? badge('err') : anyWarn ? badge('warn') : badge('pending');
   return `
     <div class="entity-section">
@@ -157,11 +176,9 @@ let currentData = null;
 async function toggleManual(key) {
   if (!currentData) return;
   if (!currentData.manual) currentData.manual = {};
-  const was = currentData.manual[key] || false;
-  currentData.manual[key] = !was;
+  currentData.manual[key] = !currentData.manual[key];
   currentData.manualUpdatedAt = new Date().toISOString();
   renderManualSection(currentData.manual, currentData.manualChecklist || []);
-  // persist
   try {
     await fetch('/api/update', {
       method: 'POST',
@@ -190,7 +207,7 @@ function renderManualSection(manual, checklist) {
       </div>`;
   }).join('');
   el.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+    <div class="section-header-row">
       <span class="section-title" style="margin-bottom:0">Manual close steps</span>
       <span style="font-size:12px;color:var(--text-muted)">${doneCount}/${checklist.length} complete</span>
     </div>
@@ -214,9 +231,9 @@ function render(d) {
   document.getElementById('app').innerHTML = `
     <div class="summary-bar">
       <div class="sc"><div class="sc-label">Period</div><div class="sc-value" style="font-size:15px">${d.period||'—'}</div></div>
-      <div class="sc"><div class="sc-label">Total progress</div><div class="sc-value" style="font-size:15px">${totalDone}/${totalItems}</div></div>
-      <div class="sc"><div class="sc-label">Accounting</div><div class="sc-value" style="font-size:15px">${autoDone}/${autoTotal}</div></div>
-      <div class="sc"><div class="sc-label">Manual steps</div><div class="sc-value" style="font-size:15px">${manualDone}/${manualChecklist.length}</div></div>
+      <div class="sc"><div class="sc-label">Total progress</div><div class="sc-value">${totalDone}/${totalItems}</div></div>
+      <div class="sc"><div class="sc-label">Accounting</div><div class="sc-value">${autoDone}/${autoTotal}</div></div>
+      <div class="sc"><div class="sc-label">Manual steps</div><div class="sc-value">${manualDone}/${manualChecklist.length}</div></div>
     </div>
 
     <span class="section-title">Accounting checks — auto updated by Claude</span>
