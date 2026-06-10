@@ -1078,7 +1078,7 @@ function refreshMetaTable() {
     const logoOv = r._ov && r._ov.logo !== undefined;
     const logoCell = r.logo ? '<span class="logo-tag" title="' + r.logo + '">' + r.logo + '</span>' + (logoOv ? '<span class="override-tag">edited</span>' : '') : '<span style="color:var(--text-muted)">—</span>';
     const icpCell  = icpBadge(r.icp) + (icpOv ? '<span class="override-tag">edited</span>' : '');
-    return '<tr class="' + (isActive ? '' : 'inactive') + '" onclick="openCustomerCard(' + JSON.stringify(r.id) + ')">' +
+    return '<tr class="' + (isActive ? '' : 'inactive') + ' onclick=\'openCustomerCard(\' + r.id + \')\'">' +
       '<td>' + r.name + '</td>' +
       '<td><span class="ent-pill ent-' + r.entity + '">' + r.entity + '</span></td>' +
       '<td>' + icpCell + '</td>' +
