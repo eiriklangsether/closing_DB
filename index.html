@@ -124,6 +124,8 @@
     .month-selector label{font-size:12px;color:var(--text-secondary);font-weight:500}
     .month-selector select{font-size:13px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text-primary);font-family:inherit;cursor:pointer}
     .month-selector select:focus{outline:2px solid var(--teal);outline-offset:1px}
+    .show-more-btn{display:block;width:100%;margin-top:6px;padding:5px 0;font-size:11px;font-weight:600;color:var(--teal);background:none;border:none;border-top:1px solid var(--border);cursor:pointer;text-align:center;font-family:inherit;letter-spacing:.02em}
+    .show-more-btn:hover{color:var(--dark-teal)}
     @media(max-width:600px){.movement-grid{grid-template-columns:1fr}.kpi-grid{grid-template-columns:repeat(2,1fr)}}
   </style>
 </head>
@@ -361,12 +363,13 @@ let mrrData = null;
 let mrrChartInst = null;
 let arrChartInst = null;
 
-function nokFmt(v) {
-  if (Math.abs(v) >= 1000000) return (v/1000000).toFixed(2) + 'M';
-  if (Math.abs(v) >= 1000) return Math.round(v/1000) + 'K';
-  return Math.round(v).toLocaleString('nb-NO');
+const FX_NOK_USD = 0.0990;
+function toUSD(nok) { return nok * FX_NOK_USD; }
+function usdFmt(v) {
+  if (Math.abs(v) >= 1000000) return '$' + (v/1000000).toFixed(2) + 'M';
+  if (Math.abs(v) >= 1000) return '$' + Math.round(v/1000) + 'K';
+  return '$' + Math.round(v).toLocaleString('en-US');
 }
-function nokFull(v) { return 'kr ' + Math.round(v).toLocaleString('nb-NO'); }
 function pctFmt(a,b) { return ((a-b)/b*100).toFixed(1) + '%'; }
 function sign(v) { return v >= 0 ? '+' : ''; }
 
@@ -380,7 +383,7 @@ function renderMRR(data, selectedMonth) {
   // Banner
   const banner = document.getElementById('mrr-banner');
   document.getElementById('mrr-banner-text').textContent =
-    `NO Chargebee site only · Manual upload · Data as of ${data.uploadDate}`;
+    `NO Chargebee site only · NOK converted at $0.0990 · Manual upload · Data as of ${data.uploadDate}`;
   banner.style.display = 'flex';
 
   // Month selector default = last month
@@ -397,7 +400,7 @@ function renderMRR(data, selectedMonth) {
   const currCount = counts[selectedMonth];
 
   const kpiMoM = momDelta !== null
-    ? `<span class="${momDelta >= 0 ? 'kpi-delta-pos' : 'kpi-delta-neg'}">${sign(momDelta)}kr ${nokFmt(Math.abs(momDelta))} (${sign(momPct)}${momPct.toFixed(1)}%)</span>`
+    ? `<span class="${momDelta >= 0 ? 'kpi-delta-pos' : 'kpi-delta-neg'}">${sign(momDelta)}${usdFmt(Math.abs(toUSD(momDelta)))} (${sign(momPct)}${momPct.toFixed(1)}%)</span>`
     : '—';
 
   // Movement for selected month
@@ -407,12 +410,25 @@ function renderMRR(data, selectedMonth) {
   const movExp = (mov.expansions || []).sort((a,b)=>b.mrr-a.mrr);
   const movCon = (mov.contractions || []).sort((a,b)=>a.mrr-b.mrr);
 
-  function movRows(items, cls) {
+  let _expandedCards = {};
+  function toggleExpand(cardId) {
+    _expandedCards[cardId] = !_expandedCards[cardId];
+    renderMRR(mrrData, document.getElementById('monthSel') ? document.getElementById('monthSel').value : null);
+  }
+  function movRows(items, cls, cardId) {
     if (!items.length) return `<div class="movement-empty">None this month</div>`;
-    return items.map(r => `<div class="movement-row">
+    const TOP = 5;
+    const expanded = !!_expandedCards[cardId];
+    const visible = expanded ? items : items.slice(0, TOP);
+    const rows = visible.map(r => `<div class="movement-row">
       <span class="movement-name" title="${r.Company}">${r.Company}</span>
-      <span class="movement-amt ${cls}">${sign(r.mrr)}kr ${nokFmt(Math.abs(r.mrr))}</span>
+      <span class="movement-amt ${cls}">${sign(r.mrr)}${usdFmt(toUSD(Math.abs(r.mrr)))}</span>
     </div>`).join('');
+    const more = items.length - TOP;
+    const toggle = items.length > TOP ? `<button class="show-more-btn" onclick="toggleExpand('${cardId}')">
+      ${expanded ? 'Show less' : 'Show ' + more + ' more'}
+    </button>` : '';
+    return rows + toggle;
   }
 
   // Month selector options
@@ -425,12 +441,12 @@ function renderMRR(data, selectedMonth) {
     <div class="kpi-grid">
       <div class="kpi">
         <div class="kpi-label">MRR</div>
-        <div class="kpi-value">kr ${nokFmt(currMRR)}</div>
+        <div class="kpi-value">${usdFmt(toUSD(currMRR))}</div>
         <div class="kpi-sub">${selectedMonth}</div>
       </div>
       <div class="kpi">
-        <div class="kpi-label">ARR (implied)</div>
-        <div class="kpi-value">kr ${nokFmt(currMRR * 12)}</div>
+        <div class="kpi-label">ARR</div>
+        <div class="kpi-value">${usdFmt(toUSD(currMRR) * 12)}</div>
         <div class="kpi-sub">MRR × 12</div>
       </div>
       <div class="kpi">
@@ -446,12 +462,12 @@ function renderMRR(data, selectedMonth) {
     </div>
 
     <div class="chart-section">
-      <div class="chart-section-title">Monthly MRR — NOK</div>
+      <div class="chart-section-title">Monthly MRR — USD</div>
       <div class="chart-wrap"><canvas id="mrrChart" role="img" aria-label="Monthly MRR line chart"></canvas></div>
     </div>
 
     <div class="chart-section">
-      <div class="chart-section-title">Implied ARR — NOK</div>
+      <div class="chart-section-title">ARR — USD</div>
       <div class="chart-wrap"><canvas id="arrChart" role="img" aria-label="Implied ARR line chart"></canvas></div>
     </div>
 
@@ -467,32 +483,32 @@ function renderMRR(data, selectedMonth) {
       <div class="movement-card">
         <div class="movement-card-header">
           <span class="movement-card-title new-title">New</span>
-          <span class="movement-total pos">+kr ${nokFmt(mov.new_total || 0)}</span>
+          <span class="movement-total pos">+${usdFmt(toUSD(mov.new_total || 0))}</span>
         </div>
-        ${movRows(movNew, 'pos')}
+        ${movRows(movNew, 'pos', 'new_' + selectedMonth)}
       </div>
       <div class="movement-card">
         <div class="movement-card-header">
           <span class="movement-card-title churned-title">Churned</span>
-          <span class="movement-total neg">−kr ${nokFmt(mov.churned_total || 0)}</span>
+          <span class="movement-total neg">−${usdFmt(toUSD(mov.churned_total || 0))}</span>
         </div>
-        ${movRows(movChurned, 'neg')}
+        ${movRows(movChurned, 'neg', 'churned_' + selectedMonth)}
       </div>
       <div class="movement-card">
         <div class="movement-card-header">
           <span class="movement-card-title expansion-title">Expansions</span>
-          <span class="movement-total pos">+kr ${nokFmt(mov.expansion_total || 0)}</span>
+          <span class="movement-total pos">+${usdFmt(toUSD(mov.expansion_total || 0))}</span>
         </div>
-        ${movRows(movExp, 'pos')}
+        ${movRows(movExp, 'pos', 'exp_' + selectedMonth)}
       </div>
       <div class="movement-card">
         <div class="movement-card-header">
           <span class="movement-card-title contraction-title">Contractions</span>
           <span class="movement-total ${(mov.contraction_total||0) < 0 ? 'amber' : 'neutral'}">
-            ${(mov.contraction_total||0) < 0 ? '' : ''}kr ${nokFmt(Math.abs(mov.contraction_total || 0))}
+            ${usdFmt(toUSD(Math.abs(mov.contraction_total || 0)))}
           </span>
         </div>
-        ${movRows(movCon.map(r=>({...r,mrr:Math.abs(r.mrr)})), 'amber')}
+        ${movRows(movCon.map(r=>({...r,mrr:Math.abs(r.mrr)})), 'amber', 'con_' + selectedMonth)}
       </div>
     </div>`;
 
@@ -514,7 +530,7 @@ function drawCharts(months, totals, selectedMonth) {
   const sharedOpts = (fmtY) => ({
     responsive: true, maintainAspectRatio: false,
     plugins: { legend: { display: false }, tooltip: {
-      callbacks: { label: ctx => ' kr ' + Math.round(ctx.raw).toLocaleString('nb-NO') }
+      callbacks: { label: ctx => ' ' + usdFmt(toUSD(ctx.raw)) }
     }},
     scales: {
       x: {
@@ -542,7 +558,7 @@ function drawCharts(months, totals, selectedMonth) {
       pointBorderWidth: 1.5,
       tension: 0.3, fill: true
     }]},
-    options: sharedOpts(v => 'kr ' + Math.round(v/1000) + 'K')
+    options: sharedOpts(v => usdFmt(toUSD(v)))
   });
 
   if (arrChartInst) arrChartInst.destroy();
@@ -559,7 +575,7 @@ function drawCharts(months, totals, selectedMonth) {
       pointBorderWidth: 1.5,
       tension: 0.3, fill: true
     }]},
-    options: sharedOpts(v => 'kr ' + (v/1000000).toFixed(1) + 'M')
+    options: sharedOpts(v => usdFmt(toUSD(v)))
   });
 }
 
