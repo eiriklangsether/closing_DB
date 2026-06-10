@@ -1215,7 +1215,7 @@ function openCustomerCard(id) {
         </div>
         <div class="cc-row">
           <span class="cc-label">First seen</span>
-          <span class="cc-value">${c.first_month || '—'}</span>
+          <span class="cc-value">${c.first_month || '—'}${c.first_month === 'Jul 2025' ? '<span style="font-size:11px;color:var(--text-muted);margin-left:6px">(earliest data available)</span>' : ''}</span>
         </div>
         <div class="cc-row" style="align-items:center">
           <span class="cc-label">MRR trend</span>
