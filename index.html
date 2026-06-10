@@ -146,6 +146,7 @@
     .known-issue-row:first-of-type{border-top:none;padding-top:0}
     .sr-btn{margin-left:auto;flex-shrink:0;padding:3px 10px;font-size:11px;font-weight:600;border-radius:4px;border:1px solid var(--teal);color:var(--teal);background:none;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
     .sr-btn:hover{background:var(--teal);color:#fff}
+    .sr-warning{display:inline-block;margin-left:8px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;background:#fff0cc;color:#8a5a00;border:1px solid #f5d97a;letter-spacing:.02em;vertical-align:middle}
     .sr-btn-active{background:var(--teal);color:#fff}
     .known-issue-tag{flex-shrink:0;font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;background:var(--amber-bg);color:var(--amber-text)}
     @media(max-width:600px){.movement-grid{grid-template-columns:1fr}.kpi-grid{grid-template-columns:repeat(2,1fr)}}
@@ -635,12 +636,12 @@ function renderMRR(data, selectedMonth) {
     </div>
 
     <div class="chart-section">
-      <div class="chart-section-title">Monthly MRR — USD</div>
+      <div class="chart-section-title">Monthly MRR — USD${_showSR ? '<span class="sr-warning">incl. SalesRabbit</span>' : ''}</div>
       <div class="chart-wrap"><canvas id="mrrChart" role="img" aria-label="Monthly MRR line chart"></canvas></div>
     </div>
 
     <div class="chart-section">
-      <div class="chart-section-title">ARR — USD</div>
+      <div class="chart-section-title">ARR — USD${_showSR ? '<span class="sr-warning">incl. SalesRabbit</span>' : ''}</div>
       <div class="chart-wrap"><canvas id="arrChart" role="img" aria-label="ARR line chart"></canvas></div>
     </div>
 
@@ -690,9 +691,6 @@ function renderMRR(data, selectedMonth) {
 
 function drawCharts(months, totals, selectedMonth) {
   const labels = months.map(m => { const p = m.split(' '); return p[0].slice(0,3) + ' ' + p[1].slice(2); });
-  // When SR is shown, totals already include SR — compute base (without SR) for stacked display
-  const mrrBase = months.map(m => totals[m] - (_showSR ? (SR_MONTHLY[m] || 0) : 0));
-  const mrrSR   = months.map(m => _showSR ? (SR_MONTHLY[m] || 0) : 0);
   const mrrVals = months.map(m => totals[m]);
   const arrVals = mrrVals.map(v => v * 12);
   const selIdx = months.indexOf(selectedMonth);
@@ -722,46 +720,24 @@ function drawCharts(months, totals, selectedMonth) {
     interaction: { mode: 'index', intersect: false }
   });
 
-  const mrrDatasets = _showSR ? [
-    { data: mrrBase, borderColor: '#1EAFAA', backgroundColor: 'rgba(30,175,170,0.10)',
-      borderWidth: 2.5, pointRadius: ptR, pointBackgroundColor: ptColors,
-      pointBorderColor: '#fff', pointBorderWidth: 1.5, tension: 0.3, fill: true, label: 'MRR' },
-    { data: mrrSR, borderColor: '#DC5171', backgroundColor: 'rgba(220,81,113,0.10)',
-      borderWidth: 1.5, borderDash: [4,3], pointRadius: 0, tension: 0.3, fill: true, label: 'SalesRabbit' }
-  ] : [
-    { data: mrrVals, borderColor: '#1EAFAA', backgroundColor: 'rgba(30,175,170,0.07)',
-      borderWidth: 2.5, pointRadius: ptR, pointBackgroundColor: ptColors,
-      pointBorderColor: '#fff', pointBorderWidth: 1.5, tension: 0.3, fill: true }
-  ];
   if (window._mrrChart) window._mrrChart.destroy();
   window._mrrChart = new Chart(document.getElementById('mrrChart'), {
     type: 'line',
-    data: { labels, datasets: mrrDatasets },
-    options: { ...sharedOpts(v => usdFmt(v)),
-      plugins: { ...sharedOpts(v => usdFmt(v)).plugins,
-        legend: { display: _showSR, labels: { font: { size: 11 }, boxWidth: 12 } } } }
+    data: { labels, datasets: [{ data: mrrVals, borderColor: '#1EAFAA',
+      backgroundColor: 'rgba(30,175,170,0.07)', borderWidth: 2.5,
+      pointRadius: ptR, pointBackgroundColor: ptColors,
+      pointBorderColor: '#fff', pointBorderWidth: 1.5, tension: 0.3, fill: true }] },
+    options: sharedOpts(v => usdFmt(v))
   });
 
-  const arrBase = mrrBase.map(v => v * 12);
-  const arrSR   = mrrSR.map(v => v * 12);
-  const arrDatasets = _showSR ? [
-    { data: arrBase, borderColor: '#114B5C', backgroundColor: 'rgba(17,75,92,0.08)',
-      borderWidth: 2.5, pointRadius: ptR, pointBackgroundColor: ptColors,
-      pointBorderColor: '#fff', pointBorderWidth: 1.5, tension: 0.3, fill: true, label: 'ARR' },
-    { data: arrSR, borderColor: '#DC5171', backgroundColor: 'rgba(220,81,113,0.08)',
-      borderWidth: 1.5, borderDash: [4,3], pointRadius: 0, tension: 0.3, fill: true, label: 'SalesRabbit' }
-  ] : [
-    { data: arrVals, borderColor: '#114B5C', backgroundColor: 'rgba(17,75,92,0.06)',
-      borderWidth: 2.5, pointRadius: ptR, pointBackgroundColor: ptColors,
-      pointBorderColor: '#fff', pointBorderWidth: 1.5, tension: 0.3, fill: true }
-  ];
   if (window._arrChart) window._arrChart.destroy();
   window._arrChart = new Chart(document.getElementById('arrChart'), {
     type: 'line',
-    data: { labels, datasets: arrDatasets },
-    options: { ...sharedOpts(v => usdFmt(v)),
-      plugins: { ...sharedOpts(v => usdFmt(v)).plugins,
-        legend: { display: _showSR, labels: { font: { size: 11 }, boxWidth: 12 } } } }
+    data: { labels, datasets: [{ data: arrVals, borderColor: '#114B5C',
+      backgroundColor: 'rgba(17,75,92,0.06)', borderWidth: 2.5,
+      pointRadius: ptR, pointBackgroundColor: ptColors,
+      pointBorderColor: '#fff', pointBorderWidth: 1.5, tension: 0.3, fill: true }] },
+    options: sharedOpts(v => usdFmt(v))
   });
 }
 
