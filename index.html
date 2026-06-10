@@ -826,7 +826,9 @@ function renderMRR(data, selectedMonth) {
         const endTotal      = Object.values(snapEnd).reduce((s,v)=>s+v,0);
         const retainedStart = retained.reduce((s,n)=>s+(snapStart[n]||0),0);
         const retainedEnd   = retained.reduce((s,n)=>s+(snapEnd[n]||0),0);
-        grr = startTotal > 0 ? Math.round((retainedStart / startTotal) * 1000) / 10 : 0;
+        // GRR: retained revenue capped at start (excl. expansions, incl. contractions)
+        const retainedCapped = retained.reduce((s,n) => s + Math.min(snapStart[n]||0, snapEnd[n]||0), 0);
+        grr = startTotal > 0 ? Math.min(100, Math.round((retainedCapped / startTotal) * 1000) / 10) : 0;
         nrr = startTotal > 0 ? Math.round((retainedEnd   / startTotal) * 1000) / 10 : 0;
         arr_start = startTotal * 12; arr_end = endTotal * 12;
         yoy_arr = arr_start > 0 ? Math.round((arr_end - arr_start) / arr_start * 1000) / 10 : 0;
@@ -1613,11 +1615,13 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
   const newRows        = rows.filter(r => r.status === 'new');
   const startTotal     = rows.filter(r => r.startMRR > 0).reduce((s,r) => s + r.startMRR, 0);
   const endTotal       = rows.filter(r => r.endMRR > 0).reduce((s,r) => s + r.endMRR, 0);
-  const retainedStart  = retained.reduce((s,r) => s + r.startMRR, 0);
-  const retainedEnd    = retained.reduce((s,r) => s + r.endMRR,   0);
-  const churnedMRR     = churned.reduce((s,r) => s + r.startMRR, 0);
+  const retainedStart   = retained.reduce((s,r) => s + r.startMRR, 0);
+  const retainedEnd     = retained.reduce((s,r) => s + r.endMRR,   0);
+  const retainedCapped  = retained.reduce((s,r) => s + Math.min(r.startMRR, r.endMRR), 0);
+  const churnedMRR      = churned.reduce((s,r) => s + r.startMRR, 0);
+  const contractionMRR  = retained.filter(r => r.endMRR < r.startMRR).reduce((s,r) => s + (r.startMRR - r.endMRR), 0);
 
-  const grr    = startTotal > 0 ? (retainedStart / startTotal * 100) : 0;
+  const grr    = startTotal > 0 ? Math.min(100, retainedCapped / startTotal * 100) : 0;
   const nrr    = startTotal > 0 ? (retainedEnd   / startTotal * 100) : 0;
   const yoyArr = startTotal > 0 ? ((endTotal - startTotal) / startTotal * 100) : 0;
 
@@ -1661,17 +1665,22 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
         <div class="ret-formula-row">
           <span class="ret-formula-label">Churned MRR</span>
           <span class="ret-formula-val" style="color:var(--cranberry)">−${fmt(churnedMRR)}</span>
-          <span class="ret-formula-note">${churned.length} customers lost</span>
+          <span class="ret-formula-note">${churned.length} customers lost entirely</span>
         </div>
         <div class="ret-formula-row">
-          <span class="ret-formula-label">Retained start MRR</span>
-          <span class="ret-formula-val">${fmt(retainedStart)}</span>
-          <span class="ret-formula-note">${retained.length} customers still active at ${endM}</span>
+          <span class="ret-formula-label">Contraction MRR</span>
+          <span class="ret-formula-val" style="color:var(--cranberry)">−${fmt(contractionMRR)}</span>
+          <span class="ret-formula-note">${retained.filter(r=>r.endMRR<r.startMRR).length} retained customers who downsized</span>
+        </div>
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Retained MRR (capped)</span>
+          <span class="ret-formula-val">${fmt(retainedCapped)}</span>
+          <span class="ret-formula-note">start MRR for retained customers, capped at start · expansions excluded</span>
         </div>
         <hr class="ret-formula-divider">
         <div class="ret-formula-row">
           <span class="ret-formula-label">GRR</span>
-          <span class="ret-formula-result">${fmt(retainedStart)} ÷ ${fmt(startTotal)} = ${grr.toFixed(1)}%</span>
+          <span class="ret-formula-result">${fmt(retainedCapped)} ÷ ${fmt(startTotal)} = ${grr.toFixed(1)}%</span>
         </div>
       </div>`;
     bodyHtml = `
