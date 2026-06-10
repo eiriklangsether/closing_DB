@@ -144,6 +144,9 @@
     .known-issues-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:.625rem}
     .known-issue-row{font-size:12px;color:var(--text-secondary);padding:5px 0;border-top:1px solid var(--border);display:flex;gap:8px;line-height:1.5}
     .known-issue-row:first-of-type{border-top:none;padding-top:0}
+    .sr-btn{margin-left:auto;flex-shrink:0;padding:3px 10px;font-size:11px;font-weight:600;border-radius:4px;border:1px solid var(--teal);color:var(--teal);background:none;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
+    .sr-btn:hover{background:var(--teal);color:#fff}
+    .sr-btn-active{background:var(--teal);color:#fff}
     .known-issue-tag{flex-shrink:0;font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;background:var(--amber-bg);color:var(--amber-text)}
     @media(max-width:600px){.movement-grid{grid-template-columns:1fr}.kpi-grid{grid-template-columns:repeat(2,1fr)}}
     .modal-overlay{position:fixed;inset:0;background:rgba(17,75,92,0.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem}
@@ -423,6 +426,11 @@ const KNOWN_ISSUES = [
   {
     tag: 'Gjensidige · Dec 2025',
     text: 'Gjensidige Business Services AB shows a contraction of NOK 130,455 in Dec 2025. This is a data artefact — the actual MRR in December should be NOK 174K (not NOK 44K as shown). The NOK 130K contraction did not occur.'
+  },
+  {
+    tag: 'SalesRabbit · Jul–Nov 2025',
+    text: 'SalesRabbit reseller revenue is not included in the Chargebee MRR data above (except their standard subscription). Three invoices totalling $2.25M were periodized across May 2023–Nov 2025, of which $510K falls within this dashboard window. Toggle to add it to the charts.',
+    srToggle: true
   }
 ];
 
@@ -483,7 +491,9 @@ function getMRRTotals(entity, months) {
   const sources = getEntityData(entity);
   const totals = {};
   months.forEach(m => {
-    totals[m] = sources.reduce((s, d) => s + toUSD(d.src.totals_local[m] || 0, d.key), 0);
+    let v = sources.reduce((s, d) => s + toUSD(d.src.totals_local[m] || 0, d.key), 0);
+    if (_showSR) v += (SR_MONTHLY[m] || 0);
+    totals[m] = v;
   });
   return totals;
 }
@@ -561,7 +571,11 @@ function renderMRR(data, selectedMonth) {
   const issuesHtml = KNOWN_ISSUES.length ? `
     <div class="known-issues">
       <div class="known-issues-title">Known issues / misrepresented MRR</div>
-      ${KNOWN_ISSUES.map(i => `<div class="known-issue-row"><span class="known-issue-tag">${i.tag}</span><span>${i.text}</span></div>`).join('')}
+      ${KNOWN_ISSUES.map(i => `<div class="known-issue-row">
+        <span class="known-issue-tag">${i.tag}</span>
+        <span style="flex:1">${i.text}</span>
+        ${i.srToggle ? `<button class="sr-btn${_showSR ? ' sr-btn-active' : ''}" onclick="toggleSR(this)">${_showSR ? 'Hide SalesRabbit' : 'Include SalesRabbit'}</button>` : ''}
+      </div>`).join('')}
     </div>` : '';
 
   document.getElementById('mrr-banner').style.display = 'flex';
@@ -583,12 +597,12 @@ function renderMRR(data, selectedMonth) {
       <div class="kpi">
         <div class="kpi-label">MRR</div>
         <div class="kpi-value">${usdFmt(currMRR)}</div>
-        <div class="kpi-sub">${selectedMonth} · ${entityLabel}</div>
+        <div class="kpi-sub">${selectedMonth} · ${entityLabel}${_showSR ? " · incl. SR" : ""}</div>
       </div>
       <div class="kpi">
         <div class="kpi-label">ARR</div>
         <div class="kpi-value">${usdFmt(currMRR * 12)}</div>
-        <div class="kpi-sub">MRR × 12</div>
+        <div class="kpi-sub">MRR × 12${_showSR ? " · incl. SR" : ""}</div>
       </div>
       <div class="kpi">
         <div class="kpi-label">MoM change</div>
@@ -676,6 +690,9 @@ function renderMRR(data, selectedMonth) {
 
 function drawCharts(months, totals, selectedMonth) {
   const labels = months.map(m => { const p = m.split(' '); return p[0].slice(0,3) + ' ' + p[1].slice(2); });
+  // When SR is shown, totals already include SR — compute base (without SR) for stacked display
+  const mrrBase = months.map(m => totals[m] - (_showSR ? (SR_MONTHLY[m] || 0) : 0));
+  const mrrSR   = months.map(m => _showSR ? (SR_MONTHLY[m] || 0) : 0);
   const mrrVals = months.map(m => totals[m]);
   const arrVals = mrrVals.map(v => v * 12);
   const selIdx = months.indexOf(selectedMonth);
@@ -705,24 +722,46 @@ function drawCharts(months, totals, selectedMonth) {
     interaction: { mode: 'index', intersect: false }
   });
 
+  const mrrDatasets = _showSR ? [
+    { data: mrrBase, borderColor: '#1EAFAA', backgroundColor: 'rgba(30,175,170,0.10)',
+      borderWidth: 2.5, pointRadius: ptR, pointBackgroundColor: ptColors,
+      pointBorderColor: '#fff', pointBorderWidth: 1.5, tension: 0.3, fill: true, label: 'MRR' },
+    { data: mrrSR, borderColor: '#DC5171', backgroundColor: 'rgba(220,81,113,0.10)',
+      borderWidth: 1.5, borderDash: [4,3], pointRadius: 0, tension: 0.3, fill: true, label: 'SalesRabbit' }
+  ] : [
+    { data: mrrVals, borderColor: '#1EAFAA', backgroundColor: 'rgba(30,175,170,0.07)',
+      borderWidth: 2.5, pointRadius: ptR, pointBackgroundColor: ptColors,
+      pointBorderColor: '#fff', pointBorderWidth: 1.5, tension: 0.3, fill: true }
+  ];
   if (window._mrrChart) window._mrrChart.destroy();
   window._mrrChart = new Chart(document.getElementById('mrrChart'), {
     type: 'line',
-    data: { labels, datasets: [{ data: mrrVals, borderColor: '#1EAFAA',
-      backgroundColor: 'rgba(30,175,170,0.07)', borderWidth: 2.5,
-      pointRadius: ptR, pointBackgroundColor: ptColors,
-      pointBorderColor: '#fff', pointBorderWidth: 1.5, tension: 0.3, fill: true }] },
-    options: sharedOpts(v => usdFmt(v))
+    data: { labels, datasets: mrrDatasets },
+    options: { ...sharedOpts(v => usdFmt(v)),
+      plugins: { ...sharedOpts(v => usdFmt(v)).plugins,
+        legend: { display: _showSR, labels: { font: { size: 11 }, boxWidth: 12 } } } }
   });
 
+  const arrBase = mrrBase.map(v => v * 12);
+  const arrSR   = mrrSR.map(v => v * 12);
+  const arrDatasets = _showSR ? [
+    { data: arrBase, borderColor: '#114B5C', backgroundColor: 'rgba(17,75,92,0.08)',
+      borderWidth: 2.5, pointRadius: ptR, pointBackgroundColor: ptColors,
+      pointBorderColor: '#fff', pointBorderWidth: 1.5, tension: 0.3, fill: true, label: 'ARR' },
+    { data: arrSR, borderColor: '#DC5171', backgroundColor: 'rgba(220,81,113,0.08)',
+      borderWidth: 1.5, borderDash: [4,3], pointRadius: 0, tension: 0.3, fill: true, label: 'SalesRabbit' }
+  ] : [
+    { data: arrVals, borderColor: '#114B5C', backgroundColor: 'rgba(17,75,92,0.06)',
+      borderWidth: 2.5, pointRadius: ptR, pointBackgroundColor: ptColors,
+      pointBorderColor: '#fff', pointBorderWidth: 1.5, tension: 0.3, fill: true }
+  ];
   if (window._arrChart) window._arrChart.destroy();
   window._arrChart = new Chart(document.getElementById('arrChart'), {
     type: 'line',
-    data: { labels, datasets: [{ data: arrVals, borderColor: '#114B5C',
-      backgroundColor: 'rgba(17,75,92,0.06)', borderWidth: 2.5,
-      pointRadius: ptR, pointBackgroundColor: ptColors,
-      pointBorderColor: '#fff', pointBorderWidth: 1.5, tension: 0.3, fill: true }] },
-    options: sharedOpts(v => usdFmt(v))
+    data: { labels, datasets: arrDatasets },
+    options: { ...sharedOpts(v => usdFmt(v)),
+      plugins: { ...sharedOpts(v => usdFmt(v)).plugins,
+        legend: { display: _showSR, labels: { font: { size: 11 }, boxWidth: 12 } } } }
   });
 }
 
@@ -851,6 +890,16 @@ function refreshModalTable() {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
 const RETENTION = { grr: 98.1, nrr: 99.7, yoy_arr: 10.6, arr_start: 6710338, arr_end: 7423905, window_start: 'Jul 2025', window_end: 'Jun 2026' };
+
+const SR_MONTHLY = {"Jul 2025":109879.13,"Aug 2025":109879.13,"Sep 2025":106334.64,"Oct 2025":109879.13,"Nov 2025":74434.25,"Dec 2025":0.0,"Jan 2026":0.0,"Feb 2026":0.0,"Mar 2026":0.0,"Apr 2026":0.0,"May 2026":0.0,"Jun 2026":0.0};
+let _showSR = false;
+function toggleSR(btn) {
+  _showSR = !_showSR;
+  btn.textContent = _showSR ? 'Hide SalesRabbit' : 'Include SalesRabbit';
+  btn.classList.toggle('sr-btn-active', _showSR);
+  const sel = document.getElementById('monthSel');
+  renderMRR(null, sel ? sel.value : null);
+}
 
 /* boot */
 load();
