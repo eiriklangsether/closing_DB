@@ -501,7 +501,7 @@ function renderMRR(data, selectedMonth) {
 }
 
 function drawCharts(months, totals, selectedMonth) {
-  const labels = months.map(m => { const p = m.split(' '); return p[0] + ' '' + p[1].slice(2); });
+  const labels = months.map(m => { const p = m.split(' '); return p[0].slice(0,3) + ' ' + p[1].slice(2); });
   const mrrVals = months.map(m => totals[m]);
   const arrVals = mrrVals.map(v => v * 12);
   const selIdx = months.indexOf(selectedMonth);
