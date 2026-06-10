@@ -140,8 +140,8 @@
     SalesScreen Finance
   </a>
   <div class="nav-tabs">
-    <button class="nav-tab active" onclick="switchPage('closing')">Monthly close</button>
-    <button class="nav-tab" onclick="switchPage('mrr')">MRR</button>
+    <button class="nav-tab active" onclick="switchPage('closing', this)">Monthly close</button>
+    <button class="nav-tab" onclick="switchPage('mrr', this)">MRR</button>
   </div>
   <div class="header-right">Internal · Finance team</div>
 </header>
@@ -171,11 +171,11 @@
 /* ─────────────────────────────────────────────
    PAGE NAVIGATION
 ───────────────────────────────────────────── */
-function switchPage(p) {
+function switchPage(p, btn) {
   document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
   document.getElementById('page-' + p).classList.add('active');
-  event.currentTarget.classList.add('active');
+  if (btn) btn.classList.add('active');
 }
 
 /* ─────────────────────────────────────────────
@@ -571,7 +571,7 @@ const MRR_DATA = {"uploadDate":"10 Jun 2026","months":["Jul 2025","Aug 2025","Se
 
 /* boot */
 load();
-renderMRR(MRR_DATA, null);
+window.addEventListener('load', () => renderMRR(MRR_DATA, null));
 </script>
 </body>
 </html>
