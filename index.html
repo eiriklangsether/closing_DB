@@ -4,10 +4,10 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SalesScreen Finance Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
-      /* SalesScreen brand palette */
       --teal:#1EAFAA;
       --dark-teal:#114B5C;
       --cranberry:#D63C60;
@@ -15,27 +15,36 @@
       --teal-lighter:#DAEDEC;
       --teal-light:#A7D6D4;
       --black:#1A1A1A;
-
       --bg:#F4F8F8;
       --surface:#ffffff;
       --border:rgba(17,75,92,0.12);
       --text-primary:#1A1A1A;
       --text-secondary:#3a5a63;
       --text-muted:#7a9ba3;
-
       --green-bg:#e6f5f4;--green-text:#0d6b65;--green-dot:#1EAFAA;
       --red-bg:#fce8ee;--red-text:#a01f3c;--red-dot:#D63C60;
       --amber-bg:#fff0e6;--amber-text:#8a4a10;--amber-dot:#e07b30;
-
       --radius:12px;--radius-sm:8px;
     }
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text-primary);min-height:100vh}
-    header{background:var(--dark-teal);padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between}
-    .logo{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;color:#fff}
+
+    /* ── Header ── */
+    header{background:var(--dark-teal);padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+    .logo{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:600;color:#fff;text-decoration:none}
     .logo-icon{width:28px;height:28px;display:flex;align-items:center;justify-content:center}
     .logo-icon svg{width:22px;height:22px}
+    .nav-tabs{display:flex;gap:2px}
+    .nav-tab{padding:0 16px;height:56px;display:flex;align-items:center;font-size:13px;font-weight:500;color:var(--teal-light);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;letter-spacing:.01em;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit}
+    .nav-tab:hover{color:#fff}
+    .nav-tab.active{color:#fff;border-bottom-color:var(--teal)}
     .header-right{font-size:12px;color:var(--teal-light);letter-spacing:.02em}
-    main{max-width:860px;margin:0 auto;padding:2.5rem 2rem}
+
+    /* ── Layout ── */
+    main{max-width:880px;margin:0 auto;padding:2.5rem 2rem}
+    .page{display:none}
+    .page.active{display:block}
+
+    /* ── Closing page (unchanged) ── */
     .page-title{font-size:22px;font-weight:700;color:var(--dark-teal);margin-bottom:6px;letter-spacing:-.01em}
     .page-desc{font-size:14px;color:var(--text-secondary);margin-bottom:4px;line-height:1.6;max-width:620px}
     .last-updated{font-size:12px;color:var(--text-muted);margin-bottom:2rem;margin-top:4px}
@@ -62,7 +71,6 @@
     .badge-na{background:#f0f4f5;color:var(--text-muted);border:1px solid var(--border)}.badge-na .dot{background:var(--text-muted)}
     .badge-manual{background:#f0f4f5;color:var(--text-secondary);border:1px solid var(--border)}.badge-manual .dot{background:var(--teal-light)}
     .divider{border:none;border-top:1px solid var(--border);margin:1.5rem 0}
-    /* Manual checklist */
     .checklist-items{display:flex;flex-direction:column;gap:6px}
     .checklist-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.75rem 1.125rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;cursor:pointer;transition:background .1s}
     .checklist-item:hover{background:#f7fbfb}
@@ -73,16 +81,55 @@
     .checklist-sub{font-size:12px;color:var(--text-muted)}
     .toggle-btn{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 12px;border-radius:99px;border:none;cursor:pointer;font-family:inherit;transition:all .15s;letter-spacing:.02em}
     .toggle-btn.mark-done{background:var(--teal-lighter);color:var(--dark-teal);border:1px solid var(--teal-light)}
-    .toggle-btn.mark-done:hover{background:var(--teal-light);color:var(--dark-teal)}
+    .toggle-btn.mark-done:hover{background:var(--teal-light)}
     .toggle-btn.mark-undone{background:var(--green-bg);color:var(--green-text);border:1px solid rgba(30,175,170,.3)}
     .toggle-btn.mark-undone:hover{background:#d0eeed}
     .empty{text-align:center;padding:3rem;color:var(--text-muted);font-size:14px}
     .section-header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+
+    /* ── MRR page ── */
+    .mrr-banner{background:var(--teal-lighter);border:1px solid var(--teal-light);border-radius:var(--radius-sm);padding:.625rem 1rem;display:flex;align-items:center;gap:.5rem;margin-bottom:1.75rem;font-size:12px;color:var(--dark-teal)}
+    .mrr-banner-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);flex-shrink:0}
+    .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:2rem}
+    .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem}
+    .kpi-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:5px}
+    .kpi-value{font-size:20px;font-weight:700;color:var(--dark-teal);letter-spacing:-.01em}
+    .kpi-sub{font-size:11px;color:var(--text-muted);margin-top:3px}
+    .kpi-delta-pos{color:#0d6b65}
+    .kpi-delta-neg{color:var(--cranberry)}
+    .chart-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:1.25rem}
+    .chart-section-title{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:1rem}
+    .chart-wrap{position:relative;width:100%;height:200px}
+    .movement-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.25rem}
+    .movement-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem}
+    .movement-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+    .movement-card-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+    .movement-card-title.new-title{color:#0d6b65}
+    .movement-card-title.churned-title{color:var(--cranberry)}
+    .movement-card-title.expansion-title{color:#114B5C}
+    .movement-card-title.contraction-title{color:var(--amber-text)}
+    .movement-total{font-size:14px;font-weight:700}
+    .movement-total.pos{color:#0d6b65}
+    .movement-total.neg{color:var(--cranberry)}
+    .movement-total.neutral{color:var(--dark-teal)}
+    .movement-total.amber{color:var(--amber-text)}
+    .movement-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-top:1px solid var(--border);font-size:12px}
+    .movement-name{color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:72%;flex:1;margin-right:8px}
+    .movement-amt{font-weight:600;white-space:nowrap}
+    .movement-amt.pos{color:#0d6b65}
+    .movement-amt.neg{color:var(--cranberry)}
+    .movement-amt.amber{color:var(--amber-text)}
+    .movement-empty{font-size:12px;color:var(--text-muted);padding:6px 0}
+    .month-selector{display:flex;align-items:center;gap:8px;margin-bottom:1.5rem}
+    .month-selector label{font-size:12px;color:var(--text-secondary);font-weight:500}
+    .month-selector select{font-size:13px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text-primary);font-family:inherit;cursor:pointer}
+    .month-selector select:focus{outline:2px solid var(--teal);outline-offset:1px}
+    @media(max-width:600px){.movement-grid{grid-template-columns:1fr}.kpi-grid{grid-template-columns:repeat(2,1fr)}}
   </style>
 </head>
 <body>
 <header>
-  <div class="logo">
+  <a class="logo" href="#">
     <div class="logo-icon">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="2" y="12" width="5" height="10" rx="1.5" fill="#1EAFAA"/>
@@ -91,18 +138,49 @@
       </svg>
     </div>
     SalesScreen Finance
+  </a>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchPage('closing')">Monthly close</button>
+    <button class="nav-tab" onclick="switchPage('mrr')">MRR</button>
   </div>
   <div class="header-right">Internal · Finance team</div>
 </header>
 
 <main>
-  <div class="page-title">Monthly close tracker</div>
-  <div class="page-desc">Track how complete the monthly closing process is across all entities. Accounting checks are updated automatically by Claude — manual steps are marked by the finance team.</div>
-  <div class="last-updated" id="lastUpdated">Loading…</div>
-  <div id="app"><div class="empty">Loading…</div></div>
+  <!-- ══ CLOSING PAGE ══ -->
+  <div id="page-closing" class="page active">
+    <div class="page-title">Monthly close tracker</div>
+    <div class="page-desc">Track how complete the monthly closing process is across all entities. Accounting checks are updated automatically by Claude — manual steps are marked by the finance team.</div>
+    <div class="last-updated" id="lastUpdated">Loading…</div>
+    <div id="app"><div class="empty">Loading…</div></div>
+  </div>
+
+  <!-- ══ MRR PAGE ══ -->
+  <div id="page-mrr" class="page">
+    <div class="page-title">MRR tracker</div>
+    <div id="mrr-banner" class="mrr-banner" style="display:none">
+      <span class="mrr-banner-dot"></span>
+      <span id="mrr-banner-text"></span>
+    </div>
+
+    <div id="mrr-content"><div class="empty">Upload a Chargebee MRR export to view data.</div></div>
+  </div>
 </main>
 
 <script>
+/* ─────────────────────────────────────────────
+   PAGE NAVIGATION
+───────────────────────────────────────────── */
+function switchPage(p) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+/* ─────────────────────────────────────────────
+   CLOSING PAGE — unchanged logic
+───────────────────────────────────────────── */
 const SECRET = 'finance2026';
 
 async function load() {
@@ -124,8 +202,7 @@ async function load() {
 function norwayTime(isoStr) {
   if (!isoStr) return '—';
   return new Date(isoStr).toLocaleString('nb-NO', {
-    timeZone: 'Europe/Oslo',
-    day: '2-digit', month: 'short', year: 'numeric',
+    timeZone: 'Europe/Oslo', day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
   });
 }
@@ -146,31 +223,28 @@ function badge(status) {
 function renderEntity(e) {
   if (!e) return '';
   const entityKey = e.name.replace(/[^a-z0-9]/gi,'_').toLowerCase();
-  const manualState = (currentData && currentData.manualChecks || {})[entityKey] || {};
+  const manualState = (closingData && closingData.manualChecks || {})[entityKey] || {};
   const checks = (e.checks || []).map((c, i) => {
     const checkKey = `${entityKey}_${i}`;
     if (c.status === 'manual') {
       const done = !!manualState[checkKey];
-      return `
-        <div class="check-card ${done?'checklist-item done':''}">
-          <div class="check-left">
-            <div class="check-name ${done?'done-text':''}">${c.label}</div>
-            ${c.note ? `<div class="check-note">${c.note}</div>` : ''}
-          </div>
-          <button class="toggle-btn ${done?'mark-undone':'mark-done'}"
-            onclick="toggleEntityCheck('${entityKey}','${checkKey}')">
-            ${done ? '✓ Done' : 'Mark done'}
-          </button>
-        </div>`;
-    }
-    return `
-      <div class="check-card">
+      return `<div class="check-card ${done?'checklist-item done':''}">
         <div class="check-left">
-          <div class="check-name">${c.label}</div>
+          <div class="check-name ${done?'done-text':''}">${c.label}</div>
           ${c.note ? `<div class="check-note">${c.note}</div>` : ''}
         </div>
-        ${badge(c.status)}
+        <button class="toggle-btn ${done?'mark-undone':'mark-done'}" onclick="toggleEntityCheck('${entityKey}','${checkKey}')">
+          ${done ? '✓ Done' : 'Mark done'}
+        </button>
       </div>`;
+    }
+    return `<div class="check-card">
+      <div class="check-left">
+        <div class="check-name">${c.label}</div>
+        ${c.note ? `<div class="check-note">${c.note}</div>` : ''}
+      </div>
+      ${badge(c.status)}
+    </div>`;
   }).join('');
   const autoDone = (e.checks||[]).filter(c=>c.status==='ok').length;
   const manualDone = Object.values(manualState).filter(Boolean).length;
@@ -180,50 +254,48 @@ function renderEntity(e) {
   const anyWarn = (e.checks||[]).some(c=>['warn','pending'].includes(c.status));
   const allDone = done===total && total>0;
   const overallBadge = allDone ? badge('ok') : anyErr ? badge('err') : anyWarn ? badge('warn') : badge('pending');
-  return `
-    <div class="entity-section" id="entity-${entityKey}">
-      <div class="entity-header">
-        <div>
-          <div class="entity-name">${e.name}</div>
-          <div class="entity-sub">${e.system} · ${e.country}</div>
-        </div>
-        ${overallBadge}
+  return `<div class="entity-section" id="entity-${entityKey}">
+    <div class="entity-header">
+      <div>
+        <div class="entity-name">${e.name}</div>
+        <div class="entity-sub">${e.system} · ${e.country}</div>
       </div>
-      <div class="checks">${checks}</div>
-    </div>`;
+      ${overallBadge}
+    </div>
+    <div class="checks">${checks}</div>
+  </div>`;
 }
 
-let currentData = null;
+let closingData = null;
 
 async function toggleEntityCheck(entityKey, checkKey) {
-  if (!currentData) return;
-  if (!currentData.manualChecks) currentData.manualChecks = {};
-  if (!currentData.manualChecks[entityKey]) currentData.manualChecks[entityKey] = {};
-  currentData.manualChecks[entityKey][checkKey] = !currentData.manualChecks[entityKey][checkKey];
-  // Re-render the full app to update counts and badges
-  render(currentData);
+  if (!closingData) return;
+  if (!closingData.manualChecks) closingData.manualChecks = {};
+  if (!closingData.manualChecks[entityKey]) closingData.manualChecks[entityKey] = {};
+  closingData.manualChecks[entityKey][checkKey] = !closingData.manualChecks[entityKey][checkKey];
+  render(closingData);
   try {
     await fetch('/api/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-dashboard-secret': SECRET },
       credentials: 'include',
-      body: JSON.stringify(currentData)
+      body: JSON.stringify(closingData)
     });
   } catch(e) { console.error('Save failed', e); }
 }
 
 async function toggleManual(key) {
-  if (!currentData) return;
-  if (!currentData.manual) currentData.manual = {};
-  currentData.manual[key] = !currentData.manual[key];
-  currentData.manualUpdatedAt = new Date().toISOString();
-  renderManualSection(currentData.manual, currentData.manualChecklist || []);
+  if (!closingData) return;
+  if (!closingData.manual) closingData.manual = {};
+  closingData.manual[key] = !closingData.manual[key];
+  closingData.manualUpdatedAt = new Date().toISOString();
+  renderManualSection(closingData.manual, closingData.manualChecklist || []);
   try {
     await fetch('/api/update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-dashboard-secret': SECRET },
       credentials: 'include',
-      body: JSON.stringify(currentData)
+      body: JSON.stringify(closingData)
     });
   } catch(e) { console.error('Save failed', e); }
 }
@@ -234,42 +306,36 @@ function renderManualSection(manual, checklist) {
   const doneCount = checklist.filter(c => manual[c.key]).length;
   const items = checklist.map(c => {
     const done = !!manual[c.key];
-    return `
-      <div class="checklist-item ${done?'done':''}" onclick="toggleManual('${c.key}')">
-        <div class="checklist-left">
-          <div class="checklist-name ${done?'done-text':''}">${c.label}</div>
-          ${c.sub ? `<div class="checklist-sub">${c.sub}</div>` : ''}
-        </div>
-        <button class="toggle-btn ${done?'mark-undone':'mark-done'}" onclick="event.stopPropagation();toggleManual('${c.key}')">
-          ${done ? '✓ Done' : 'Mark done'}
-        </button>
-      </div>`;
+    return `<div class="checklist-item ${done?'done':''}" onclick="toggleManual('${c.key}')">
+      <div class="checklist-left">
+        <div class="checklist-name ${done?'done-text':''}">${c.label}</div>
+        ${c.sub ? `<div class="checklist-sub">${c.sub}</div>` : ''}
+      </div>
+      <button class="toggle-btn ${done?'mark-undone':'mark-done'}" onclick="event.stopPropagation();toggleManual('${c.key}')">
+        ${done ? '✓ Done' : 'Mark done'}
+      </button>
+    </div>`;
   }).join('');
-  el.innerHTML = `
-    <div class="section-header-row">
-      <span class="section-title" style="margin-bottom:0">Manual close steps</span>
-      <span style="font-size:12px;color:var(--text-muted)">${doneCount}/${checklist.length} complete</span>
-    </div>
-    <div class="checklist-items">${items}</div>`;
+  el.innerHTML = `<div class="section-header-row">
+    <span class="section-title" style="margin-bottom:0">Manual close steps</span>
+    <span style="font-size:12px;color:var(--text-muted)">${doneCount}/${checklist.length} complete</span>
+  </div>
+  <div class="checklist-items">${items}</div>`;
 }
 
 function render(d) {
-  currentData = d;
-  const updated = norwayTime(d.updatedAt);
-  document.getElementById('lastUpdated').textContent = `Accounting checks last updated: ${updated} · ${d.period || ''}`;
-
+  closingData = d;
+  document.getElementById('lastUpdated').textContent = `Accounting checks last updated: ${norwayTime(d.updatedAt)} · ${d.period || ''}`;
   const allAutoChecks = [...(d.no?.checks||[]), ...(d.se?.checks||[]), ...(d.us?.checks||[])];
   const autoDone = allAutoChecks.filter(c=>c.status==='ok').length;
   const autoTotal = allAutoChecks.filter(c=>c.status!=='na').length;
-  // Count entity-level manual check toggles
   const manualChecks = d.manualChecks || {};
-  const entityManualDone = Object.values(manualChecks).reduce((sum, entity) => sum + Object.values(entity).filter(Boolean).length, 0);
+  const entityManualDone = Object.values(manualChecks).reduce((sum, e) => sum + Object.values(e).filter(Boolean).length, 0);
   const manualChecklist = d.manualChecklist || [];
   const manual = d.manual || {};
   const manualDone = manualChecklist.filter(c=>manual[c.key]).length;
   const totalDone = autoDone + entityManualDone + manualDone;
   const totalItems = autoTotal + manualChecklist.length;
-
   document.getElementById('app').innerHTML = `
     <div class="summary-bar">
       <div class="sc"><div class="sc-label">Period</div><div class="sc-value" style="font-size:15px">${d.period||'—'}</div></div>
@@ -277,7 +343,6 @@ function render(d) {
       <div class="sc"><div class="sc-label">Accounting</div><div class="sc-value">${autoDone}/${autoTotal}</div></div>
       <div class="sc"><div class="sc-label">Manual steps</div><div class="sc-value">${manualDone}/${manualChecklist.length}</div></div>
     </div>
-
     <span class="section-title">Accounting checks — auto updated by Claude</span>
     ${renderEntity(d.no)}
     <hr class="divider"/>
@@ -286,11 +351,227 @@ function render(d) {
     ${renderEntity(d.us)}
     <hr class="divider"/>
     <div id="manual-section"></div>`;
-
   renderManualSection(manual, manualChecklist);
 }
 
+/* ─────────────────────────────────────────────
+   MRR PAGE
+───────────────────────────────────────────── */
+let mrrData = null;
+let mrrChartInst = null;
+let arrChartInst = null;
+
+function nokFmt(v) {
+  if (Math.abs(v) >= 1000000) return (v/1000000).toFixed(2) + 'M';
+  if (Math.abs(v) >= 1000) return Math.round(v/1000) + 'K';
+  return Math.round(v).toLocaleString('nb-NO');
+}
+function nokFull(v) { return 'kr ' + Math.round(v).toLocaleString('nb-NO'); }
+function pctFmt(a,b) { return ((a-b)/b*100).toFixed(1) + '%'; }
+function sign(v) { return v >= 0 ? '+' : ''; }
+
+function renderMRR(data, selectedMonth) {
+  mrrData = data;
+  const months = data.months;
+  const totals = data.totals_nok;
+  const counts = data.customer_counts;
+  const movements = data.movements;
+
+  // Banner
+  const banner = document.getElementById('mrr-banner');
+  document.getElementById('mrr-banner-text').textContent =
+    `NO Chargebee site only · Manual upload · Data as of ${data.uploadDate}`;
+  banner.style.display = 'flex';
+
+  // Month selector default = last month
+  const movMonths = Object.keys(movements);
+  if (!selectedMonth) selectedMonth = movMonths[movMonths.length - 1];
+
+  // KPIs — use selected month vs previous
+  const selIdx = months.indexOf(selectedMonth);
+  const prevMonth = selIdx > 0 ? months[selIdx - 1] : null;
+  const currMRR = totals[selectedMonth];
+  const prevMRR = prevMonth ? totals[prevMonth] : null;
+  const momDelta = prevMRR ? currMRR - prevMRR : null;
+  const momPct = prevMRR ? ((currMRR - prevMRR)/prevMRR*100) : null;
+  const currCount = counts[selectedMonth];
+
+  const kpiMoM = momDelta !== null
+    ? `<span class="${momDelta >= 0 ? 'kpi-delta-pos' : 'kpi-delta-neg'}">${sign(momDelta)}kr ${nokFmt(Math.abs(momDelta))} (${sign(momPct)}${momPct.toFixed(1)}%)</span>`
+    : '—';
+
+  // Movement for selected month
+  const mov = movements[selectedMonth] || {};
+  const movNew = (mov.new || []).sort((a,b)=>b.mrr-a.mrr);
+  const movChurned = (mov.churned || []).sort((a,b)=>b.mrr-a.mrr);
+  const movExp = (mov.expansions || []).sort((a,b)=>b.mrr-a.mrr);
+  const movCon = (mov.contractions || []).sort((a,b)=>a.mrr-b.mrr);
+
+  function movRows(items, cls) {
+    if (!items.length) return `<div class="movement-empty">None this month</div>`;
+    return items.map(r => `<div class="movement-row">
+      <span class="movement-name" title="${r.Company}">${r.Company}</span>
+      <span class="movement-amt ${cls}">${sign(r.mrr)}kr ${nokFmt(Math.abs(r.mrr))}</span>
+    </div>`).join('');
+  }
+
+  // Month selector options
+  const opts = movMonths.map(m =>
+    `<option value="${m}" ${m===selectedMonth?'selected':''}>${m}</option>`
+  ).join('');
+
+  // Render content
+  document.getElementById('mrr-content').innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">MRR</div>
+        <div class="kpi-value">kr ${nokFmt(currMRR)}</div>
+        <div class="kpi-sub">${selectedMonth}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">ARR (implied)</div>
+        <div class="kpi-value">kr ${nokFmt(currMRR * 12)}</div>
+        <div class="kpi-sub">MRR × 12</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">MoM change</div>
+        <div class="kpi-value" style="font-size:15px">${kpiMoM}</div>
+        <div class="kpi-sub">${prevMonth ? prevMonth + ' → ' + selectedMonth : 'No prior month'}</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Active customers</div>
+        <div class="kpi-value">${currCount}</div>
+        <div class="kpi-sub">NO site</div>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-section-title">Monthly MRR — NOK</div>
+      <div class="chart-wrap"><canvas id="mrrChart" role="img" aria-label="Monthly MRR line chart"></canvas></div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-section-title">Implied ARR — NOK</div>
+      <div class="chart-wrap"><canvas id="arrChart" role="img" aria-label="Implied ARR line chart"></canvas></div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <span class="section-title" style="margin-bottom:0">Month-on-month movements</span>
+      <div class="month-selector">
+        <label for="monthSel">Viewing</label>
+        <select id="monthSel" onchange="renderMRR(mrrData, this.value)">${opts}</select>
+      </div>
+    </div>
+
+    <div class="movement-grid">
+      <div class="movement-card">
+        <div class="movement-card-header">
+          <span class="movement-card-title new-title">New</span>
+          <span class="movement-total pos">+kr ${nokFmt(mov.new_total || 0)}</span>
+        </div>
+        ${movRows(movNew, 'pos')}
+      </div>
+      <div class="movement-card">
+        <div class="movement-card-header">
+          <span class="movement-card-title churned-title">Churned</span>
+          <span class="movement-total neg">−kr ${nokFmt(mov.churned_total || 0)}</span>
+        </div>
+        ${movRows(movChurned, 'neg')}
+      </div>
+      <div class="movement-card">
+        <div class="movement-card-header">
+          <span class="movement-card-title expansion-title">Expansions</span>
+          <span class="movement-total pos">+kr ${nokFmt(mov.expansion_total || 0)}</span>
+        </div>
+        ${movRows(movExp, 'pos')}
+      </div>
+      <div class="movement-card">
+        <div class="movement-card-header">
+          <span class="movement-card-title contraction-title">Contractions</span>
+          <span class="movement-total ${(mov.contraction_total||0) < 0 ? 'amber' : 'neutral'}">
+            ${(mov.contraction_total||0) < 0 ? '' : ''}kr ${nokFmt(Math.abs(mov.contraction_total || 0))}
+          </span>
+        </div>
+        ${movRows(movCon.map(r=>({...r,mrr:Math.abs(r.mrr)})), 'amber')}
+      </div>
+    </div>`;
+
+  // Draw charts
+  drawCharts(months, totals, selectedMonth);
+}
+
+function drawCharts(months, totals, selectedMonth) {
+  const labels = months.map(m => { const p = m.split(' '); return p[0] + ' '' + p[1].slice(2); });
+  const mrrVals = months.map(m => totals[m]);
+  const arrVals = mrrVals.map(v => v * 12);
+  const selIdx = months.indexOf(selectedMonth);
+
+  const pointColors = months.map((m, i) =>
+    i === selIdx ? '#D63C60' : '#1EAFAA'
+  );
+  const pointR = months.map((m, i) => i === selIdx ? 6 : 3);
+
+  const sharedOpts = (fmtY) => ({
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: {
+      callbacks: { label: ctx => ' kr ' + Math.round(ctx.raw).toLocaleString('nb-NO') }
+    }},
+    scales: {
+      x: {
+        grid: { color: 'rgba(17,75,92,0.06)' },
+        ticks: { color: '#7a9ba3', font: { size: 11 }, maxRotation: 0, autoSkip: false }
+      },
+      y: {
+        grid: { color: 'rgba(17,75,92,0.06)' },
+        ticks: { color: '#7a9ba3', font: { size: 11 }, callback: fmtY }
+      }
+    }
+  });
+
+  if (mrrChartInst) mrrChartInst.destroy();
+  mrrChartInst = new Chart(document.getElementById('mrrChart'), {
+    type: 'line',
+    data: { labels, datasets: [{
+      data: mrrVals,
+      borderColor: '#1EAFAA',
+      backgroundColor: 'rgba(30,175,170,0.07)',
+      borderWidth: 2.5,
+      pointRadius: pointR,
+      pointBackgroundColor: pointColors,
+      pointBorderColor: '#fff',
+      pointBorderWidth: 1.5,
+      tension: 0.3, fill: true
+    }]},
+    options: sharedOpts(v => 'kr ' + Math.round(v/1000) + 'K')
+  });
+
+  if (arrChartInst) arrChartInst.destroy();
+  arrChartInst = new Chart(document.getElementById('arrChart'), {
+    type: 'line',
+    data: { labels, datasets: [{
+      data: arrVals,
+      borderColor: '#114B5C',
+      backgroundColor: 'rgba(17,75,92,0.06)',
+      borderWidth: 2.5,
+      pointRadius: pointR,
+      pointBackgroundColor: pointColors,
+      pointBorderColor: '#fff',
+      pointBorderWidth: 1.5,
+      tension: 0.3, fill: true
+    }]},
+    options: sharedOpts(v => 'kr ' + (v/1000000).toFixed(1) + 'M')
+  });
+}
+
+/* ─────────────────────────────────────────────
+   MRR DATA — embedded from CB export
+   (replace this block each upload)
+───────────────────────────────────────────── */
+const MRR_DATA = {"uploadDate":"10 Jun 2026","months":["Jul 2025","Aug 2025","Sep 2025","Oct 2025","Nov 2025","Dec 2025","Jan 2026","Feb 2026","Mar 2026","Apr 2026","May 2026","Jun 2026"],"totals_nok":{"Jul 2025":3809049,"Aug 2025":3820772,"Sep 2025":3781015,"Oct 2025":3836515,"Nov 2025":4156587,"Dec 2025":3884104,"Jan 2026":4027548,"Feb 2026":4107688,"Mar 2026":4142458,"Apr 2026":4068719,"May 2026":4015084,"Jun 2026":4013764},"customer_counts":{"Jul 2025":238,"Aug 2025":237,"Sep 2025":235,"Oct 2025":239,"Nov 2025":239,"Dec 2025":237,"Jan 2026":239,"Feb 2026":240,"Mar 2026":237,"Apr 2026":234,"May 2026":233,"Jun 2026":230},"movements":{"Aug 2025":{"new":[],"churned":[{"Company":"MHDK ApS","mrr":3413.97}],"expansions":[{"Company":"AnyVan Limited","mrr":2283.57},{"Company":"Cornmarket Health Insurance","mrr":405.55},{"Company":"Dacha Real Estate","mrr":1090.97},{"Company":"Det Norske Kaffehus AS","mrr":250.0},{"Company":"[DONT INVOICE] Proaktiv Trøndelag","mrr":226.8},{"Company":"Eie Bergen / Mekleriet AS","mrr":1272.58},{"Company":"Eneas Services AS","mrr":532.35},{"Company":"Holo","mrr":320.27},{"Company":"Irish Life Health","mrr":1520.95},{"Company":"Living Forsikring","mrr":705.6},{"Company":"LUXFolio Real Estate","mrr":1601.36},{"Company":"Luxury Property LLC","mrr":383.57},{"Company":"Max Equity Real Estates LLC","mrr":1179.78},{"Company":"Meglerhuset Rele Haugesund AS","mrr":437.5},{"Company":"Notar AS","mrr":480.0},{"Company":"Nova ehf","mrr":480.46},{"Company":"Okida Finans AS","mrr":762.0},{"Company":"Partner Assuranse AS","mrr":304.0},{"Company":"Sandegruppen Management AS","mrr":304.5},{"Company":"Sørmegleren AS","mrr":391.66},{"Company":"Sticos AS","mrr":666.75},{"Company":"Storebrand Forsikring AS","mrr":769.5},{"Company":"T Ash International Realty Broker","mrr":678.23},{"Company":"Toten Forsikring og Finans","mrr":354.9},{"Company":"United Gas & Power","mrr":481.66},{"Company":"Utedesign AS","mrr":293.26},{"Company":"Watercircles Norge AS","mrr":4335.16},{"Company":"We Finance Any Car Limited","mrr":2001.67},{"Company":"White & Co Properties","mrr":2018.51}],"contractions":[{"Company":"ABChus AS","mrr":-52.5},{"Company":"Buy it Direct","mrr":-1276.06},{"Company":"Carter & Sønn AS","mrr":-300.0},{"Company":"Digi Publishing AS","mrr":-238.0},{"Company":"Electi Business Partner AS","mrr":-1764.0},{"Company":"Flyt AS","mrr":-221.0},{"Company":"NGage Recruitment BV","mrr":-1032.31},{"Company":"Per Aaland AS","mrr":-875.0},{"Company":"Privatmegleren Main Account","mrr":-5512.5},{"Company":"Slatlem Gruppen AS","mrr":-125.0}],"new_total":0,"churned_total":3414,"expansion_total":26533,"contraction_total":-11396},"Sep 2025":{"new":[{"Company":"Askim & Spydeberg Sparebank","mrr":9350.0},{"Company":"Ignite Procurement AS","mrr":3600.0},{"Company":"MHDK ApS","mrr":3413.97},{"Company":"Mollie B.V","mrr":25553.96},{"Company":"We Rock Sales AS","mrr":4500.0}],"churned":[{"Company":"52realestate","mrr":10916.89},{"Company":"Accquis Group Limited","mrr":10258.97},{"Company":"Blink Payment","mrr":9249.65},{"Company":"Chestertons International Real Estate Brokerage LLC","mrr":21755.09},{"Company":"Duett AS","mrr":4375.0},{"Company":"Hth AS","mrr":4870.95},{"Company":"ROGALAND EIENDOMSMEGLING AS","mrr":2275.0}],"expansions":[{"Company":"ABMarketing AS","mrr":3300.0},{"Company":"Akershus Forsikringssenter AS","mrr":385.86},{"Company":"AnyVan Limited","mrr":4240.89},{"Company":"Balder Forsikring AS","mrr":1350.0},{"Company":"Coitio Gruppen AS","mrr":1050.0},{"Company":"Din Salgskonsulent AS","mrr":3300.0},{"Company":"Extracover Limited","mrr":2305.39},{"Company":"Storebrand Forsikring AS","mrr":1539.0},{"Company":"T Ash International Realty Broker","mrr":2373.77},{"Company":"White & Co Properties","mrr":2691.36}],"contractions":[{"Company":"Buy it Direct","mrr":-319.02},{"Company":"[DONT INVOKE] Proaktiv Vest","mrr":-3255.66},{"Company":"Privatmegleren Main Account","mrr":-32299.17},{"Company":"Talkmore AS","mrr":-14771.71}],"new_total":46418,"churned_total":63702,"expansion_total":32660,"contraction_total":-55134},"Oct 2025":{"new":[{"Company":"Maskineriet Forsikring AS","mrr":1500.0},{"Company":"Nidaros Sparebank","mrr":4250.0},{"Company":"Ørland Sparebank","mrr":4037.5},{"Company":"Owlie Jobs","mrr":4213.48},{"Company":"Partnercall AS","mrr":2500.0},{"Company":"Red Bull GmbH","mrr":16327.25},{"Company":"T Ash International Realty Ltd","mrr":14011.68},{"Company":"Vivid Living Real Estate","mrr":2664.44}],"churned":[{"Company":"A1 Gruppen AS","mrr":3948.0},{"Company":"(DONT INVOICE) I@D International","mrr":15.57},{"Company":"Eiendomsmegler A","mrr":5416.67},{"Company":"Uitblinqers","mrr":99.49}],"expansions":[{"Company":"Akershus Forsikringssenter AS","mrr":385.86},{"Company":"AnyVan Limited","mrr":326.11},{"Company":"Balder Forsikring AS","mrr":1350.0},{"Company":"Buy it Direct","mrr":957.05},{"Company":"Cornmarket Health Insurance","mrr":2027.74},{"Company":"Din Salgskonsulent AS","mrr":2550.0},{"Company":"Eie - Main Account","mrr":1400.0},{"Company":"White & Co Properties","mrr":8410.48}],"contractions":[{"Company":"Biisoni Group Oy","mrr":-1849.26},{"Company":"Dataquest UK ltd","mrr":-2311.92},{"Company":"Digitale Medier 1881 AS","mrr":-1360.0},{"Company":"Eiendomsmegler 1 Sør-norge AS","mrr":-275.0},{"Company":"Hamar Innredning AS","mrr":-1155.0},{"Company":"Sos-barnebyer Norge Stiftelsen","mrr":-2147.25}],"new_total":49504,"churned_total":9480,"expansion_total":31855,"contraction_total":-16379},"Nov 2025":{"new":[{"Company":"Aasen Sparebank","mrr":7225.0},{"Company":"ECIT Autogear AS","mrr":2500.0},{"Company":"Elite Property Brokerage, L.L.C.","mrr":18757.67},{"Company":"Steadman Brown Limited","mrr":3502.92},{"Company":"Teya Services Ltd.","mrr":8514.04}],"churned":[{"Company":"Dataquest UK ltd","mrr":8958.72},{"Company":"Partners Bergen AS","mrr":1250.0},{"Company":"Prismatch AS","mrr":4000.0},{"Company":"Red Bull GmbH","mrr":16327.25},{"Company":"Shilton Sharpe Quarry Limited","mrr":14615.1}],"expansions":[{"Company":"GrabTaxi Holdings Pte. Ltd.","mrr":263159.22},{"Company":"SAP SE","mrr":25394.66},{"Company":"White & Co Properties","mrr":10429.0},{"Company":"ITS (Southampton) Ltd","mrr":5504.58},{"Company":"Nova ehf","mrr":2231.51},{"Company":"Irish Life Health","mrr":2281.37},{"Company":"Orkla Sparebank","mrr":1119.94},{"Company":"Sunnmøre Kjøkken AS","mrr":1443.75}],"contractions":[{"Company":"Scrap Car Comparison","mrr":-5962.05},{"Company":"Initial Force AS","mrr":-1381.2},{"Company":"Max Equity Real Estates LLC","mrr":-1717.94},{"Company":"Partners Eiendomsmegling AS","mrr":-750.0}],"new_total":40500,"churned_total":45151,"expansion_total":336008,"contraction_total":-11285},"Dec 2025":{"new":[{"Company":"Dataquest UK ltd","mrr":4488.74},{"Company":"Selbu Sparebank","mrr":6800.0},{"Company":"Tolga-Os Sparebank","mrr":6587.5}],"churned":[{"Company":"Fjordkraft AS (11284)","mrr":11242.35},{"Company":"Mollie B.V","mrr":25553.96},{"Company":"The Luxury Real Estate Broker LLC","mrr":20454.3},{"Company":"Thor Companies Ltd","mrr":25050.88},{"Company":"WAYRA Deutschland GmbH","mrr":48767.21}],"expansions":[{"Company":"Irish Life Health","mrr":14798.69},{"Company":"If IT Services A/S","mrr":6300.0},{"Company":"Din Salgskonsulent AS","mrr":3015.0},{"Company":"White & Co Properties","mrr":3027.78},{"Company":"Bank Norwegian, En filial av NOVA Bank Group AB (publ)","mrr":2521.33},{"Company":"Nettbil AS","mrr":450.0},{"Company":"Storebrand Forsikring AS","mrr":256.5}],"contractions":[{"Company":"Gjensidige Business Services AB","mrr":-130454.88},{"Company":"Telenor Norge AS Avd: Talkmore","mrr":-19358.63},{"Company":"Tryg forsikring (11247)","mrr":-15622.2},{"Company":"Redgo Norway AS","mrr":-5184.0},{"Company":"Viken Kjøkkensenter AS","mrr":-4042.5},{"Company":"Convins Nederland","mrr":-2194.52},{"Company":"JTalk Ltd","mrr":-1546.42}],"new_total":17876,"churned_total":131069,"expansion_total":34264,"contraction_total":-193555},"Jan 2026":{"new":[{"Company":"Bergen Eiendomsmegling AS","mrr":3123.75},{"Company":"Bjugn Sparebank","mrr":6174.0},{"Company":"Hallingdal Brannkasse","mrr":22458.33},{"Company":"Nobia Norway AS","mrr":1443.83},{"Company":"Primo Capital Real Estate L.L.C","mrr":19888.89},{"Company":"Sne Eiendomsmegling AS","mrr":4050.0}],"churned":[{"Company":"HMS Partner Norge","mrr":1750.0},{"Company":"Maritech AS","mrr":4391.53},{"Company":"Sørmegleren AS","mrr":25850.0},{"Company":"Ticketco AS","mrr":2614.5}],"expansions":[{"Company":"Gjensidige Business Services AB","mrr":133237.26},{"Company":"Tryg forsikring (11247)","mrr":15622.2},{"Company":"Eiendomsmegler Norge AS","mrr":14083.3},{"Company":"Storebrand Forsikring AS","mrr":1026.0},{"Company":"If IT Services A/S","mrr":2520.0},{"Company":"Grønn Jobb AS","mrr":1079.2},{"Company":"Sparebank 1 Nord-norge (11580)","mrr":2475.0},{"Company":"Eie - Main Account","mrr":2450.0}],"contractions":[{"Company":"GrabTaxi Holdings Pte. Ltd.","mrr":-18179.24},{"Company":"Gill Gruppen AS","mrr":-15528.97},{"Company":"Walter AG","mrr":-7072.67},{"Company":"Vitality Corporate Services Limited","mrr":-3117.48},{"Company":"White & Co Properties","mrr":-4027.38},{"Company":"Arun Estate Agencies Ltd","mrr":-1978.72},{"Company":"Domestic & General Insurance Europe AG","mrr":-1973.96}],"new_total":57139,"churned_total":34606,"expansion_total":201170,"contraction_total":-80259},"Feb 2026":{"new":[{"Company":"Homely AS","mrr":3750.0},{"Company":"Innkjøpsgruppen AS","mrr":2500.0},{"Company":"PK Properties","mrr":6660.61}],"churned":[{"Company":"Coitio Gruppen AS","mrr":7350.0},{"Company":"Rune Enstad AS","mrr":5750.0}],"expansions":[{"Company":"Arun Estate Agencies Ltd","mrr":71167.56},{"Company":"White & Co Properties","mrr":5050.5},{"Company":"We Rock Sales AS","mrr":1800.0},{"Company":"Hallingdal Brannkasse","mrr":1166.67},{"Company":"Heimdal Eiendomsmegling AS","mrr":2173.5},{"Company":"Nettbil AS","mrr":450.0},{"Company":"Storebrand Forsikring AS","mrr":513.0},{"Company":"Vivid Living Real Estate","mrr":681.81}],"contractions":[{"Company":"Balder Forsikring AS","mrr":-3802.5},{"Company":"AnyVan Limited","mrr":-952.26},{"Company":"Jay-Bee Telecom Ltd","mrr":-775.22},{"Company":"Olaya AS","mrr":-1224.72},{"Company":"Utleiemegleren Forvaltning AS","mrr":-855.0},{"Company":"Landkreditt Forsikring AS","mrr":-400.0}],"new_total":12911,"churned_total":13100,"expansion_total":88339,"contraction_total":-8010},"Mar 2026":{"new":[{"Company":"Genertel Biztosító Zrt.","mrr":12229.98},{"Company":"Mobino Salg og Service AS","mrr":4875.0},{"Company":"WAYRA Deutschland GmbH","mrr":9813.12}],"churned":[{"Company":"Børsan AS","mrr":2000.0},{"Company":"Edland, Mannes & Rege AS","mrr":200.0},{"Company":"Fjordkraft AS (SMB, 111948)","mrr":6863.06},{"Company":"Gill Gruppen AS","mrr":22789.28},{"Company":"Smartdok AS","mrr":2133.33},{"Company":"Sølvrev AS","mrr":2000.0}],"expansions":[{"Company":"AnyVan Limited","mrr":8829.45},{"Company":"Linx Business Communications Ltd","mrr":16021.78},{"Company":"Heimdal Eiendomsmegling AS","mrr":3924.38},{"Company":"Eie - Main Account","mrr":1750.0},{"Company":"Eiendomsmegler Norge AS","mrr":1228.03},{"Company":"Watercircles Norge AS","mrr":2897.72},{"Company":"We Finance Any Car Limited","mrr":2921.29},{"Company":"Vertice Group Ltd","mrr":1791.73},{"Company":"Storebrand Forsikring AS","mrr":513.0}],"contractions":[{"Company":"Partners Eiendomsmegling AS","mrr":-2737.5},{"Company":"Proaktiv Romerike [Do not invoice, team invoicing]","mrr":-983.12},{"Company":"Olaya AS","mrr":-612.36},{"Company":"Foodora Norway AS","mrr":-1509.37},{"Company":"White & Co Properties","mrr":-631.31}],"new_total":26918,"churned_total":35986,"expansion_total":50311,"contraction_total":-6474},"Apr 2026":{"new":[{"Company":"BridgeFund","mrr":13777.67},{"Company":"Northwood Edinburgh Ltd","mrr":2337.03},{"Company":"Sms Interiør AS","mrr":2598.75}],"churned":[{"Company":"BWC Real Estate LLC","mrr":7744.14},{"Company":"Ccom AS","mrr":352.8},{"Company":"Hjem Eiendomsmegling AS","mrr":3150.0},{"Company":"Intrum AS","mrr":2245.74},{"Company":"Kreftforeningen","mrr":2500.0},{"Company":"Media Access AS","mrr":2500.0}],"expansions":[{"Company":"AnyVan Limited","mrr":4656.48},{"Company":"Storebrand Forsikring AS","mrr":1026.0},{"Company":"JTalk Ltd","mrr":2527.45},{"Company":"White & Co Properties","mrr":2840.91},{"Company":"We Finance Any Car Limited","mrr":1679.74},{"Company":"Partners Eiendomsmegling AS","mrr":3262.5},{"Company":"Dataquest UK ltd","mrr":3240.2},{"Company":"Watercircles Norge AS","mrr":2395.75},{"Company":"We Rock Sales AS","mrr":900.0}],"contractions":[{"Company":"Arun Estate Agencies Ltd","mrr":-71174.73},{"Company":"Linx Business Communications Ltd","mrr":-15292.81},{"Company":"Simpson Judge ltd","mrr":-4970.25},{"Company":"Vertice Group Ltd","mrr":-4407.77},{"Company":"Eiendomsmegler Norge AS","mrr":-4941.17},{"Company":"Gule Sider AS [Team Invoicing]","mrr":-1008.35},{"Company":"Sparebank 1 Østlandet","mrr":-1993.75}],"new_total":18713,"churned_total":18493,"expansion_total":32786,"contraction_total":-106746},"May 2026":{"new":[{"Company":"Concept Communication AS","mrr":8863.41},{"Company":"Islands Insurance Group","mrr":23611.44},{"Company":"Logistikkgruppen AS","mrr":3000.0}],"churned":[{"Company":"Ideagen Limited","mrr":39249.8},{"Company":"Sos-barnebyer Norge Stiftelsen","mrr":2705.52},{"Company":"Sparebank 1 Sør-norge ASA","mrr":11825.0},{"Company":"Vestby Forsikring DA","mrr":1837.09}],"expansions":[{"Company":"AnyVan Limited","mrr":1164.05},{"Company":"Nettbil AS","mrr":2700.0},{"Company":"Gule Sider AS [Team Invoicing]","mrr":3476.55},{"Company":"Electi Business Partner AS","mrr":1543.5},{"Company":"White & Co Properties","mrr":2209.59},{"Company":"Buy it Direct","mrr":977.68},{"Company":"We Finance Any Car Limited","mrr":511.23},{"Company":"We Rock Sales AS","mrr":450.0}],"contractions":[{"Company":"Storebrand Forsikring AS","mrr":-45836.55},{"Company":"Sparebank 1 SMN (Direktebank, 11110)","mrr":-5500.0},{"Company":"Jay-Bee Telecom Ltd","mrr":-405.73},{"Company":"Living Forsikring","mrr":-370.44}],"new_total":35475,"churned_total":55617,"expansion_total":18621,"contraction_total":-52113},"Jun 2026":{"new":[{"Company":"Infor (norge) AS","mrr":32079.95}],"churned":[{"Company":"Esacon AS","mrr":5249.07},{"Company":"Genertel Biztosító Zrt.","mrr":12229.98},{"Company":"Plusoffice AS","mrr":9187.5},{"Company":"United Gas & Power","mrr":16870.44}],"expansions":[{"Company":"Nettbil AS","mrr":2902.5},{"Company":"White & Co Properties","mrr":2209.6},{"Company":"Fremtind Forsikring AS /Avdeling 1","mrr":907.5},{"Company":"Electi Business Partner AS","mrr":926.1},{"Company":"We Finance Any Car Limited","mrr":511.22},{"Company":"Allianz Care","mrr":486.93},{"Company":"Olaya AS","mrr":428.0},{"Company":"Exito Assuranse AS","mrr":248.85},{"Company":"Carter & Sønn AS","mrr":157.5},{"Company":"Grue Sparebank","mrr":259.25},{"Company":"Vivid Living Real Estate","mrr":227.28},{"Company":"Concept Communication AS","mrr":423.21},{"Company":"Digi Publishing AS","mrr":249.9},{"Company":"Erga & Partnere AS","mrr":198.67}],"contractions":[],"new_total":32080,"churned_total":43537,"expansion_total":10137,"contraction_total":0}}};
+
+/* boot */
 load();
+renderMRR(MRR_DATA, null);
 </script>
 </body>
 </html>
