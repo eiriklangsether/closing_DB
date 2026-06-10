@@ -217,6 +217,25 @@
     .ent-NO{background:#daedec;color:#114B5C}
     .ent-SE{background:#e6e8f5;color:#2d3580}
     .ent-US{background:#fce8ee;color:#a01f3c}
+
+    /* ══ FINANCIAL KPIs PAGE ══ */
+    .fin-disclaimer{background:linear-gradient(135deg,#fff8e6 0%,#fffbf0 100%);border:1px solid #e8c84a;border-left:4px solid #e8a000;border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:2rem;display:flex;gap:.75rem;align-items:flex-start}
+    .fin-disclaimer-icon{font-size:18px;line-height:1;flex-shrink:0;margin-top:1px}
+    .fin-disclaimer-text{font-size:13px;color:var(--text-secondary);line-height:1.6}
+    .fin-disclaimer-text strong{color:var(--text-primary)}
+    .fin-teaser-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;margin-top:.5rem}
+    .fin-teaser-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;position:relative;overflow:hidden}
+    .fin-teaser-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(30,175,170,.04) 0%,transparent 60%);pointer-events:none}
+    .fin-teaser-card-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:99px;background:var(--teal-lighter);color:var(--dark-teal);margin-bottom:.75rem}
+    .fin-teaser-card-title{font-size:18px;font-weight:700;color:var(--dark-teal);margin-bottom:.5rem;line-height:1.2}
+    .fin-teaser-card-desc{font-size:12px;color:var(--text-muted);line-height:1.6}
+    .fin-teaser-card-preview{margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);display:flex;gap:1.5rem;flex-wrap:wrap}
+    .fin-teaser-metric{text-align:center}
+    .fin-teaser-metric-val{font-size:22px;font-weight:700;color:var(--dark-teal);letter-spacing:.02em;filter:blur(5px);user-select:none}
+    .fin-teaser-metric-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+    .fin-coming-soon{position:absolute;top:12px;right:12px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--dark-teal);color:#fff;letter-spacing:.05em;opacity:.7}
+    .fin-section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
+    .fin-section-label::after{content:'';flex:1;height:1px;background:var(--border)}
   </style>
 </head>
 <body>
@@ -233,7 +252,8 @@
   </a>
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="switchPage('closing', this)">Monthly close</button>
-    <button class="nav-tab" onclick="switchPage('mrr', this)">MRR</button>
+    <button class="nav-tab" onclick="switchPage('mrr', this)">Business KPIs</button>
+    <button class="nav-tab" onclick="switchPage('fin', this)">Financial KPIs</button>
     <button class="nav-tab" onclick="switchPage('meta', this)">Customer metadata</button>
   </div>
   <div class="header-right">Internal · Finance team</div>
@@ -1209,10 +1229,107 @@ function closeCustomerCard() {
   document.removeEventListener('keydown', ccEscHandler);
 }
 
+function renderFin() {
+  document.getElementById('fin-content').innerHTML = `
+    <div class="fin-disclaimer">
+      <div class="fin-disclaimer-icon">⏱</div>
+      <div class="fin-disclaimer-text">
+        <strong>Closed periods only.</strong>
+        Financial KPIs are based on properly closed accounting periods and will
+        always lag behind the Business KPIs view by one or more months.
+        Figures shown will reflect the most recently closed month in Tripletex,
+        not the current calendar period.
+      </div>
+    </div>
+
+    <div class="fin-section-label">Coming soon</div>
+    <div class="fin-teaser-grid">
+
+      <div class="fin-teaser-card">
+        <div class="fin-coming-soon">In progress</div>
+        <div class="fin-teaser-card-badge">Group overview</div>
+        <div class="fin-teaser-card-title">General Group Performance</div>
+        <div class="fin-teaser-card-desc">
+          Consolidated P&amp;L across all entities — revenue, gross profit,
+          operating expenses, and net income. Period-over-period and
+          budget vs. actual.
+        </div>
+        <div class="fin-teaser-card-preview">
+          <div class="fin-teaser-metric">
+            <div class="fin-teaser-metric-val">$7.4M</div>
+            <div class="fin-teaser-metric-lbl">Revenue TTM</div>
+          </div>
+          <div class="fin-teaser-metric">
+            <div class="fin-teaser-metric-val">62%</div>
+            <div class="fin-teaser-metric-lbl">Gross margin</div>
+          </div>
+          <div class="fin-teaser-metric">
+            <div class="fin-teaser-metric-val">−$1.2M</div>
+            <div class="fin-teaser-metric-lbl">EBIT</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fin-teaser-card">
+        <div class="fin-coming-soon">Planned</div>
+        <div class="fin-teaser-card-badge">Efficiency metric</div>
+        <div class="fin-teaser-card-title">Rule of 40</div>
+        <div class="fin-teaser-card-desc">
+          ARR growth rate + EBITDAC margin. The single number that benchmarks
+          SaaS health. Trended monthly so you can see whether growth or
+          profitability is driving the score.
+        </div>
+        <div class="fin-teaser-card-preview">
+          <div class="fin-teaser-metric">
+            <div class="fin-teaser-metric-val">38</div>
+            <div class="fin-teaser-metric-lbl">Rule of 40 score</div>
+          </div>
+          <div class="fin-teaser-metric">
+            <div class="fin-teaser-metric-val">+11.6%</div>
+            <div class="fin-teaser-metric-lbl">ARR growth</div>
+          </div>
+          <div class="fin-teaser-metric">
+            <div class="fin-teaser-metric-val">26%</div>
+            <div class="fin-teaser-metric-lbl">EBITDAC margin</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fin-teaser-card">
+        <div class="fin-coming-soon">Planned</div>
+        <div class="fin-teaser-card-badge">Core profitability</div>
+        <div class="fin-teaser-card-title">EBITDAC</div>
+        <div class="fin-teaser-card-desc">
+          EBITDA excluding R&amp;D capitalisation — the leadership group's
+          primary profitability metric. Shown as NOK absolute and USD margin,
+          with R&amp;D cap add-back clearly labelled.
+        </div>
+        <div class="fin-teaser-card-preview">
+          <div class="fin-teaser-metric">
+            <div class="fin-teaser-metric-val">$1.9M</div>
+            <div class="fin-teaser-metric-lbl">EBITDAC TTM</div>
+          </div>
+          <div class="fin-teaser-metric">
+            <div class="fin-teaser-metric-val">26%</div>
+            <div class="fin-teaser-metric-lbl">Margin</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  `;
+}
+
 /* boot */
 load();
 window.addEventListener('load', () => renderMRR({ uploadDate: '10 Jun 2026' }, null));
 </script>
+  <!-- ══ FINANCIAL KPIs PAGE ══ -->
+  <div id="page-fin" class="page">
+    <div class="page-title">Financial KPIs</div>
+    <div id="fin-content"></div>
+  </div>
+
   <!-- ══ CUSTOMER METADATA PAGE ══ -->
   <div id="page-meta" class="page">
     <div class="page-title">Customer metadata</div>
