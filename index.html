@@ -230,7 +230,7 @@
   <div class="nav-tabs">
     <button class="nav-tab active" onclick="switchPage('closing', this)">Monthly close</button>
     <button class="nav-tab" onclick="switchPage('mrr', this)">MRR</button>
-    <button class="nav-tab" onclick="switchPage('meta', this);if(!document.getElementById('metaBody')||document.getElementById('metaBody').innerHTML==='')renderMeta()">Customer metadata</button>
+    <button class="nav-tab" onclick="switchPage('meta', this)">Customer metadata</button>
   </div>
   <div class="header-right">Internal · Finance team</div>
 </header>
@@ -267,6 +267,7 @@ function switchPage(p, btn) {
   document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
   document.getElementById('page-' + p).classList.add('active');
+  if (p === 'meta' && (!document.getElementById('metaBody') || document.getElementById('metaBody').innerHTML === '')) renderMeta();
   if (btn) btn.classList.add('active');
 }
 
@@ -1156,7 +1157,7 @@ load();
 window.addEventListener('load', () => renderMRR({ uploadDate: '10 Jun 2026' }, null));
 </script>
   <!-- ══ CUSTOMER METADATA PAGE ══ -->
-  <div id="page-meta" class="page" style="display:none">
+  <div id="page-meta" class="page">
     <div class="page-title">Customer metadata</div>
     <div id="meta-content"><div class="empty">Loading…</div></div>
   </div>
