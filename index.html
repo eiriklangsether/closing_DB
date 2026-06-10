@@ -915,7 +915,7 @@ function renderMRR(data, selectedMonth) {
 
     <div class="chart-section" style="margin-bottom:1.25rem">
       <div class="chart-section-title">MRR waterfall · ${periodLabel}${_ownerFilter !== "ALL" ? " · " + _ownerFilter : ""}</div>
-      <div class="chart-wrap" style="height:220px"><canvas id="waterfallChart"></canvas></div>
+      <div id="waterfallViz"></div>
     </div>`;
 
   drawCharts(months, totals, selectedMonth);
@@ -1189,8 +1189,8 @@ function renderMeta() {
         <th onclick="sortMeta('icp')" id="mth-icp">ICP</th>
         <th onclick="sortMeta('logo')" id="mth-logo">Group (Logo)</th>
         <th onclick="sortMeta('latest_mrr_usd')" id="mth-latest_mrr_usd" class="sort-desc">MRR (USD)</th>
-        <th onclick="sortMeta('owner_name')" id="mth-owner_name">Owner</th>
         <th onclick="sortMeta('latest_month')" id="mth-latest_month">Last active</th>
+        <th onclick="sortMeta('owner_name')" id="mth-owner_name">Owner</th>
       </tr></thead>
       <tbody id="metaBody"></tbody>
     </table>`;
@@ -1515,90 +1515,73 @@ const OWNER_MAP = {"Thomas Testard": ["d8805420-5d4a-4de9-bc95-39c07acac7da", "f
 const NAME_OWNER_MAP = {"52realestate": "Thomas Testard", "A1 Gruppen AS": "Hanne Herseth", "Aasen Sparebank": "Caroline Ingrud", "ABChus AS": "Marius Ekerholt", "ABMarketing AS": "Caroline Ingrud", "Accquis Group Limited": "Hanne Herseth", "Adresseavisens Telefontjenester AS": "Hanne Herseth", "Akershus Forsikringssenter AS": "Hanne Herseth", "Aktiv Arna & Åsane AS": "Emil Lindblom", "Allstar Business Solutions": "Ece Ella", "AnyVan Limited": "Ece Ella", "Arun Estate Agencies Ltd": "Ece Ella", "Askim & Spydeberg Sparebank": "Caroline Ingrud", "Aust-agder Forsikringssenter AS": "Hanne Herseth", "Axo AS": "Hanne Herseth", "Balder Forsikring AS": "Caroline Ingrud", "Bank Norwegian, En filial av NOVA Bank Group AB (publ)": "Marius Ekerholt", "Berg Sparebank": "Marius Ekerholt", "Biisoni Group Oy": "Hanne Herseth", "Bjugn Sparebank": "Marius Ekerholt", "Blink Payment": "Harry Hindess", "Børsan AS": "Hanne Herseth", "BridgeFund": "Ece Ella", "Buy it Direct": "Hanne Herseth", "BWC Real Estate LLC": "Hanne Herseth", "Carter & Sønn AS": "Hanne Herseth", "Ccom AS": "Hanne Herseth", "Chestertons International Real Estate Brokerage LLC": "Caroline Ingrud", "Cognism Limited": "Marie Conza", "Coitio Gruppen AS": "Hanne Herseth", "Concept Communication AS": "Hanne Herseth", "Contentful GmbH": "Ece Ella", "Convins Nederland": "Caroline Ingrud", "Cornmarket Health Insurance": "Ece Ella", "Dacha Real Estate": "Ece Ella", "Dataquest UK ltd": "Marius Ekerholt", "Det Norske Kaffehus AS": "Hanne Herseth", "Devola Group": "Hanne Herseth", "Digiflow AS": "Hanne Herseth", "Digi Publishing AS": "Hanne Herseth", "Digitale Medier 1881 AS": "Hanne Herseth", "Din Salgskonsulent AS": "Marius Ekerholt", "Ditio AS": "Hanne Herseth", "DNB Bank ASA": "Vidar Haaland", "Domestic & General Insurance Europe AG": "Ece Ella", "[Do not invoice] &Partners, team invoicing": "Marius Ekerholt", "(DONT INVOICE) I@D International": "Barbara Kiss", "[DONT INVOICE] Proaktiv Trøndelag": "Marius Ekerholt", "[DONT INVOICE] Proaktiv Vest": "Marius Ekerholt", "Douglasdale": "Hanne Herseth", "Drangedal Sparebank": "Caroline Ingrud", "Duett AS": "Vidar Haaland", "ECIT Autogear AS": "Hanne Herseth", "Eie Bergen / Mekleriet AS": "Marius Ekerholt", "Eie - Main Account": "Vidar Haaland", "EiendomsMegler 1 Lillehammer og Gudbrandsdal": "Marius Ekerholt", "Eiendomsmegler 1 Midt-norge AS": "Marius Ekerholt", "Eiendomsmegler 1 Sør-norge AS": "Marius Ekerholt", "Eiendomsmegler A": "Vidar Haaland", "Eiendomsmegler Norge AS": "Marius Ekerholt", "EK Concept": "Hanne Herseth", "Electi Business Partner AS": "Marius Ekerholt", "Elis Norge AS": "Hanne Herseth", "Elite Property Brokerage, L.L.C.": "Ece Ella", "Eneas Services AS": "Hanne Herseth", "Erga & Partnere AS": "Hanne Herseth", "Esacon AS": "Vidar Haaland", "Esentya Estate & Promotion S.L.": "Hanne Herseth", "Every Matrix": "Hanne Herseth", "Exito Assuranse AS": "Hanne Herseth", "Extracover Limited": "Ece Ella", "Fana Sparebank Eiendom AS": "Caroline Ingrud", "Finansco AS": "Hanne Herseth", "Fjordkraft AS (11284)": "Vidar Haaland", "Fjordkraft AS (Fjordkraft KS, 111949)": "Marius Ekerholt", "Fjordkraft AS (SMB, 111948)": "Vidar Haaland", "Flexebee Ltd": "Hanne Herseth", "Flyt AS": "Marius Ekerholt", "Foodora Norway AS": "Marius Ekerholt", "Forsikring1 AS": "Hanne Herseth", "Forward Role": "Marius Ekerholt", "Fremtind Forsikring AS /Avdeling 1": "Caroline Ingrud", "Fullhouse Recruitment": "Hanne Herseth", "Garanti Eiendomsmegling [Team Invoicing]": "Caroline Ingrud", "Genertel Biztosító Zrt.": "Ece Ella", "Gjensidige Business Services AB": "Marius Ekerholt", "GrabTaxi Holdings Pte. Ltd.": "Ece Ella", "Grønn Jobb AS": "Hanne Herseth", "Grue Sparebank": "Marius Ekerholt", "Gule Sider AS [Team Invoicing]": "Marius Ekerholt", "Hallingdal Brannkasse": "Caroline Ingrud", "Hamar Innredning AS": "Caroline Ingrud", "Haugaland Forsikringssenter AS": "Hanne Herseth", "Heimdal Eiendomsmegling AS": "Marius Ekerholt", "Hjem Eiendomsmegling AS": "Hanne Herseth", "Hjemmesidehuset AS": "Hanne Herseth", "HMS Partner Norge": "Hanne Herseth", "Holo": "Hanne Herseth", "Homely AS": "Hanne Herseth", "Ideagen Limited": "Caroline Ingrud", "If IT Services A/S": "Marius Ekerholt", "Ignite Procurement AS": "Hanne Herseth", "Infor (norge) AS": "Ece Ella", "Initial Force AS": "Hanne Herseth", "Innkjøpsgruppen AS": "Hanne Herseth", "Intrum AS": "Hanne Herseth", "In-vest Eiendomsmegling AS": "Marius Ekerholt", "Irish Life Health": "Ece Ella", "Islands Insurance Group": "Ece Ella", "ITS (Southampton) Ltd": "Hanne Herseth", "Jay-Bee Telecom Ltd": "Hanne Herseth", "JBF Sparebank": "Marius Ekerholt", "JTalk Ltd": "Hanne Herseth", "Julius Caesar AS": "Hanne Herseth", "Kjøkkenspesialisten AS": "Hanne Herseth", "Kreftforeningen": "Hanne Herseth", "Kristiansand Forsikringssenter AS": "Hanne Herseth", "Kvik Kanalveien AS (111967)": "Hanne Herseth", "Landkreditt Forsikring AS": "Hanne Herseth", "Lendo AS": "Hanne Herseth", "LifeSearch Limited": "Ece Ella", "Linx Business Communications Ltd": "Hanne Herseth", "Living Forsikring": "Hanne Herseth", "Logistikkgruppen AS": "Hanne Herseth", "LUXFolio Real Estate": "Ece Ella", "Luxury Property LLC": "Ece Ella", "Lyse Tele AS": "Marius Ekerholt", "Lysholm Bil AS": "Hanne Herseth", "Maritech AS": "Hanne Herseth", "Maskineriet Forsikring AS": "Hanne Herseth", "Max Equity Real Estates LLC": "Ece Ella", "Media Access AS": "Hanne Herseth", "Meglerhuset Nylander AS": "Marius Ekerholt", "Meglerhuset Rele Haugesund AS": "Hanne Herseth", "MetaCompliance Ltd.": "Ece Ella", "MHDK ApS": "Hanne Herseth", "Mobino Salg og Service AS": "Hanne Herseth", "Mollie B.V": "Thomas Testard", "MØRE EIENDOMSMEGLING AS": "Hanne Herseth", "Mystore.no AS": "Marius Ekerholt", "N3 Group AS": "Hanne Herseth", "Nettbil AS": "Marius Ekerholt", "New Zealand Fine Touring Group": "Hanne Herseth", "NGage Recruitment BV": "Hanne Herseth", "Nidaros Sparebank": "Caroline Ingrud", "Nobia Norway AS": "Caroline Ingrud", "Nordvest Forsikringssenter AS": "Hanne Herseth", "Northwood Edinburgh Ltd": "Vidar Haaland", "Notar AS": "Marius Ekerholt", "Nova ehf": "Caroline Ingrud", "Novvi Properties": "Caroline Ingrud", "N&SLB Ltd": "Hanne Herseth", "Obos Eiendomsmeglere AS": "Caroline Ingrud", "OfficeLink Mobil og IT AS": "Hanne Herseth", "Okida Finans AS": "Hanne Herseth", "Olaya AS": "Hanne Herseth", "Orkla Sparebank": "Marius Ekerholt", "Ørland Sparebank": "Caroline Ingrud", "Outlook Publishing": "Hanne Herseth", "Øvre Romerike Eiendomsmegling AS": "Marius Ekerholt", "Owlie Jobs": "Hanne Herseth", "Partner Assuranse AS": "Hanne Herseth", "Partnercall AS": "Hanne Herseth", "Partners Bergen AS": "Emil Lindblom", "Partners Eiendomsmegling AS": "Marius Ekerholt", "Pedan A/S": "Hanne Herseth", "Per Aaland AS": "Hanne Herseth", "Personal Group Benefits": "Ece Ella", "Pistachio AS": "Hanne Herseth", "PK Properties": "Hanne Herseth", "Plusoffice AS": "Hanne Herseth", "Polardrikk AS": "Hanne Herseth", "Primo Capital Real Estate L.L.C": "Ece Ella", "Prismatch AS": "Hanne Herseth", "Privatmegleren Main Account": "Marius Ekerholt", "Proaktiv Romerike [Do not invoice, team invoicing]": "Marius Ekerholt", "RAM Tracking, Remote Asset Management Ltd": "Hanne Herseth", "Red Bull GmbH": "Hanne Herseth", "Redgo Norway AS": "Marius Ekerholt", "Redress AS": "Vidar Haaland", "ROGALAND EIENDOMSMEGLING AS": "Vidar Haaland", "Rogaland Sparebank": "Marius Ekerholt", "Rune Enstad AS": "Hanne Herseth", "Safedrive AS": "Hanne Herseth", "Safenames Ltd": "Caroline Ingrud", "Samlerhuset Group B.V.": "Marius Ekerholt", "Sandegruppen Management AS": "Hanne Herseth", "SAP SE": "Marius Ekerholt", "Schala & Partners [Do not invoice - Team invoicing]": "Marius Ekerholt", "Schibsted Norge Smb AS": "Marius Ekerholt", "Scrap Car Comparison": "Ece Ella", "Selbu Sparebank": "Caroline Ingrud", "Sem & Johnsen Eiendomsmegling AS": "Caroline Ingrud", "Shilton Sharpe Quarry Limited": "Caroline Ingrud", "Simpson Judge ltd": "Ece Ella", "Simpson & Marwick": "Hanne Herseth", "Skandia Greenpower AS": "Hanne Herseth", "Slatlem Gruppen AS": "Hanne Herseth", "Sne Eiendomsmegling AS": "Hanne Herseth", "Sølvrev AS": "Hanne Herseth", "Sordal Supply AS": "Hanne Herseth", "Sørmegleren AS": "Vidar Haaland", "Sos-barnebyer Norge Stiftelsen": "Hanne Herseth", "Sparebank 1 Nord-norge (111945)": "Caroline Ingrud", "Sparebank 1 Nord-norge (11580)": "Caroline Ingrud", "Sparebank 1 SMN (Direktebank, 11110)": "Caroline Ingrud", "Sparebank 1 SMN (Næring/BM, 111955)": "Caroline Ingrud", "Sparebank 1 Sør-norge ASA": "Vidar Haaland", "Staq GmbH": "Hanne Herseth", "Steadman Brown Limited": "Hanne Herseth", "Sticos AS": "Marius Ekerholt", "Storebrand Forsikring AS": "Hanne Herseth", "Strada Real Estate Brokerage LLC": "Ece Ella", "Sunnmøre Kjøkken AS": "Caroline Ingrud", "Talkmore AS": "Marius Ekerholt", "T Ash International Realty Broker": "Ece Ella", "T Ash International Realty Ltd": "Ece Ella", "Telenor Norge AS Avd: Talkmore": "Marius Ekerholt", "Tema Landbruk AS": "Hanne Herseth", "Teya Services Ltd.": "Hanne Herseth", "The Luxury Real Estate Broker LLC": "Thomas Testard", "The Neon Company": "Hanne Herseth", "The Talent Boom Inc": "Hanne Herseth", "Thor Companies Ltd": "Emil Lindblom", "Ticketco AS": "Emil Lindblom", "Tolga-Os Sparebank": "Caroline Ingrud", "Toten Forsikring og Finans": "Hanne Herseth", "Toyota Material Handling Norway AS": "Marius Ekerholt", "Tripletex AS": "Emil Lindblom", "Trondheim Forsikringssenter AS": "Hanne Herseth", "TutorCare": "Hanne Herseth", "Uitblinqers": "Hanne Herseth", "United Gas & Power": "Ece Ella", "Utedesign AS": "Hanne Herseth", "Utleiemegleren Forvaltning AS": "Marius Ekerholt", "Vertice Group Ltd": "Ece Ella", "Vestby Forsikring DA": "Hanne Herseth", "Vestfold Forsikringssenter AS": "Hanne Herseth", "Viken Kjøkkensenter AS": "Caroline Ingrud", "Viken Media AS": "Hanne Herseth", "Visma Enterprise AS": "Marius Ekerholt", "Vitality Corporate Services Limited": "Ece Ella", "Vitec Fixit Systemer AS": "Hanne Herseth", "Vivid Living Real Estate": "Hanne Herseth", "Walter AG": "Ece Ella", "Watercircles Norge AS": "Marius Ekerholt", "WAYRA Deutschland GmbH": "Ece Ella", "We Finance Any Car Limited": "Ece Ella", "We Rock Sales AS": "Hanne Herseth", "White & Co Properties": "Ece Ella", "Wille & Sand Forsikringspartner AS": "Hanne Herseth", "W Norge AS": "Hanne Herseth", "WS - The WallSwiss Partner’s SA": "Hanne Herseth", "XO Property": "Caroline Ingrud", "Annonssäljarna i Gamla Stan AB": "Hanne Herseth", "Bisdata AB": "Hanne Herseth", "Blendow Group": "Hanne Herseth", "Bonnier News Inhouse Sales AB": "Marius Ekerholt", "Bravura Sverige AB": "Hanne Herseth", "Cinode AB": "Hanne Herseth", "Cloudgruppen Sverige AB": "Marius Ekerholt", "Foodora AB": "Emil Lindblom", "Göteborg Energi Aktiebolag": "Hanne Herseth", "Hailey HR": "Marius Ekerholt", "Home Call AB": "Harry Hindess", "Hunter & Tailor Sverige AB": "Hanne Herseth", "Impressive Relations Sweden AB": "Marius Ekerholt", "Kassacentralen i Skåne AB": "Hanne Herseth", "Länsförsäkringar Jämtland": "Hanne Herseth", "Länsförsäkringar Norrbotten": "Hanne Herseth", "Länsförsäkringar Skåne - ömsesidigt": "Hanne Herseth", "Lån & Spar Sverige, Bankfilial": "Hanne Herseth", "Lawlabs AB": "Hanne Herseth", "Lime Technologies": "Caroline Ingrud", "Nimblr AB": "Hanne Herseth", "Nordax Bank AB (publ)": "Marius Ekerholt", "Nordea Bank Abp, filial i Sverige": "Marius Ekerholt", "Nordea (BB Direct Savings)": "Marius Ekerholt", "PO Söderberg & Partners AB": "Marius Ekerholt", "Puzzel AB": "Hanne Herseth", "Reliable AB": "Hanne Herseth", "Silentium AB": "Hanne Herseth", "Soolar Solenergi AB": "Hanne Herseth", "S.P. FTL Malmö AB": "Emil Lindblom", "Telink PBX AB": "Hanne Herseth", "Trygg-Hansa Försäkring Filial": "Marius Ekerholt", "Watercircles Sverige AB": "Marius Ekerholt", "Acrisure, LLC": "Cailin Kless", "Adobe Inc.": "Marie Conza", "Ahlers Roofing and Construction": "Hanne Herseth", "Akkar Limited": "Hanne Herseth", "BigID": "Marie Conza", "BMC Helix Inc": "Marie Conza", "BMC Software Inc": "Marie Conza", "BOSS Magazine": "Hanne Herseth", "BURNS WEALTH ADVISORS, LLC": "Hanne Herseth", "Carl Ferraro III, State Farm Agent": "Marie Conza", "Censys": "Cailin Kless", "Clear Start Tax": "Marie Conza", "Cyera US Inc.": "Marie Conza", "Everly Plumbing": "Marie Conza", "Farmers Insurance Exchange": "Marie Conza", "Fuchs Financial": "Hanne Herseth", "GoodLeap, LLC.": "Marie Conza", "Goosehead Insurance Agency, LLC": "Marie Conza", "Heather Schaefer Insurance Agency Inc": "Cailin Kless", "HP Inc.": "Marie Conza", "Hyde Park Capital": "Hanne Herseth", "Inter Miami CF": "Marie Conza", "Johnson Brunetti": "Hanne Herseth", "Kandji": "Marie Conza", "K-Designers": "Cailin Kless", "Kelly Insurance Agency, LLC": "Remy Cholhan", "LMP Financial": "Marie Conza", "Marisa Schaefer Insurance Agency Inc": "Cailin Kless", "New Western Acquisitions": "Marie Conza", "NSP Marketing": "Marie Conza", "Olympia Entertainment, Inc.": "Marie Conza", "One Capital Solutions, LLC": "Marie Conza", "O.P.E.N. America dba OpenWorks": "Marie Conza", "Phil Klein Insurance Group": "Marie Conza", "SafetyCulture Pty Ltd": "Marie Conza", "SalesRabbit Inc": "Cailin Kless", "Sovos Compliance, LLC": "Marie Conza", "Spotio, Inc. (Stronghouse)": "Cailin Kless", "State Farm Insurance": "Marie Conza", "Stor Mor Portable Buildings": "Marie Conza", "Tax Resolution Plus": "Hanne Herseth", "Team Up Staffing LLC, DBA TeamUP": "Hanne Herseth", "Tines Security Services Limited": "Cailin Kless", "Trailstone Insurance Group": "Marie Conza", "Unite Health Share Ministries": "Marie Conza", "Universal Processing LLC": "Hanne Herseth", "UWDTBA": "Cailin Kless", "Vingcard-ASSA ABLOY": "Marie Conza", "Western Pioneer Financial, Inc.": "Hanne Herseth", "WFG National Title Insurance Company": "Cailin Kless", "Your Home Improvement Company": "Marie Conza"};
 
 function drawWaterfall(mov, totals, months, periodStart, periodEnd) {
-  const canvas = document.getElementById('waterfallChart');
-  if (!canvas) return;
+  const el = document.getElementById('waterfallViz');
+  if (!el) return;
 
-  // Start MRR = totals at month before periodStart (or periodStart itself if first month)
   const allMonths = months;
-  const startIdx = allMonths.indexOf(periodStart);
-  const startMRR = startIdx > 0 ? totals[allMonths[startIdx - 1]] : totals[allMonths[startIdx]];
+  const startIdx  = allMonths.indexOf(periodStart);
+  const startMRR  = startIdx > 0 ? totals[allMonths[startIdx - 1]] : totals[allMonths[startIdx]];
+  const newMRR    = mov.new_total;
+  const expMRR    = mov.expansion_total;
+  const conMRR    = mov.contraction_total;
+  const churnMRR  = mov.churned_total;
+  const endMRR    = startMRR + newMRR + expMRR - churnMRR - conMRR;
+  const netChange = endMRR - startMRR;
 
-  const newMRR         = mov.new_total;
-  const expansionMRR   = mov.expansion_total;
-  const contractionMRR = mov.contraction_total;
-  const churnMRR       = mov.churned_total;
-  const endMRR         = startMRR + newMRR + expansionMRR - churnMRR - contractionMRR;
+  function fmt(v) {
+    const a = Math.abs(v);
+    if (a >= 1000000) return (v < 0 ? '-' : '') + '$' + (a/1000000).toFixed(2) + 'M';
+    if (a >= 1000)    return (v < 0 ? '-' : '') + '$' + Math.round(a/1000) + 'K';
+    return (v < 0 ? '-' : '') + '$' + Math.round(a);
+  }
 
-  const bars = [
-    { label: 'Start MRR', value: startMRR,       type: 'base'        },
-    { label: 'New',        value: newMRR,          type: 'positive'    },
-    { label: 'Expansion',  value: expansionMRR,    type: 'positive'    },
-    { label: 'Churn',      value: -churnMRR,       type: 'negative'    },
-    { label: 'Contraction',value: -contractionMRR, type: 'negative'    },
-    { label: 'End MRR',    value: endMRR,          type: 'base'        },
+  const steps = [
+    { label: 'Start MRR',  value: startMRR, type: 'base',     sign: ''  },
+    { label: 'New',        value: newMRR,   type: 'positive', sign: '+' },
+    { label: 'Expansion',  value: expMRR,   type: 'positive', sign: '+' },
+    { label: 'Churn',      value: churnMRR, type: 'negative', sign: '−' },
+    { label: 'Contraction',value: conMRR,   type: 'negative', sign: '−' },
+    { label: 'End MRR',    value: endMRR,   type: 'base',     sign: ''  },
   ];
 
-  // Compute floating bar positions [bottom, top]
-  const data = [];
-  let running = 0;
-  bars.forEach(function(b, i) {
-    if (b.type === 'base') {
-      data.push({ x: b.label, y: [0, b.value], raw: b.value, type: b.type });
-      running = (i === 0) ? b.value : b.value;
-    } else {
-      const bottom = running;
-      const top    = running + b.value;
-      data.push({ x: b.label, y: [Math.min(bottom, top), Math.max(bottom, top)], raw: b.value, type: b.type });
-      running = top;
-    }
-  });
+  // Bar widths as % of endMRR for visual proportion, capped so deltas stay visible
+  const maxVal = Math.max(startMRR, endMRR, 1);
+  function barPct(v) { return Math.max(4, Math.round(Math.abs(v) / maxVal * 100)); }
 
-  const colors = data.map(function(d) {
-    if (d.type === 'base')     return 'rgba(17,75,92,0.85)';
-    if (d.type === 'positive') return 'rgba(30,175,170,0.85)';
-    return 'rgba(214,60,96,0.85)';
-  });
-  const borderColors = colors.map(function(c) { return c.replace('0.85', '1'); });
+  const colors = {
+    base:     { bar: '#114B5C', text: '#114B5C', bg: 'rgba(17,75,92,.08)' },
+    positive: { bar: '#1EAFAA', text: '#0d6b65', bg: 'rgba(30,175,170,.08)' },
+    negative: { bar: '#D63C60', text: '#a01f3c', bg: 'rgba(214,60,96,.08)'  },
+  };
 
-  if (window._waterfallChart) window._waterfallChart.destroy();
-  window._waterfallChart = new Chart(canvas, {
-    type: 'bar',
-    data: {
-      labels: bars.map(function(b) { return b.label; }),
-      datasets: [{
-        data: data.map(function(d) { return d.y; }),
-        backgroundColor: colors,
-        borderColor: borderColors,
-        borderWidth: 1,
-        borderRadius: 3,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: function(ctx) {
-              const d = data[ctx.dataIndex];
-              const sign = d.raw >= 0 ? '+' : '';
-              const abs = Math.abs(d.raw);
-              const fmt = abs >= 1000 ? sign + '$' + Math.round(abs/1000) + 'K' : sign + '$' + Math.round(abs);
-              return ' ' + fmt + ' MRR';
-            }
-          }
-        }
-      },
-      scales: {
-        x: { grid: { color: 'rgba(17,75,92,0.06)' },
-             ticks: { color: '#7a9ba3', font: { size: 11 } } },
-        y: { grid: { color: 'rgba(17,75,92,0.06)' },
-             ticks: { color: '#7a9ba3', font: { size: 11 },
-                      callback: function(v) { return v >= 1000 ? '$' + Math.round(v/1000) + 'K' : '$' + v; } } }
-      }
-    }
-  });
+  const rows = steps.map(function(s) {
+    const c   = colors[s.type];
+    const pct = barPct(s.value);
+    const displayVal = s.type === 'base'
+      ? fmt(s.value)
+      : (s.sign ? s.sign + ' ' : '') + fmt(Math.abs(s.value));
+    return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid rgba(17,75,92,.06)">
+      <div style="width:96px;font-size:11px;color:#7a9ba3;text-align:right;flex-shrink:0">${s.label}</div>
+      <div style="flex:1;display:flex;align-items:center;gap:8px">
+        <div style="width:${pct}%;background:${c.bar};height:20px;border-radius:3px;min-width:4px;transition:width .3s"></div>
+        <span style="font-size:13px;font-weight:600;color:${c.text};white-space:nowrap">${displayVal}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  const netColor = netChange >= 0 ? colors.positive.text : colors.negative.text;
+  const netSign  = netChange >= 0 ? '+' : '−';
+
+  el.innerHTML = `<div style="padding:4px 0 2px">
+    ${rows}
+    <div style="display:flex;align-items:center;gap:10px;padding-top:8px;margin-top:2px">
+      <div style="width:96px;font-size:11px;font-weight:600;color:var(--dark-teal,#114B5C);text-align:right;flex-shrink:0">Net change</div>
+      <div style="flex:1">
+        <span style="font-size:14px;font-weight:700;color:${netColor}">${netSign} ${fmt(Math.abs(netChange))}</span>
+        <span style="font-size:11px;color:#7a9ba3;margin-left:6px">${netChange >= 0 ? '▲' : '▼'} ${Math.abs((netChange/startMRR)*100).toFixed(1)}%</span>
+      </div>
+    </div>
+  </div>`;
 }
 
 /* ─────────────────────────────────────────────
