@@ -121,6 +121,9 @@
     .movement-amt.neg{color:var(--cranberry)}
     .movement-amt.amber{color:var(--amber-text)}
     .movement-empty{font-size:12px;color:var(--text-muted);padding:6px 0}
+    .period-selector{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .period-select{padding:4px 8px;font-size:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text-primary);font-family:inherit;cursor:pointer}
+    .period-label{font-size:12px;color:var(--text-muted)}
     .month-selector{display:flex;align-items:center;gap:8px;margin-bottom:1.5rem}
     .month-selector label{font-size:12px;color:var(--text-secondary);font-weight:500}
     .month-selector select{font-size:13px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text-primary);font-family:inherit;cursor:pointer}
@@ -512,6 +515,8 @@ function sign(v) { return v >= 0 ? '+' : ''; }
 let _expandedCards = {};
 let _activeEntity = 'ALL';
 let _ownerFilter = 'ALL';
+let _movPeriodStart = null;
+let _movPeriodEnd = null;
 
 function setEntity(e, btn) {
   _activeEntity = e;
@@ -611,30 +616,32 @@ function renderMRR(data, selectedMonth) {
   const movMonths = months.slice(1);
   if (!selectedMonth || !movMonths.includes(selectedMonth)) selectedMonth = movMonths[movMonths.length - 1];
 
-  const totals = (_ownerFilter === 'ALL')
-    ? getMRRTotals(_activeEntity, months)
-    : (function() {
-        const t = {};
-        const entities = _activeEntity === 'ALL' ? ['NO','SE','US'] : [_activeEntity];
-        months.forEach(function(m) {
-          t[m] = entities.reduce(function(s, e) {
-            return s + Object.values(filteredSnapshots(e, m)).reduce(function(a, d) { return a + (d.mrr_usd || 0); }, 0);
-          }, 0);
-        });
-        return t;
-      })();
-  const counts = (_ownerFilter === 'ALL')
-    ? getCounts(_activeEntity, months)
-    : (function() {
-        const c = {};
-        const entities = _activeEntity === 'ALL' ? ['NO','SE','US'] : [_activeEntity];
-        months.forEach(function(m) {
-          c[m] = entities.reduce(function(s, e) {
-            return s + Object.values(filteredSnapshots(e, m)).filter(function(d) { return (d.mrr_usd || 0) > 0; }).length;
-          }, 0);
-        });
-        return c;
-      })();
+  const entities = _activeEntity === 'ALL' ? ['NO','SE','US'] : [_activeEntity];
+  function ownerSnap(entity, month) {
+    const arr = (SNAPSHOTS[entity] || {})[month] || [];
+    if (_ownerFilter === 'ALL') return arr;
+    return arr.filter(function(d) { return NAME_OWNER_MAP[d.Company] === _ownerFilter; });
+  }
+  const totals = (function() {
+    if (_ownerFilter === 'ALL') return getMRRTotals(_activeEntity, months);
+    const t = {};
+    months.forEach(function(m) {
+      t[m] = entities.reduce(function(s, e) {
+        return s + ownerSnap(e, m).reduce(function(a, d) { return a + (d.mrr_usd || 0); }, 0);
+      }, 0);
+    });
+    return t;
+  })();
+  const counts = (function() {
+    if (_ownerFilter === 'ALL') return getCounts(_activeEntity, months);
+    const c = {};
+    months.forEach(function(m) {
+      c[m] = entities.reduce(function(s, e) {
+        return s + ownerSnap(e, m).filter(function(d) { return (d.mrr_usd || 0) > 0; }).length;
+      }, 0);
+    });
+    return c;
+  })()
 
   const selIdx = months.indexOf(selectedMonth);
   const prevMonth = selIdx > 0 ? months[selIdx - 1] : null;
@@ -649,15 +656,61 @@ function renderMRR(data, selectedMonth) {
       sign(momDelta) + usdFmt(Math.abs(momDelta)) + ' (' + sign(momPct) + momPct.toFixed(1) + '%)</span>'
     : '—';
 
-  const mov = getMergedMovements(_activeEntity, selectedMonth);
-  const movNew = mov.new;
-  const movChurned = mov.churned;
-  const movExp = mov.expansions;
-  const movCon = mov.contractions.map(r => ({ ...r, mrr: Math.abs(r.mrr) }));
+  // Period selector state
+  if (!_movPeriodStart || !movMonths.includes(_movPeriodStart)) _movPeriodStart = movMonths[movMonths.length - 1];
+  if (!_movPeriodEnd   || !movMonths.includes(_movPeriodEnd))   _movPeriodEnd   = movMonths[movMonths.length - 1];
+  if (movMonths.indexOf(_movPeriodStart) > movMonths.indexOf(_movPeriodEnd)) _movPeriodEnd = _movPeriodStart;
+  const movPeriodStart = _movPeriodStart;
+  const movPeriodEnd   = _movPeriodEnd;
 
-  const opts = movMonths.map(m =>
-    '<option value="' + m + '"' + (m === selectedMonth ? ' selected' : '') + '>' + m + '</option>'
-  ).join('');
+  // Build combined movements across selected period
+  const periodMonths = movMonths.slice(movMonths.indexOf(movPeriodStart), movMonths.indexOf(movPeriodEnd) + 1);
+  const periodLabel  = movPeriodStart === movPeriodEnd ? movPeriodStart : movPeriodStart + ' – ' + movPeriodEnd;
+
+  function ownerMovFilter(arr) {
+    if (_ownerFilter === 'ALL') return arr;
+    return arr.filter(function(r) { return NAME_OWNER_MAP[r.Company] === _ownerFilter; });
+  }
+
+  const mergedNew = [], mergedChurned = [], mergedExp = [], mergedCon = [];
+  periodMonths.forEach(function(pm) {
+    const m = getMergedMovements(_activeEntity, pm);
+    ownerMovFilter(m.new).forEach(function(r) { mergedNew.push({...r, _month: pm}); });
+    ownerMovFilter(m.churned).forEach(function(r) { mergedChurned.push({...r, _month: pm}); });
+    ownerMovFilter(m.expansions).forEach(function(r) { mergedExp.push({...r, _month: pm}); });
+    ownerMovFilter(m.contractions).forEach(function(r) { mergedCon.push({...r, _month: pm}); });
+  });
+
+  // Aggregate same company across months (sum MRR)
+  function aggregateMov(arr) {
+    const map = {};
+    arr.forEach(function(r) {
+      const k = r.Company;
+      if (!map[k]) map[k] = {...r, mrr: 0};
+      map[k].mrr += (r.mrr || 0);
+    });
+    return Object.values(map).sort(function(a,b) { return Math.abs(b.mrr) - Math.abs(a.mrr); });
+  }
+
+  const movNew     = aggregateMov(mergedNew);
+  const movChurned = aggregateMov(mergedChurned);
+  const movExp     = aggregateMov(mergedExp);
+  const movCon     = aggregateMov(mergedCon).map(r => ({ ...r, mrr: Math.abs(r.mrr) }));
+
+  // Rebuild mov totals
+  const mov = {
+    new_total:         movNew.reduce(function(s,r) { return s + r.mrr; }, 0),
+    churned_total:     movChurned.reduce(function(s,r) { return s + r.mrr; }, 0),
+    expansion_total:   movExp.reduce(function(s,r) { return s + r.mrr; }, 0),
+    contraction_total: movCon.reduce(function(s,r) { return s + r.mrr; }, 0),
+  };
+
+  function periodOpts(selVal, isEnd) {
+    return movMonths.map(function(m) {
+      return '<option value="' + m + '"' + (m === selVal ? ' selected' : '') + '>' + m + '</option>';
+    }).join('');
+  }
+
 
   const entityLabel = _activeEntity === 'ALL' ? 'All entities' : _activeEntity + ' site';
 
@@ -727,21 +780,52 @@ function renderMRR(data, selectedMonth) {
     </div>
 
     <div class="metrics-row">
+      ${(function() {
+        let grr, nrr, yoy_arr, arr_start, arr_end;
+        if (_ownerFilter === "ALL" && _activeEntity === "ALL") {
+          grr = RETENTION.grr; nrr = RETENTION.nrr; yoy_arr = RETENTION.yoy_arr;
+          arr_start = RETENTION.arr_start; arr_end = RETENTION.arr_end;
+        } else {
+          // Compute from snapshots
+          const calcEntities = _activeEntity === "ALL" ? ["NO","SE","US"] : [_activeEntity];
+          const startM = months[0], endM = months[months.length-1];
+          const prevYearM = months.length >= 12 ? months[months.length-13] : months[0];
+          const snapStart = {}; // company → start MRR
+          const snapEnd   = {}; // company → end MRR
+          calcEntities.forEach(function(e) {
+            ownerSnap(e, startM).forEach(function(d) { snapStart[d.Company] = (snapStart[d.Company]||0) + (d.mrr_usd||0); });
+            ownerSnap(e, endM).forEach(function(d)   { snapEnd[d.Company]   = (snapEnd[d.Company]||0)   + (d.mrr_usd||0); });
+          });
+          const startNames = new Set(Object.keys(snapStart).filter(n => snapStart[n] > 0));
+          const endNames   = new Set(Object.keys(snapEnd).filter(n => snapEnd[n] > 0));
+          const retained   = [...startNames].filter(n => endNames.has(n));
+          const startTotal = Object.values(snapStart).reduce((s,v)=>s+v,0);
+          const endTotal   = Object.values(snapEnd).reduce((s,v)=>s+v,0);
+          const retainedStart = retained.reduce((s,n)=>s+(snapStart[n]||0),0);
+          const retainedEnd   = retained.reduce((s,n)=>s+(snapEnd[n]||0),0);
+          grr = startTotal > 0 ? Math.round((retainedStart / startTotal) * 1000) / 10 : 0;
+          nrr = startTotal > 0 ? Math.round((retainedEnd   / startTotal) * 1000) / 10 : 0;
+          arr_start = startTotal * 12; arr_end = endTotal * 12;
+          yoy_arr = arr_start > 0 ? Math.round((arr_end - arr_start) / arr_start * 1000) / 10 : 0;
+        }
+        const ownerNote = _ownerFilter === "ALL" ? "" : '<span style="font-size:10px;color:var(--text-muted);margin-left:4px">(filtered)</span>';
+        return `
       <div class="metric-card">
-        <div class="metric-label">L12M GRR</div>
-        <div class="metric-value ${RETENTION.grr >= 95 ? '' : 'metric-warn'}">${RETENTION.grr.toFixed(1)}%</div>
+        <div class="metric-label">L12M GRR ${ownerNote}</div>
+        <div class="metric-value ${grr >= 95 ? '' : 'metric-warn'}">${grr.toFixed(1)}%</div>
         <div class="metric-sub">Gross revenue retention · excl. expansions</div>
       </div>
       <div class="metric-card">
-        <div class="metric-label">L12M NRR</div>
-        <div class="metric-value ${RETENTION.nrr >= 100 ? 'metric-pos' : RETENTION.nrr >= 95 ? '' : 'metric-warn'}">${RETENTION.nrr.toFixed(1)}%</div>
+        <div class="metric-label">L12M NRR ${ownerNote}</div>
+        <div class="metric-value ${nrr >= 100 ? 'metric-pos' : nrr >= 95 ? '' : 'metric-warn'}">${nrr.toFixed(1)}%</div>
         <div class="metric-sub">Net revenue retention · incl. expansions</div>
       </div>
       <div class="metric-card">
-        <div class="metric-label">YoY ARR growth</div>
-        <div class="metric-value ${RETENTION.yoy_arr >= 0 ? 'metric-pos' : 'metric-warn'}">${RETENTION.yoy_arr >= 0 ? '+' : ''}${RETENTION.yoy_arr.toFixed(1)}%</div>
-        <div class="metric-sub">${usdFmt(RETENTION.arr_start)} → ${usdFmt(RETENTION.arr_end)} · ${RETENTION.window_start} vs ${RETENTION.window_end}</div>
-      </div>
+        <div class="metric-label">YoY ARR growth ${ownerNote}</div>
+        <div class="metric-value ${yoy_arr >= 0 ? 'metric-pos' : 'metric-warn'}">${yoy_arr >= 0 ? '+' : ''}${yoy_arr.toFixed(1)}%</div>
+        <div class="metric-sub">${usdFmt(arr_start)} → ${usdFmt(arr_end)} · Jul 2025 vs Jun 2026</div>
+      </div>`;
+      })()} 
     </div>
 
     <div class="chart-section">
@@ -765,10 +849,12 @@ function renderMRR(data, selectedMonth) {
     ${issuesHtml}
 
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
-      <span class="section-title" style="margin-bottom:0">Month-on-month movements</span>
-      <div class="month-selector">
-        <label for="monthSel">Viewing</label>
-        <select id="monthSel" onchange="renderMRR(null, this.value)">${opts}</select>
+      <span class="section-title" style="margin-bottom:0">Movements · ${periodLabel}</span>
+      <div class="period-selector">
+        <span class="period-label">From</span>
+        <select id="movStartSel" class="period-select" onchange="setPeriod(this.value, document.getElementById('movEndSel').value)">${periodOpts(movPeriodStart)}</select>
+        <span class="period-label">to</span>
+        <select id="movEndSel" class="period-select" onchange="setPeriod(document.getElementById('movStartSel').value, this.value)">${periodOpts(movPeriodEnd, true)}</select>
       </div>
     </div>
 
@@ -778,28 +864,28 @@ function renderMRR(data, selectedMonth) {
           <span class="movement-card-title new-title">New</span>
           <span class="movement-total pos">+${usdFmt(mov.new_total)}</span>
         </div>
-        ${movRows(movNew, 'pos', 'new_' + selectedMonth)}
+        ${movRows(movNew, 'pos', 'new_' + movPeriodEnd)}
       </div>
       <div class="movement-card">
         <div class="movement-card-header">
           <span class="movement-card-title churned-title">Churned</span>
           <span class="movement-total neg">−${usdFmt(mov.churned_total)}</span>
         </div>
-        ${movRows(movChurned, 'neg', 'churned_' + selectedMonth)}
+        ${movRows(movChurned, 'neg', 'churned_' + movPeriodEnd)}
       </div>
       <div class="movement-card">
         <div class="movement-card-header">
           <span class="movement-card-title expansion-title">Expansions</span>
           <span class="movement-total pos">+${usdFmt(mov.expansion_total)}</span>
         </div>
-        ${movRows(movExp, 'pos', 'exp_' + selectedMonth)}
+        ${movRows(movExp, 'pos', 'exp_' + movPeriodEnd)}
       </div>
       <div class="movement-card">
         <div class="movement-card-header">
           <span class="movement-card-title contraction-title">Contractions</span>
           <span class="movement-total ${mov.contraction_total < 0 ? 'amber' : 'neutral'}">${usdFmt(Math.abs(mov.contraction_total))}</span>
         </div>
-        ${movRows(movCon, 'amber', 'con_' + selectedMonth)}
+        ${movRows(movCon, 'amber', 'con_' + movPeriodEnd)}
       </div>
     </div>`;
 
@@ -1171,6 +1257,15 @@ function refreshMetaTable() {
     rows.length + ' customers · ' + rows.filter(r=>r.icp===true).length + ' ICP';
 }
 
+function setPeriod(start, end) {
+  const months = MRR_NO.months.slice(1);
+  _movPeriodStart = months.includes(start) ? start : months[months.length-1];
+  _movPeriodEnd   = months.includes(end)   ? end   : months[months.length-1];
+  if (months.indexOf(_movPeriodStart) > months.indexOf(_movPeriodEnd)) _movPeriodEnd = _movPeriodStart;
+  const sel = document.getElementById('monthSel');
+  renderMRR(null, sel ? sel.value : null);
+}
+
 function toggleMappingIssues() {
   _metaMappingOnly = !_metaMappingOnly;
   renderMeta();
@@ -1380,6 +1475,8 @@ function renderFin() {
 }
 
 const OWNER_MAP = {"Thomas Testard": ["d8805420-5d4a-4de9-bc95-39c07acac7da", "f3712018-ded5-42cf-999b-47cea8f17dbb", "56cadbd1-9a16-4390-9c54-8220d3e91ac1"], "Hanne Herseth": ["504e953c-95a4-468f-9215-3b40cc5af0ba", "116d67f1-da5b-4401-8b47-266398114ee3", "17498eee-5ea8-4547-bb88-1ca8287cb321", "fecd9dfa-2245-405a-80ea-e6076789cf03", "9b522879-4e84-4a20-891c-2fba6dec6c66", "a1dc918a-b3b6-4817-9c7e-9e58d4df6dad", "74850372-ed95-4e4a-8636-79b7b43ee330", "ae198dd5-11bb-46ee-8be8-b4b002409a14", "5cda359d-fab7-40c7-8e89-9d7da064f751", "82600d87-bef7-4d42-83ff-676684a7372b", "40540144-c1df-4dd5-8de8-f584faf52bd4", "4eac7975-f66c-421c-ac24-ba89d5aaf747", "08bf56ca-c896-4f59-a596-1fb1b96fd0bb", "6e6020bc-ecb9-474d-aaef-4914ccbcdd4c", "8ab8fda7-2194-4e0e-8f9a-1f1ce55495be", "a44baa63-130c-4432-b7a0-6cfda99d2274", "65ed27c3-f77b-49d9-aa65-708b0a27f2da", "8972e524-3f83-4b0c-9576-03ffe8cf09c5", "3a44f58e-8f73-4fb7-8c47-743225d0f77a", "f36ea2fb-1c50-4926-b695-a1238480eac1", "81d1e2fc-6426-4571-ab76-770b02c873f9", "6322c162-c915-45cc-9593-9bd58aa3f893", "3f793d4a-1061-4d4d-a67d-7d6fcbb4fdac", "af1f2565-edfb-4bf2-9db1-97cb51bb749a", "94b81543-5165-42db-a022-c99e6f03da90", "fda5606d-7d85-4614-9f7f-a2fa918c59e5", "eeba6993-07ed-403b-b649-cf5476bafb09", "f8a888a7-b35f-43b8-9b30-24ef2ee981ad", "09a5ded4-1b64-472f-aa90-02c62e0d5674", "6fa20a0b-38d8-4a15-997d-0a24254b501e", "867545d9-da60-42d3-88d7-7011b935d66b", "3306d6b7-eade-46d4-9f6e-421f39e7e690", "34595c38-6fb3-4d4d-bd6f-e58878a59ecc", "fa7136fa-9152-4e1e-8ec8-05f435c3c4f2", "28d7108d-bb36-43b1-bfcc-6912e9645233", "35ea4c7c-da7d-4ecf-b620-580666365a65", "b50004e7-d3e2-4b3b-be20-40e0d909efc1", "4549dd16-9c96-4dad-a52f-d5bffbbd8ed5", "c5706858-d7bd-4096-8dcc-79038a49b8ff", "5bf14c0b-d824-4aef-b28c-f13c5e458d00", "377f04fe-9c2c-40cc-82a1-ace044083579", "736e3bfe-83e7-4b21-ba5b-12bfdea6856c", "f0a6a02f-2029-4550-82d4-08d0f075467c", "dbdf2a94-38fa-43d4-83ff-cdae9db37093", "ebf1563d-fb6c-429c-be6c-c38f593a098c", "76745f0c-5b57-403b-834a-fac6aa26e038", "198250c2-218a-4e87-99c1-fd3c6cf01f7f", "aaca74ba-7f94-42df-bf2a-88427bdc123c", "d9c36e34-11e0-44d3-ab83-31d3d9957016", "63033c94-669e-45ea-881c-13331e4f7ff3", "b9ef545d-e4a9-4f60-bcf5-86ef4f512e41", "39fa22dd-b58a-4b42-8856-5f8ffdd746ad", "37b0ddba-5389-4b9a-8c6f-b4ae0e794048", "cdaf1d55-befb-40e5-a6f0-4e36311a2632", "e9b87de5-0bef-464d-9cb6-4a3d431bbd49", "f49dff28-21d0-4de5-9cb9-c03c4d6c4343", "02c83697-0844-40fe-843f-cedd64267541", "a1a4946b-442e-4f29-8123-5f305d149706", "f0141e7d-e335-4a3c-ac2b-43f74b2eb95f", "2497417b-3347-460e-92f1-f1e5cec39df4", "6e136534-aa1f-4344-9a1c-c57bc62d1b7f", "17ef3a53-4d67-482c-a27c-d1cc199db426", "c9a2d911-8f45-4005-8f3e-4cfd0c16238d", "3c535bed-9346-4156-9afa-3737b5da8454", "3da48964-2a19-41e8-81cd-274d1b1f5ba7", "d4b902e8-1f40-4a78-b036-55dc0d50fa90", "54217945-58fa-4d36-8bb0-ee2f73c62f80", "5a2175de-e60e-4896-bc18-0517e117dfea", "8eea8a21-475a-4918-aa46-060fa478f478", "b6cb0594-3e20-4fc9-be5f-748504acfc80", "4df54428-595a-4dcf-aac6-159b8c814b8f", "75465e2c-3740-4e95-ace7-5b3184d644ee", "0f728c97-ee98-4e6f-8c48-9f78fcb61ad3", "a6b9367e-0e1a-4d2f-bd39-07726e523c8c", "cb9ebf72-0553-458e-a2ef-775b8c92a881", "39d5c7c3-41bc-4d35-a30c-e82b207924e2", "b44643b2-1412-4186-a6ad-4a62b5f8bb1a", "1788d13b-8332-482f-9d25-74bfe443baf3", "83214a0c-04af-4e12-bf98-f8594d38fab1", "0d6544c4-5d9b-4664-847b-e95a007af4ed", "86bcc604-8d1c-4316-8485-f85249b58edc", "aa526d8e-fd27-47f8-9c6c-8bae5b3bd932", "f9b77209-2517-4449-9e1a-ff5373b2c3f3", "d49284d6-9891-49d0-84cb-c637d83a60a6", "878c8b99-f167-49da-8246-7ed7113118c9", "40284432-d58a-4be5-ac6a-e77bf7f8447a", "ac6d497e-bacd-4ecc-9873-005eb4a29bb7", "aa8bffe2-6b95-44bc-b3a1-8f776915a2fd", "4fc34625-14a8-4892-a1df-4be893bf1ae5", "0830b854-fcfb-497f-8204-da0912516953", "6c188f5a-e50f-4bc5-9781-25c06ec1ad16", "476a5bd0-6f52-456c-b8e3-af59d8734bd3", "421f3220-4edb-4be5-8cc3-f317611643c6", "cadff6af-085f-4dee-9fbd-71629f6bb572", "0464ba9b-ef69-45b1-b9d0-674c78ea9a0f", "762332b0-069f-4370-b0fb-479981a3907a", "871b4d8f-d918-470e-b11b-e526565721f3", "df570d0c-af33-4dc1-931d-de90a9120eb5", "23f5bbc0-f9cc-4700-b8b8-0e336ff016ec", "e44c6c1d-e0fb-49fd-9a25-c12ad6c95940", "b50db771-7898-4f08-b5f9-c603474acd95", "0f226e24-9b3a-43aa-863c-cf21250b99d7", "3e20f218-1c22-4914-ac9e-1d51a9bea576", "55975126-6073-4514-8b86-644b78948711", "a5c0b4e1-06ca-4abe-98bb-aa7b1296da8f", "1bc2c9fd-6182-4445-b846-914fab4abec9", "94d253e1-4bf3-4367-a16d-c248b11bb184", "78b2625f-3ee0-44ae-9e19-9c3d9c852d5f", "0aebdaf6-5114-4271-90d5-f37d708d4c40", "02751e20-940f-49e0-b6d1-ecce99bfc833", "51fdb965-c752-44a8-91e6-23ee4d16eb21", "e97e0bde-d2b8-4d66-9340-5dbebebd7bb0", "0761d708-225d-4cc8-99dc-6bac59094e0b", "174f652e-ee2f-4307-8dd4-7c023ff9ef9d", "879faba1-f4d0-4796-92a0-b8a1477d5e2c", "eb72966c-b791-4002-9560-9a9cea5c142a", "2d9d4b34-07e8-4f5f-999f-7899248b2810", "cae2f0b7-fb76-4179-88ca-b289823ed59b", "1a34fc55-8cf8-43b8-a47f-e019dca6b65d", "4a84a33d-a14b-43e6-ba93-fa53cc6372d7", "50c8a8fa-4895-44b7-8e46-16566a6a6fbc", "7fa15d2b-cab8-4894-b0b5-4621599afbd5", "7ee44ca9-968a-4039-8d2c-31b3e4669b9f", "e4160d1a-4499-4602-91fd-ce1039e56c71", "72107da5-7e50-4f36-9f34-cb15e6334593", "b53a417d-e679-470a-8323-06e194d4c660", "616ebba0-e0c4-47fa-a618-54597bdcb6c2", "1b1ef03e-03a9-49b3-a1ca-d8f2f2d91819", "60362db9-9d9c-4219-bd99-3025b6eff14c", "3c0dbbf6-09f7-4df2-a0ec-5d7c76da2323", "534af447-f495-411f-aceb-0c93061d6df7", "0b613d43-1734-4c89-ab51-81d8a7c3a29b", "506bc552-72b2-4547-b67d-d05e09b3b873", "f0854f23-07d6-4583-a338-7e9a77a5290f", "8ab52c26-c15e-4d91-ad2d-ca59a0c3a5ba", "5f28c068-c446-41bf-9f73-79eeef2f2fe5", "1b254fd0-fd50-4c6a-902c-a73bf36c284d", "404c736c-0351-43f7-9130-20d086d7b01b", "141ada63-0cd8-4f9f-8cdc-21bca973e9b4", "df62fe14-3e46-4826-89ff-bdf3adb7ff2d", "190bfaa5-94cf-4d83-8d31-e8cffefd1d8a", "1d79901f-0173-46d3-980f-2798ee1a3906", "3a6d05b4-97e5-4107-b189-c2999d04ba69", "3ce19303-746f-46d2-8ada-78b29f779280", "cf7ae45e-fcfa-4ded-a4df-e45aebf5cacd", "7f37bc07-70c7-4edc-a089-a80f7bb04fa4", "59c630f8-b281-42fc-8889-5f57680a7fa7"], "Caroline Ingrud": ["8c9235bf-5308-49dd-b65a-8155fdf671ad", "034bfe3f-f371-47ed-a390-4c5fb3f3adea", "c4b56936-05be-4770-b6ac-90868fa9f7f2", "737a3f09-2c40-4299-ad8e-684abce689f3", "5ad91108-fc84-4b4a-a1f6-1738cd1829f4", "14ae068f-7c99-4ac7-a8a0-9e01012f29e9", "64167081-d2ff-41bf-9068-b2553e3f8777", "f7aa53b3-8c97-4649-ba7b-9ff27976ca9c", "67cc6657-7f50-4e4c-97e6-07ffb6738edf", "67032d10-15f2-411e-a999-556c9b8650d7", "80c6e272-dc05-4635-8098-eaeff2c69a53", "33944b94-50f6-44c4-bce4-c705fa615321", "a46a436c-637a-4b69-9ab6-9534e8a155a8", "2f6ca935-19c7-4566-ab22-7c57b52ac12b", "70e2ebcc-e354-4b1f-9e5b-215725ec6c46", "2e799986-9889-4967-adb4-07ef0b9870e3", "90e8fb8a-5c64-4724-ab08-c942176f07f0", "76c1a453-21a0-4759-a81d-7a104d39bdc1", "e7bf282a-f740-4b10-951a-922a3dbb2223", "75f33528-84d2-4317-bef5-bbb3fb1f4dd2", "cc6a8dff-f985-47c3-9b5b-45622ade5c3a", "ec571509-5807-487c-abb4-63d3166e71d9", "57d13c03-7edc-44b4-bca2-caf2a5784c79", "3406f0b8-2090-4696-aaa2-e5ebe536c9bb", "2aeeec27-e9ac-4306-839b-a54de874ae1c", "a7985bfe-511e-493a-b100-28a18b76e8bf", "18479195-3a62-4ccb-b102-c877c0b6a533", "4a085bf4-1c2f-4156-b890-dfee73c585d5", "b42da703-0491-4c38-8964-091006faaa28", "d3f97cb0-cc9c-47b1-b004-0d3a66f17c28", "c05185d9-bdd5-4bd5-8285-1e0dbfaa9cd0", "da117626-0b9f-4c8b-af00-5199e0ad8119"], "Marius Ekerholt": ["10aed0f8-4bd2-4fdb-ac39-722a9a01f8fb", "96bfd511-c108-47b8-bb98-a85e6e1f73cd", "ebcae286-fb85-45b0-b07e-819240bfaf5c", "76aad305-1793-4264-a573-ad4e799ae233", "85bc00b5-6d92-4b53-9d7f-85537de81e31", "872031eb-aaba-41f9-b67d-319d16f043c0", "8cb7fb51-0cd7-4d81-afda-1d1d92f39877", "f7cca947-5a1d-417a-9d2d-437ae0e98bb5", "2e01cf83-df29-42a7-99b9-010f0af68f90", "7410f67f-a17f-41ae-9f2c-3b8e2479454b", "149ee2ca-3625-43f7-b233-5fd218a3f3f2", "ac1767ae-7766-44b4-b73e-15f084dc9c4b", "4f75566b-07a3-4443-8167-a67b866944fb", "1743b385-169a-4f15-80d2-cb48341bb866", "99f26d1e-cfa2-402e-9ec9-04068751e750", "c750777e-d3fa-4902-acde-500406a504e9", "63aaa3ec-7f5c-41f1-9202-0a0ad83958b2", "96c1c18f-b427-4016-961b-eacf0740701e", "7bd70a4a-ee7f-4b8b-bede-bc0ea15f2a34", "fd08b5d6-95f7-4cb3-a28b-3f26f22ae706", "4ce3a8bb-aff3-4673-b91b-b7e5a301bacc", "48892d09-8e34-4b80-a593-21308d84dc94", "cb397c5e-b02b-4187-9028-4bcd7328ebf5", "75cedd61-59e2-4db9-82b2-543a6d92bb76", "6ecdfc3d-1441-4f14-8e19-9d90fe3c399f", "4a6b2ee2-8d3a-4ff1-a40e-88f5f015f3a8", "c975b3bd-6af4-4fc4-bdd9-ceccd0936a6d", "d9e27278-ba4f-4c76-9e3c-b8a86b690f9e", "f349959a-257d-4444-a059-75beaa55b7c3", "f3a6e0a6-4793-4b88-8abc-59d0edbe08a9", "b0c3c7f7-ccae-4a54-a442-4a0346c7d7be", "a5ce142d-87f8-41f3-b183-a3ff3a8dcd94", "a25a70c1-e8bf-4d34-8ce4-84e33b44970b", "4c437290-c14e-4a42-85dd-f5426e04763c", "3d2981d4-dc65-4e2a-a320-6f509c12bb04", "a335c89b-34f2-4b03-bdf6-03386fadab89", "6f64fb36-ecb4-4353-b0dc-3073183040c6", "2d791dcf-dc4c-4afd-9df2-afba0be42845", "d0aa44cc-cda9-4b28-9f12-1b6b4271a308", "117e7873-e662-4125-90a2-221acfef5d44", "f9291e48-5cf7-4785-a7c2-1030fb2bdcfe", "bf4d82d0-c235-47c9-ab3d-3c91934e8975", "863ec3d6-c5da-4115-a045-22b0a66c8365", "a59156a4-f789-4ebd-a2e0-0f9dc86ddb50", "02a57a8d-21e7-4ed6-acfc-be901104357a", "10d9773c-d346-4634-b9e2-caf63c759c25", "97e65265-7387-4fa6-8e6d-5193b0994628", "adf11c3e-8cc1-4620-a568-0a98cd7a8bf9", "8bce6eee-9f40-4464-b537-022066167430", "13c94736-4764-42c9-8307-98bffdd52286", "e6eec7a2-cc61-437b-a895-2c34fb027d02", "e01f63ea-1fd6-45af-90fe-0ee3aec1cbcd", "f369b9cf-87dd-499e-b878-4de922842a8f", "5587b83a-dab2-4fb7-9436-646d3f3f2435", "3067ed63-563c-49da-b73f-d75a24bf976a", "28187086-4f5a-4df8-98d5-a7784e6fee20", "96efe3d4-d7a7-4711-b04a-8263ef88f9c4", "44b96830-319c-4ea4-9c98-75cf1cb7616f", "2784c3db-d3bd-487c-94cd-a7457a5253c1"], "Emil Lindblom": ["540e8c54-e364-4b87-9449-6ead68dc3990", "ba13cdde-1a34-4006-a523-5c6a255e79eb", "4beebf96-1715-48ec-9f3b-06ce65ec8302", "f5cdcde5-f60d-4a66-a52e-04e08efd3497", "cfd9a736-5c57-4cf4-b910-30f93ae68262", "74294486-047e-471e-9b49-1309516cf620", "6fc4e0e0-5172-46c1-b3e5-93e9376d31b6"], "Ece Ella": ["9fa49963-e745-4165-a4de-a09528ff3dc7", "132a7b6c-53ac-4608-83b9-0e427283aa57", "88c61dfe-7368-44fb-b62d-b94009f6e015", "3ab0977a-efe4-4bc8-bfa9-8b5b55eefe7f", "4e5c4ef9-1af5-47f0-92c1-993469c89220", "be820b0b-b7fd-42b9-ab2b-1c26abcc906b", "30d22ec0-3a12-44ae-b0ed-f0137edfe95b", "3d1d6b65-f921-4463-b4bd-fab60d2a047f", "251fcbaf-cf9b-4cbe-bfc8-89d4035c82a8", "6c5f6571-abca-4bd8-bb91-483a0dc3fe50", "710cd257-7ddd-4975-8065-2f399c4af875", "056b3122-627f-4ee6-a6ae-c6dc8d5c6b6a", "097ce29a-78df-4e4a-b2c8-2cd5b8ca1657", "e7634a21-d27b-43ef-8fcb-5a0c05793733", "eacf779c-7f49-44d4-9733-3d4b9fbf6413", "2c529ba4-213c-4b68-9d92-a15a08263677", "6a3e4e98-107b-4759-8e60-08f7a5bf2717", "f174c506-d5ef-441e-9672-cc5e4b89e284", "b14d1cf3-ac4a-4e90-9dd0-7516373ace71", "a51011f1-e461-4e7d-b172-61df9d6b4ff2", "55f16ec0-2051-41ba-a895-88d159f8466b", "143ef855-b6f1-4571-9bc7-225cef13435f", "8e5d6ef5-45fb-472e-a7c0-440c480c4477", "91c42b45-3882-4ebe-bacc-40d1b8e20052", "d84400a9-2e65-4659-b330-4d7d1bfde5e9", "f8b89366-6234-4382-8403-ad97ef2dd91b", "8b9bea28-0684-42f7-bef4-533a9129e73c", "3e025202-8ba6-4362-aea7-f918404c0142", "2eac7b39-027d-4f66-a21d-82b72c638663", "800e5165-e1d7-4054-aab3-7b1feb6fb90b", "22120c6b-4c17-4c78-94d9-48165ba530af", "0a6d0f25-d050-44ed-8b88-547cb643d66a", "1a6131d0-8fef-4944-b965-2d01dca178fc", "2efe48bc-e3fa-4c48-a4ef-766c11e14cda"], "Harry Hindess": ["af6bba49-c3f1-4f62-993a-37f37a6ab8fa", "d260a0af-7b9a-43c7-818d-35dc7f9779f9"], "Marie Conza": ["4de6290b-d38e-4293-9124-de967325b738", "b5bb5980-8af0-492a-9277-c9a9d5ead20f", "484f8e84-1c52-4d42-95d0-3a2352c8bbf8", "2d6b95c4-cb97-47f5-b831-ab0eb1087b83", "edfa0d53-be77-4ef8-86b1-30c5644d6b8c", "e98676fe-67c5-4966-8889-0e7aad063063", "65a866ff-086a-415d-9bb3-a049d84f5a76", "c974a7f7-0a55-40b1-a75b-fc7055497d96", "cb23c947-415b-4178-8316-1d9574715e36", "b4ecd308-52c2-43a0-aede-76b557258d7f", "f15a62df-bd01-43a4-81f0-5a8a4bba45c8", "b3726301-76c8-4ae9-9d8d-b85c6a387380", "da449d41-a598-413f-9169-7ba3132c4495", "588d4132-18ea-4696-bd5e-456d76d51b55", "41674c32-e18c-45e6-953a-b3c7b5e93caa", "d014ff04-47e9-4548-86ba-a62e61333023", "9e4ad796-7ab4-45db-b5de-33a6662a20a1", "830ea2b4-103c-4f20-84e3-e104cd25da2f", "ad6962ee-ba76-4ee4-8b7d-0c01533edd5c", "483f4e9d-ee60-447b-b70e-6d377d1cf424", "166f7276-1bae-4873-9246-e807d6e80642", "105fad7a-8269-4164-9775-bd21d8c9b188", "89551d08-6b7c-427d-a2d1-b4186006ca25", "fc490fb5-e182-4997-818b-fcb4b351b32b", "e3542a4b-40d3-411c-bd37-34073a1b1a3f", "ba9bcb1d-434e-45b5-b38b-f25658bc959e", "a2f5ac73-c253-4229-93fd-e51c41c0332d", "28dc7810-e0de-4152-8b2a-d41e73825548", "a432ef58-10ec-4383-bd44-e317c6bbbf68", "8346f574-48ee-4d6e-ab01-fadc425fba9e"], "Vidar Haaland": ["420b75da-f6ee-424b-bbf8-75ed2d04c8fd", "2a2436dc-db93-440c-af36-bfbb2e193df6", "d6cf237c-e454-47fd-8262-0dab0dee2558", "e69d5cfd-3a92-400e-88c1-a25e6eceabdc", "200e9497-4799-44f9-8fe6-c2c9470009e9", "e952e8b7-0ffa-4d85-a69a-dd965acdfb7f", "18ea4ddf-3540-42a7-9751-fdb1af71d223", "c9c582cc-acb9-46c3-8b03-91aafd63301c", "dc3db651-17e5-4d7c-99d8-1c35e270767c", "d77f8521-153d-43d2-87ac-456ad72f4a3e", "b56bb9e0-b7d4-4c37-ae1a-f1d63a2148d7", "56304a16-b2b6-41bd-8fe5-e889a0269744"], "Barbara Kiss": ["d4259599-47fe-45fa-91f4-915498e4e3b2"], "Cailin Kless": ["c3169bca-687d-4522-aea0-ac9ac0d3e684", "488b2fcb-0f01-422e-baa1-beff24724c8e", "6f9d98c5-3191-4521-9212-c0b5e419a231", "2293186d-9782-430c-ac2e-1c5a09f78c72", "fcb02ee6-8523-4b1f-82ea-949e09e5837a", "c7ae5316-f2b2-4611-be06-2a90c9c01d63", "e10e1299-26f5-4f89-80cd-af8f32199442", "5f4ab34b-fccf-42b9-9555-7616cfb0a255", "ccbc340a-ebea-4c9c-824c-7c8df92d9002", "def1da3c-38ae-4f94-a312-b3f22cb04b52"], "Remy Cholhan": ["7b38ab40-0c66-4bb6-91e0-66bea04f4e1e"]};
+
+const NAME_OWNER_MAP = {"52realestate": "Thomas Testard", "A1 Gruppen AS": "Hanne Herseth", "Aasen Sparebank": "Caroline Ingrud", "ABChus AS": "Marius Ekerholt", "ABMarketing AS": "Caroline Ingrud", "Accquis Group Limited": "Hanne Herseth", "Adresseavisens Telefontjenester AS": "Hanne Herseth", "Akershus Forsikringssenter AS": "Hanne Herseth", "Aktiv Arna & Åsane AS": "Emil Lindblom", "Allstar Business Solutions": "Ece Ella", "AnyVan Limited": "Ece Ella", "Arun Estate Agencies Ltd": "Ece Ella", "Askim & Spydeberg Sparebank": "Caroline Ingrud", "Aust-agder Forsikringssenter AS": "Hanne Herseth", "Axo AS": "Hanne Herseth", "Balder Forsikring AS": "Caroline Ingrud", "Bank Norwegian, En filial av NOVA Bank Group AB (publ)": "Marius Ekerholt", "Berg Sparebank": "Marius Ekerholt", "Biisoni Group Oy": "Hanne Herseth", "Bjugn Sparebank": "Marius Ekerholt", "Blink Payment": "Harry Hindess", "Børsan AS": "Hanne Herseth", "BridgeFund": "Ece Ella", "Buy it Direct": "Hanne Herseth", "BWC Real Estate LLC": "Hanne Herseth", "Carter & Sønn AS": "Hanne Herseth", "Ccom AS": "Hanne Herseth", "Chestertons International Real Estate Brokerage LLC": "Caroline Ingrud", "Cognism Limited": "Marie Conza", "Coitio Gruppen AS": "Hanne Herseth", "Concept Communication AS": "Hanne Herseth", "Contentful GmbH": "Ece Ella", "Convins Nederland": "Caroline Ingrud", "Cornmarket Health Insurance": "Ece Ella", "Dacha Real Estate": "Ece Ella", "Dataquest UK ltd": "Marius Ekerholt", "Det Norske Kaffehus AS": "Hanne Herseth", "Devola Group": "Hanne Herseth", "Digiflow AS": "Hanne Herseth", "Digi Publishing AS": "Hanne Herseth", "Digitale Medier 1881 AS": "Hanne Herseth", "Din Salgskonsulent AS": "Marius Ekerholt", "Ditio AS": "Hanne Herseth", "DNB Bank ASA": "Vidar Haaland", "Domestic & General Insurance Europe AG": "Ece Ella", "[Do not invoice] &Partners, team invoicing": "Marius Ekerholt", "(DONT INVOICE) I@D International": "Barbara Kiss", "[DONT INVOICE] Proaktiv Trøndelag": "Marius Ekerholt", "[DONT INVOICE] Proaktiv Vest": "Marius Ekerholt", "Douglasdale": "Hanne Herseth", "Drangedal Sparebank": "Caroline Ingrud", "Duett AS": "Vidar Haaland", "ECIT Autogear AS": "Hanne Herseth", "Eie Bergen / Mekleriet AS": "Marius Ekerholt", "Eie - Main Account": "Vidar Haaland", "EiendomsMegler 1 Lillehammer og Gudbrandsdal": "Marius Ekerholt", "Eiendomsmegler 1 Midt-norge AS": "Marius Ekerholt", "Eiendomsmegler 1 Sør-norge AS": "Marius Ekerholt", "Eiendomsmegler A": "Vidar Haaland", "Eiendomsmegler Norge AS": "Marius Ekerholt", "EK Concept": "Hanne Herseth", "Electi Business Partner AS": "Marius Ekerholt", "Elis Norge AS": "Hanne Herseth", "Elite Property Brokerage, L.L.C.": "Ece Ella", "Eneas Services AS": "Hanne Herseth", "Erga & Partnere AS": "Hanne Herseth", "Esacon AS": "Vidar Haaland", "Esentya Estate & Promotion S.L.": "Hanne Herseth", "Every Matrix": "Hanne Herseth", "Exito Assuranse AS": "Hanne Herseth", "Extracover Limited": "Ece Ella", "Fana Sparebank Eiendom AS": "Caroline Ingrud", "Finansco AS": "Hanne Herseth", "Fjordkraft AS (11284)": "Vidar Haaland", "Fjordkraft AS (Fjordkraft KS, 111949)": "Marius Ekerholt", "Fjordkraft AS (SMB, 111948)": "Vidar Haaland", "Flexebee Ltd": "Hanne Herseth", "Flyt AS": "Marius Ekerholt", "Foodora Norway AS": "Marius Ekerholt", "Forsikring1 AS": "Hanne Herseth", "Forward Role": "Marius Ekerholt", "Fremtind Forsikring AS /Avdeling 1": "Caroline Ingrud", "Fullhouse Recruitment": "Hanne Herseth", "Garanti Eiendomsmegling [Team Invoicing]": "Caroline Ingrud", "Genertel Biztosító Zrt.": "Ece Ella", "Gjensidige Business Services AB": "Marius Ekerholt", "GrabTaxi Holdings Pte. Ltd.": "Ece Ella", "Grønn Jobb AS": "Hanne Herseth", "Grue Sparebank": "Marius Ekerholt", "Gule Sider AS [Team Invoicing]": "Marius Ekerholt", "Hallingdal Brannkasse": "Caroline Ingrud", "Hamar Innredning AS": "Caroline Ingrud", "Haugaland Forsikringssenter AS": "Hanne Herseth", "Heimdal Eiendomsmegling AS": "Marius Ekerholt", "Hjem Eiendomsmegling AS": "Hanne Herseth", "Hjemmesidehuset AS": "Hanne Herseth", "HMS Partner Norge": "Hanne Herseth", "Holo": "Hanne Herseth", "Homely AS": "Hanne Herseth", "Ideagen Limited": "Caroline Ingrud", "If IT Services A/S": "Marius Ekerholt", "Ignite Procurement AS": "Hanne Herseth", "Infor (norge) AS": "Ece Ella", "Initial Force AS": "Hanne Herseth", "Innkjøpsgruppen AS": "Hanne Herseth", "Intrum AS": "Hanne Herseth", "In-vest Eiendomsmegling AS": "Marius Ekerholt", "Irish Life Health": "Ece Ella", "Islands Insurance Group": "Ece Ella", "ITS (Southampton) Ltd": "Hanne Herseth", "Jay-Bee Telecom Ltd": "Hanne Herseth", "JBF Sparebank": "Marius Ekerholt", "JTalk Ltd": "Hanne Herseth", "Julius Caesar AS": "Hanne Herseth", "Kjøkkenspesialisten AS": "Hanne Herseth", "Kreftforeningen": "Hanne Herseth", "Kristiansand Forsikringssenter AS": "Hanne Herseth", "Kvik Kanalveien AS (111967)": "Hanne Herseth", "Landkreditt Forsikring AS": "Hanne Herseth", "Lendo AS": "Hanne Herseth", "LifeSearch Limited": "Ece Ella", "Linx Business Communications Ltd": "Hanne Herseth", "Living Forsikring": "Hanne Herseth", "Logistikkgruppen AS": "Hanne Herseth", "LUXFolio Real Estate": "Ece Ella", "Luxury Property LLC": "Ece Ella", "Lyse Tele AS": "Marius Ekerholt", "Lysholm Bil AS": "Hanne Herseth", "Maritech AS": "Hanne Herseth", "Maskineriet Forsikring AS": "Hanne Herseth", "Max Equity Real Estates LLC": "Ece Ella", "Media Access AS": "Hanne Herseth", "Meglerhuset Nylander AS": "Marius Ekerholt", "Meglerhuset Rele Haugesund AS": "Hanne Herseth", "MetaCompliance Ltd.": "Ece Ella", "MHDK ApS": "Hanne Herseth", "Mobino Salg og Service AS": "Hanne Herseth", "Mollie B.V": "Thomas Testard", "MØRE EIENDOMSMEGLING AS": "Hanne Herseth", "Mystore.no AS": "Marius Ekerholt", "N3 Group AS": "Hanne Herseth", "Nettbil AS": "Marius Ekerholt", "New Zealand Fine Touring Group": "Hanne Herseth", "NGage Recruitment BV": "Hanne Herseth", "Nidaros Sparebank": "Caroline Ingrud", "Nobia Norway AS": "Caroline Ingrud", "Nordvest Forsikringssenter AS": "Hanne Herseth", "Northwood Edinburgh Ltd": "Vidar Haaland", "Notar AS": "Marius Ekerholt", "Nova ehf": "Caroline Ingrud", "Novvi Properties": "Caroline Ingrud", "N&SLB Ltd": "Hanne Herseth", "Obos Eiendomsmeglere AS": "Caroline Ingrud", "OfficeLink Mobil og IT AS": "Hanne Herseth", "Okida Finans AS": "Hanne Herseth", "Olaya AS": "Hanne Herseth", "Orkla Sparebank": "Marius Ekerholt", "Ørland Sparebank": "Caroline Ingrud", "Outlook Publishing": "Hanne Herseth", "Øvre Romerike Eiendomsmegling AS": "Marius Ekerholt", "Owlie Jobs": "Hanne Herseth", "Partner Assuranse AS": "Hanne Herseth", "Partnercall AS": "Hanne Herseth", "Partners Bergen AS": "Emil Lindblom", "Partners Eiendomsmegling AS": "Marius Ekerholt", "Pedan A/S": "Hanne Herseth", "Per Aaland AS": "Hanne Herseth", "Personal Group Benefits": "Ece Ella", "Pistachio AS": "Hanne Herseth", "PK Properties": "Hanne Herseth", "Plusoffice AS": "Hanne Herseth", "Polardrikk AS": "Hanne Herseth", "Primo Capital Real Estate L.L.C": "Ece Ella", "Prismatch AS": "Hanne Herseth", "Privatmegleren Main Account": "Marius Ekerholt", "Proaktiv Romerike [Do not invoice, team invoicing]": "Marius Ekerholt", "RAM Tracking, Remote Asset Management Ltd": "Hanne Herseth", "Red Bull GmbH": "Hanne Herseth", "Redgo Norway AS": "Marius Ekerholt", "Redress AS": "Vidar Haaland", "ROGALAND EIENDOMSMEGLING AS": "Vidar Haaland", "Rogaland Sparebank": "Marius Ekerholt", "Rune Enstad AS": "Hanne Herseth", "Safedrive AS": "Hanne Herseth", "Safenames Ltd": "Caroline Ingrud", "Samlerhuset Group B.V.": "Marius Ekerholt", "Sandegruppen Management AS": "Hanne Herseth", "SAP SE": "Marius Ekerholt", "Schala & Partners [Do not invoice - Team invoicing]": "Marius Ekerholt", "Schibsted Norge Smb AS": "Marius Ekerholt", "Scrap Car Comparison": "Ece Ella", "Selbu Sparebank": "Caroline Ingrud", "Sem & Johnsen Eiendomsmegling AS": "Caroline Ingrud", "Shilton Sharpe Quarry Limited": "Caroline Ingrud", "Simpson Judge ltd": "Ece Ella", "Simpson & Marwick": "Hanne Herseth", "Skandia Greenpower AS": "Hanne Herseth", "Slatlem Gruppen AS": "Hanne Herseth", "Sne Eiendomsmegling AS": "Hanne Herseth", "Sølvrev AS": "Hanne Herseth", "Sordal Supply AS": "Hanne Herseth", "Sørmegleren AS": "Vidar Haaland", "Sos-barnebyer Norge Stiftelsen": "Hanne Herseth", "Sparebank 1 Nord-norge (111945)": "Caroline Ingrud", "Sparebank 1 Nord-norge (11580)": "Caroline Ingrud", "Sparebank 1 SMN (Direktebank, 11110)": "Caroline Ingrud", "Sparebank 1 SMN (Næring/BM, 111955)": "Caroline Ingrud", "Sparebank 1 Sør-norge ASA": "Vidar Haaland", "Staq GmbH": "Hanne Herseth", "Steadman Brown Limited": "Hanne Herseth", "Sticos AS": "Marius Ekerholt", "Storebrand Forsikring AS": "Hanne Herseth", "Strada Real Estate Brokerage LLC": "Ece Ella", "Sunnmøre Kjøkken AS": "Caroline Ingrud", "Talkmore AS": "Marius Ekerholt", "T Ash International Realty Broker": "Ece Ella", "T Ash International Realty Ltd": "Ece Ella", "Telenor Norge AS Avd: Talkmore": "Marius Ekerholt", "Tema Landbruk AS": "Hanne Herseth", "Teya Services Ltd.": "Hanne Herseth", "The Luxury Real Estate Broker LLC": "Thomas Testard", "The Neon Company": "Hanne Herseth", "The Talent Boom Inc": "Hanne Herseth", "Thor Companies Ltd": "Emil Lindblom", "Ticketco AS": "Emil Lindblom", "Tolga-Os Sparebank": "Caroline Ingrud", "Toten Forsikring og Finans": "Hanne Herseth", "Toyota Material Handling Norway AS": "Marius Ekerholt", "Tripletex AS": "Emil Lindblom", "Trondheim Forsikringssenter AS": "Hanne Herseth", "TutorCare": "Hanne Herseth", "Uitblinqers": "Hanne Herseth", "United Gas & Power": "Ece Ella", "Utedesign AS": "Hanne Herseth", "Utleiemegleren Forvaltning AS": "Marius Ekerholt", "Vertice Group Ltd": "Ece Ella", "Vestby Forsikring DA": "Hanne Herseth", "Vestfold Forsikringssenter AS": "Hanne Herseth", "Viken Kjøkkensenter AS": "Caroline Ingrud", "Viken Media AS": "Hanne Herseth", "Visma Enterprise AS": "Marius Ekerholt", "Vitality Corporate Services Limited": "Ece Ella", "Vitec Fixit Systemer AS": "Hanne Herseth", "Vivid Living Real Estate": "Hanne Herseth", "Walter AG": "Ece Ella", "Watercircles Norge AS": "Marius Ekerholt", "WAYRA Deutschland GmbH": "Ece Ella", "We Finance Any Car Limited": "Ece Ella", "We Rock Sales AS": "Hanne Herseth", "White & Co Properties": "Ece Ella", "Wille & Sand Forsikringspartner AS": "Hanne Herseth", "W Norge AS": "Hanne Herseth", "WS - The WallSwiss Partner’s SA": "Hanne Herseth", "XO Property": "Caroline Ingrud", "Annonssäljarna i Gamla Stan AB": "Hanne Herseth", "Bisdata AB": "Hanne Herseth", "Blendow Group": "Hanne Herseth", "Bonnier News Inhouse Sales AB": "Marius Ekerholt", "Bravura Sverige AB": "Hanne Herseth", "Cinode AB": "Hanne Herseth", "Cloudgruppen Sverige AB": "Marius Ekerholt", "Foodora AB": "Emil Lindblom", "Göteborg Energi Aktiebolag": "Hanne Herseth", "Hailey HR": "Marius Ekerholt", "Home Call AB": "Harry Hindess", "Hunter & Tailor Sverige AB": "Hanne Herseth", "Impressive Relations Sweden AB": "Marius Ekerholt", "Kassacentralen i Skåne AB": "Hanne Herseth", "Länsförsäkringar Jämtland": "Hanne Herseth", "Länsförsäkringar Norrbotten": "Hanne Herseth", "Länsförsäkringar Skåne - ömsesidigt": "Hanne Herseth", "Lån & Spar Sverige, Bankfilial": "Hanne Herseth", "Lawlabs AB": "Hanne Herseth", "Lime Technologies": "Caroline Ingrud", "Nimblr AB": "Hanne Herseth", "Nordax Bank AB (publ)": "Marius Ekerholt", "Nordea Bank Abp, filial i Sverige": "Marius Ekerholt", "Nordea (BB Direct Savings)": "Marius Ekerholt", "PO Söderberg & Partners AB": "Marius Ekerholt", "Puzzel AB": "Hanne Herseth", "Reliable AB": "Hanne Herseth", "Silentium AB": "Hanne Herseth", "Soolar Solenergi AB": "Hanne Herseth", "S.P. FTL Malmö AB": "Emil Lindblom", "Telink PBX AB": "Hanne Herseth", "Trygg-Hansa Försäkring Filial": "Marius Ekerholt", "Watercircles Sverige AB": "Marius Ekerholt", "Acrisure, LLC": "Cailin Kless", "Adobe Inc.": "Marie Conza", "Ahlers Roofing and Construction": "Hanne Herseth", "Akkar Limited": "Hanne Herseth", "BigID": "Marie Conza", "BMC Helix Inc": "Marie Conza", "BMC Software Inc": "Marie Conza", "BOSS Magazine": "Hanne Herseth", "BURNS WEALTH ADVISORS, LLC": "Hanne Herseth", "Carl Ferraro III, State Farm Agent": "Marie Conza", "Censys": "Cailin Kless", "Clear Start Tax": "Marie Conza", "Cyera US Inc.": "Marie Conza", "Everly Plumbing": "Marie Conza", "Farmers Insurance Exchange": "Marie Conza", "Fuchs Financial": "Hanne Herseth", "GoodLeap, LLC.": "Marie Conza", "Goosehead Insurance Agency, LLC": "Marie Conza", "Heather Schaefer Insurance Agency Inc": "Cailin Kless", "HP Inc.": "Marie Conza", "Hyde Park Capital": "Hanne Herseth", "Inter Miami CF": "Marie Conza", "Johnson Brunetti": "Hanne Herseth", "Kandji": "Marie Conza", "K-Designers": "Cailin Kless", "Kelly Insurance Agency, LLC": "Remy Cholhan", "LMP Financial": "Marie Conza", "Marisa Schaefer Insurance Agency Inc": "Cailin Kless", "New Western Acquisitions": "Marie Conza", "NSP Marketing": "Marie Conza", "Olympia Entertainment, Inc.": "Marie Conza", "One Capital Solutions, LLC": "Marie Conza", "O.P.E.N. America dba OpenWorks": "Marie Conza", "Phil Klein Insurance Group": "Marie Conza", "SafetyCulture Pty Ltd": "Marie Conza", "SalesRabbit Inc": "Cailin Kless", "Sovos Compliance, LLC": "Marie Conza", "Spotio, Inc. (Stronghouse)": "Cailin Kless", "State Farm Insurance": "Marie Conza", "Stor Mor Portable Buildings": "Marie Conza", "Tax Resolution Plus": "Hanne Herseth", "Team Up Staffing LLC, DBA TeamUP": "Hanne Herseth", "Tines Security Services Limited": "Cailin Kless", "Trailstone Insurance Group": "Marie Conza", "Unite Health Share Ministries": "Marie Conza", "Universal Processing LLC": "Hanne Herseth", "UWDTBA": "Cailin Kless", "Vingcard-ASSA ABLOY": "Marie Conza", "Western Pioneer Financial, Inc.": "Hanne Herseth", "WFG National Title Insurance Company": "Cailin Kless", "Your Home Improvement Company": "Marie Conza"};
 
 /* boot */
 load();
