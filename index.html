@@ -140,14 +140,17 @@
     .metric-sub{font-size:11px;color:var(--text-muted);margin-top:5px}
     .metric-pos{color:#0d6b65}
     .metric-warn{color:var(--amber-text)}
-    .known-issues{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1.25rem}
-    .known-issues-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:.625rem}
-    .known-issue-row{font-size:12px;color:var(--text-secondary);padding:5px 0;border-top:1px solid var(--border);display:flex;gap:8px;line-height:1.5}
+    .known-issues{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:1.25rem;overflow:hidden}
+    .known-issues-header{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.25rem;cursor:pointer;user-select:none}
+    .known-issues-header:hover{background:var(--bg)}
+    .known-issues-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);display:flex;align-items:center;gap:8px}
+    .known-issues-count{font-size:11px;font-weight:600;padding:1px 7px;border-radius:99px;background:var(--amber-bg);color:var(--amber-text)}
+    .known-issues-chevron{font-size:12px;color:var(--text-muted);transition:transform .2s;display:inline-block}
+    .known-issues-chevron.open{transform:rotate(180deg)}
+    .known-issues-body{border-top:1px solid var(--border);padding:.75rem 1.25rem;display:none}
+    .known-issues-body.open{display:block}
+    .known-issue-row{font-size:12px;color:var(--text-secondary);padding:6px 0;border-top:1px solid var(--border);display:flex;gap:8px;line-height:1.5;align-items:flex-start}
     .known-issue-row:first-of-type{border-top:none;padding-top:0}
-    .sr-btn{margin-left:auto;flex-shrink:0;padding:3px 10px;font-size:11px;font-weight:600;border-radius:4px;border:1px solid var(--teal);color:var(--teal);background:none;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
-    .sr-btn:hover{background:var(--teal);color:#fff}
-    .sr-warning{display:inline-block;margin-left:8px;font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;background:#fff0cc;color:#8a5a00;border:1px solid #f5d97a;letter-spacing:.02em;vertical-align:middle}
-    .sr-btn-active{background:var(--teal);color:#fff}
     .known-issue-tag{flex-shrink:0;font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;background:var(--amber-bg);color:var(--amber-text)}
     @media(max-width:600px){.movement-grid{grid-template-columns:1fr}.kpi-grid{grid-template-columns:repeat(2,1fr)}}
     .modal-overlay{position:fixed;inset:0;background:rgba(17,75,92,0.45);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem}
@@ -433,6 +436,10 @@ const KNOWN_ISSUES = [
     tag: 'SalesRabbit · Jul–Nov 2025',
     text: 'SalesRabbit reseller revenue is not included in the Chargebee MRR data above (except their standard subscription). Three invoices totalling $2.25M were periodized across May 2023–Nov 2025, of which $510K falls within this dashboard window. Toggle to add it to the charts.',
     srToggle: true
+  },
+  {
+    tag: 'DWH reconciliation',
+    text: 'Dashboard vs DWH (MRR_USD_Fixed) for Jul–Oct 2025 shows a consistent residual of ±0.4% (~$2K/month). This is structural: the DWH includes Historical File customers not present in the Chargebee exports. SalesRabbit does not appear in the DWH. Nov 2025 gap (~$6.5K) reflects the same residual. Dec 2025 gap (~$17.7K) is driven by the Gjensidige artefact and churn timing differences. May–Jun 2026 and beyond: DWH not yet updated for those months.'
   }
 ];
 
@@ -575,14 +582,23 @@ function renderMRR(data, selectedMonth) {
   const entityLabel = _activeEntity === 'ALL' ? 'All entities' : _activeEntity + ' site';
 
   // Known issues HTML
+  const issuesOpen = !!document.getElementById('knownIssuesBody')?.classList.contains('open');
   const issuesHtml = KNOWN_ISSUES.length ? `
     <div class="known-issues">
-      <div class="known-issues-title">Known issues / misrepresented MRR</div>
-      ${KNOWN_ISSUES.map(i => `<div class="known-issue-row">
-        <span class="known-issue-tag">${i.tag}</span>
-        <span style="flex:1">${i.text}</span>
-        ${i.srToggle ? `<button class="sr-btn${_showSR ? ' sr-btn-active' : ''}" onclick="toggleSR(this)">${_showSR ? 'Hide SalesRabbit' : 'Include SalesRabbit'}</button>` : ''}
-      </div>`).join('')}
+      <div class="known-issues-header" onclick="toggleKnownIssues(this)">
+        <div class="known-issues-title">
+          Known issues / misrepresented MRR
+          <span class="known-issues-count">${KNOWN_ISSUES.length}</span>
+        </div>
+        <span class="known-issues-chevron${issuesOpen ? ' open' : ''}">▼</span>
+      </div>
+      <div class="known-issues-body${issuesOpen ? ' open' : ''}" id="knownIssuesBody">
+        ${KNOWN_ISSUES.map(i => `<div class="known-issue-row">
+          <span class="known-issue-tag">${i.tag}</span>
+          <span style="flex:1">${i.text}</span>
+          ${i.srToggle ? `<button class="sr-btn${_showSR ? ' sr-btn-active' : ''}" onclick="toggleSR(this)">${_showSR ? 'Hide SalesRabbit' : 'Include SalesRabbit'}</button>` : ''}
+        </div>`).join('')}
+      </div>
     </div>` : '';
 
   document.getElementById('mrr-banner').style.display = 'flex';
@@ -915,6 +931,12 @@ function togglePLG(btn) {
   btn.classList.toggle('sr-btn-active', _showPLG);
   const sel = document.getElementById('monthSel');
   renderMRR(null, sel ? sel.value : null);
+}
+function toggleKnownIssues(header) {
+  const body     = document.getElementById('knownIssuesBody');
+  const chevron  = header.querySelector('.known-issues-chevron');
+  const isOpen   = body.classList.toggle('open');
+  chevron.classList.toggle('open', isOpen);
 }
 
 /* boot */
