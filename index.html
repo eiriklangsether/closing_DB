@@ -145,21 +145,43 @@ function badge(status) {
 
 function renderEntity(e) {
   if (!e) return '';
-  const checks = (e.checks || []).map(c => `
-    <div class="check-card">
-      <div class="check-left">
-        <div class="check-name">${c.label}</div>
-        ${c.note ? `<div class="check-note">${c.note}</div>` : ''}
-      </div>
-      ${badge(c.status)}
-    </div>`).join('');
-  const done = (e.checks||[]).filter(c=>c.status==='ok').length;
-  const total = (e.checks||[]).filter(c=>!['na','manual'].includes(c.status)).length;
+  const entityKey = e.name.replace(/[^a-z0-9]/gi,'_').toLowerCase();
+  const manualState = (currentData && currentData.manualChecks || {})[entityKey] || {};
+  const checks = (e.checks || []).map((c, i) => {
+    const checkKey = `${entityKey}_${i}`;
+    if (c.status === 'manual') {
+      const done = !!manualState[checkKey];
+      return `
+        <div class="check-card ${done?'checklist-item done':''}">
+          <div class="check-left">
+            <div class="check-name ${done?'done-text':''}">${c.label}</div>
+            ${c.note ? `<div class="check-note">${c.note}</div>` : ''}
+          </div>
+          <button class="toggle-btn ${done?'mark-undone':'mark-done'}"
+            onclick="toggleEntityCheck('${entityKey}','${checkKey}')">
+            ${done ? '✓ Done' : 'Mark done'}
+          </button>
+        </div>`;
+    }
+    return `
+      <div class="check-card">
+        <div class="check-left">
+          <div class="check-name">${c.label}</div>
+          ${c.note ? `<div class="check-note">${c.note}</div>` : ''}
+        </div>
+        ${badge(c.status)}
+      </div>`;
+  }).join('');
+  const autoDone = (e.checks||[]).filter(c=>c.status==='ok').length;
+  const manualDone = Object.values(manualState).filter(Boolean).length;
+  const done = autoDone + manualDone;
+  const total = (e.checks||[]).filter(c=>c.status!=='na').length;
   const anyErr = (e.checks||[]).some(c=>c.status==='err');
   const anyWarn = (e.checks||[]).some(c=>['warn','pending'].includes(c.status));
-  const overallBadge = done===total && total>0 ? badge('ok') : anyErr ? badge('err') : anyWarn ? badge('warn') : badge('pending');
+  const allDone = done===total && total>0;
+  const overallBadge = allDone ? badge('ok') : anyErr ? badge('err') : anyWarn ? badge('warn') : badge('pending');
   return `
-    <div class="entity-section">
+    <div class="entity-section" id="entity-${entityKey}">
       <div class="entity-header">
         <div>
           <div class="entity-name">${e.name}</div>
@@ -172,6 +194,23 @@ function renderEntity(e) {
 }
 
 let currentData = null;
+
+async function toggleEntityCheck(entityKey, checkKey) {
+  if (!currentData) return;
+  if (!currentData.manualChecks) currentData.manualChecks = {};
+  if (!currentData.manualChecks[entityKey]) currentData.manualChecks[entityKey] = {};
+  currentData.manualChecks[entityKey][checkKey] = !currentData.manualChecks[entityKey][checkKey];
+  // Re-render the full app to update counts and badges
+  render(currentData);
+  try {
+    await fetch('/api/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-dashboard-secret': SECRET },
+      credentials: 'include',
+      body: JSON.stringify(currentData)
+    });
+  } catch(e) { console.error('Save failed', e); }
+}
 
 async function toggleManual(key) {
   if (!currentData) return;
@@ -221,11 +260,14 @@ function render(d) {
 
   const allAutoChecks = [...(d.no?.checks||[]), ...(d.se?.checks||[]), ...(d.us?.checks||[])];
   const autoDone = allAutoChecks.filter(c=>c.status==='ok').length;
-  const autoTotal = allAutoChecks.filter(c=>!['na','manual'].includes(c.status)).length;
+  const autoTotal = allAutoChecks.filter(c=>c.status!=='na').length;
+  // Count entity-level manual check toggles
+  const manualChecks = d.manualChecks || {};
+  const entityManualDone = Object.values(manualChecks).reduce((sum, entity) => sum + Object.values(entity).filter(Boolean).length, 0);
   const manualChecklist = d.manualChecklist || [];
   const manual = d.manual || {};
   const manualDone = manualChecklist.filter(c=>manual[c.key]).length;
-  const totalDone = autoDone + manualDone;
+  const totalDone = autoDone + entityManualDone + manualDone;
   const totalItems = autoTotal + manualChecklist.length;
 
   document.getElementById('app').innerHTML = `
