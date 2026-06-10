@@ -140,7 +140,36 @@
     .disclaimer-bar{background:#fff8e6;border:1px solid #f5d97a;border-radius:var(--radius-sm);padding:.625rem 1rem;display:flex;align-items:flex-start;gap:.5rem;margin-bottom:1rem;font-size:12px;color:#7a5800;line-height:1.5}
     .disclaimer-icon{flex-shrink:0;font-size:14px;margin-top:1px}
     .metrics-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:1.25rem}
-    .metric-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;border-top:3px solid var(--dark-teal)}
+    .metric-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;border-top:3px solid var(--dark-teal);cursor:pointer;transition:box-shadow .15s,transform .1s}
+    .metric-card:hover{box-shadow:0 4px 18px rgba(17,75,92,.13);transform:translateY(-1px)}
+    .ret-modal-overlay{position:fixed;inset:0;background:rgba(17,75,92,0.5);z-index:1200;display:none;align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto}
+    .ret-modal{background:var(--surface);border-radius:var(--radius);width:100%;max-width:820px;box-shadow:0 8px 40px rgba(17,75,92,.22);overflow:hidden}
+    .ret-modal-header{background:var(--dark-teal);padding:1.25rem 1.5rem;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
+    .ret-modal-title{font-size:16px;font-weight:700;color:#fff;margin-bottom:2px}
+    .ret-modal-sub{font-size:12px;color:rgba(255,255,255,.7);line-height:1.5}
+    .ret-modal-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .ret-modal-close:hover{background:rgba(255,255,255,.3)}
+    .ret-modal-body{padding:1.5rem}
+    .ret-formula{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:1.5rem;font-size:13px;color:var(--text-primary);line-height:1.8}
+    .ret-formula-row{display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap}
+    .ret-formula-label{font-weight:600;color:var(--dark-teal);min-width:160px}
+    .ret-formula-val{font-weight:700;font-size:15px;color:var(--dark-teal)}
+    .ret-formula-note{font-size:11px;color:var(--text-muted)}
+    .ret-formula-divider{border:none;border-top:1px solid var(--border);margin:.6rem 0}
+    .ret-formula-result{font-size:15px;font-weight:700;color:var(--dark-teal)}
+    .ret-section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin:1.25rem 0 .6rem;display:flex;align-items:center;gap:.5rem}
+    .ret-section-label::after{content:"";flex:1;height:1px;background:var(--border)}
+    .ret-table{width:100%;border-collapse:collapse;font-size:12px}
+    .ret-table th{text-align:left;padding:6px 10px;background:var(--teal-lighter);color:var(--dark-teal);font-weight:600;position:sticky;top:0}
+    .ret-table th.num{text-align:right}
+    .ret-table td{padding:5px 10px;border-bottom:1px solid var(--border)}
+    .ret-table td.num{text-align:right;font-variant-numeric:tabular-nums}
+    .ret-table tr:hover td{background:var(--teal-lighter)}
+    .ret-table-wrap{max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius)}
+    .ret-tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600}
+    .ret-tag-retained{background:#d4f5d0;color:#1a6e17}
+    .ret-tag-churned{background:#fce4d6;color:#a01f3c}
+    .ret-tag-new{background:#daedec;color:#114b5c}
     .metric-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:500;margin-bottom:4px}
     .metric-value{font-size:26px;font-weight:700;color:var(--dark-teal);letter-spacing:-.02em;line-height:1}
     .metric-sub{font-size:11px;color:var(--text-muted);margin-top:5px}
@@ -782,46 +811,41 @@ function renderMRR(data, selectedMonth) {
     <div class="metrics-row">
       ${(function() {
         let grr, nrr, yoy_arr, arr_start, arr_end;
-        if (_ownerFilter === "ALL" && _activeEntity === "ALL") {
-          grr = RETENTION.grr; nrr = RETENTION.nrr; yoy_arr = RETENTION.yoy_arr;
-          arr_start = RETENTION.arr_start; arr_end = RETENTION.arr_end;
-        } else {
-          // Compute from snapshots
-          const calcEntities = _activeEntity === "ALL" ? ["NO","SE","US"] : [_activeEntity];
-          const startM = months[0], endM = months[months.length-1];
-          const prevYearM = months.length >= 12 ? months[months.length-13] : months[0];
-          const snapStart = {}; // company → start MRR
-          const snapEnd   = {}; // company → end MRR
-          calcEntities.forEach(function(e) {
-            ownerSnap(e, startM).forEach(function(d) { snapStart[d.Company] = (snapStart[d.Company]||0) + (d.mrr_usd||0); });
-            ownerSnap(e, endM).forEach(function(d)   { snapEnd[d.Company]   = (snapEnd[d.Company]||0)   + (d.mrr_usd||0); });
-          });
-          const startNames = new Set(Object.keys(snapStart).filter(n => snapStart[n] > 0));
-          const endNames   = new Set(Object.keys(snapEnd).filter(n => snapEnd[n] > 0));
-          const retained   = [...startNames].filter(n => endNames.has(n));
-          const startTotal = Object.values(snapStart).reduce((s,v)=>s+v,0);
-          const endTotal   = Object.values(snapEnd).reduce((s,v)=>s+v,0);
-          const retainedStart = retained.reduce((s,n)=>s+(snapStart[n]||0),0);
-          const retainedEnd   = retained.reduce((s,n)=>s+(snapEnd[n]||0),0);
-          grr = startTotal > 0 ? Math.round((retainedStart / startTotal) * 1000) / 10 : 0;
-          nrr = startTotal > 0 ? Math.round((retainedEnd   / startTotal) * 1000) / 10 : 0;
-          arr_start = startTotal * 12; arr_end = endTotal * 12;
-          yoy_arr = arr_start > 0 ? Math.round((arr_end - arr_start) / arr_start * 1000) / 10 : 0;
-        }
+        // Always compute from snapshots so drill-down always works
+        const calcEntities = _activeEntity === "ALL" ? ["NO","SE","US"] : [_activeEntity];
+        const startM = months[0], endM = months[months.length-1];
+        const snapStart = {}, snapEnd = {};
+        calcEntities.forEach(function(e) {
+          ownerSnap(e, startM).forEach(function(d) { snapStart[d.Company] = (snapStart[d.Company]||0) + (d.mrr_usd||0); });
+          ownerSnap(e, endM).forEach(function(d)   { snapEnd[d.Company]   = (snapEnd[d.Company]||0)   + (d.mrr_usd||0); });
+        });
+        const startNames    = new Set(Object.keys(snapStart).filter(n => snapStart[n] > 0));
+        const endNames      = new Set(Object.keys(snapEnd).filter(n => snapEnd[n] > 0));
+        const retained      = [...startNames].filter(n => endNames.has(n));
+        const startTotal    = Object.values(snapStart).reduce((s,v)=>s+v,0);
+        const endTotal      = Object.values(snapEnd).reduce((s,v)=>s+v,0);
+        const retainedStart = retained.reduce((s,n)=>s+(snapStart[n]||0),0);
+        const retainedEnd   = retained.reduce((s,n)=>s+(snapEnd[n]||0),0);
+        grr = startTotal > 0 ? Math.round((retainedStart / startTotal) * 1000) / 10 : 0;
+        nrr = startTotal > 0 ? Math.round((retainedEnd   / startTotal) * 1000) / 10 : 0;
+        arr_start = startTotal * 12; arr_end = endTotal * 12;
+        yoy_arr = arr_start > 0 ? Math.round((arr_end - arr_start) / arr_start * 1000) / 10 : 0;
+        // Store for drill-down modal
+        window._retData = { snapStart, snapEnd, months, calcEntities };
         const ownerNote = _ownerFilter === "ALL" ? "" : '<span style="font-size:10px;color:var(--text-muted);margin-left:4px">(filtered)</span>';
         return `
-      <div class="metric-card">
-        <div class="metric-label">L12M GRR ${ownerNote}</div>
+      <div class="metric-card" onclick="openRetModal('grr',window._retData.snapStart,window._retData.snapEnd,window._retData.months,window._retData.calcEntities)" title="Click to see calculation">
+        <div class="metric-label">L12M GRR ${ownerNote}<span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>
         <div class="metric-value ${grr >= 95 ? '' : 'metric-warn'}">${grr.toFixed(1)}%</div>
         <div class="metric-sub">Gross revenue retention · excl. expansions</div>
       </div>
-      <div class="metric-card">
-        <div class="metric-label">L12M NRR ${ownerNote}</div>
+      <div class="metric-card" onclick="openRetModal('nrr',window._retData.snapStart,window._retData.snapEnd,window._retData.months,window._retData.calcEntities)" title="Click to see calculation">
+        <div class="metric-label">L12M NRR ${ownerNote}<span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>
         <div class="metric-value ${nrr >= 100 ? 'metric-pos' : nrr >= 95 ? '' : 'metric-warn'}">${nrr.toFixed(1)}%</div>
         <div class="metric-sub">Net revenue retention · incl. expansions</div>
       </div>
-      <div class="metric-card">
-        <div class="metric-label">YoY ARR growth ${ownerNote}</div>
+      <div class="metric-card" onclick="openRetModal('yoy',window._retData.snapStart,window._retData.snapEnd,window._retData.months,window._retData.calcEntities)" title="Click to see calculation">
+        <div class="metric-label">YoY ARR growth ${ownerNote}<span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>
         <div class="metric-value ${yoy_arr >= 0 ? 'metric-pos' : 'metric-warn'}">${yoy_arr >= 0 ? '+' : ''}${yoy_arr.toFixed(1)}%</div>
         <div class="metric-sub">${usdFmt(arr_start)} → ${usdFmt(arr_end)} · Jul 2025 vs Jun 2026</div>
       </div>`;
@@ -1093,7 +1117,7 @@ function refreshModalTable() {
   document.getElementById('modalTotal').textContent = 'Total: ' + usdFmt(total);
 }
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeRetModal(); } });
 
 const RETENTION = { grr: 98.2, nrr: 99.8, yoy_arr: 11.6, arr_start: 6654178, arr_end: 7424251, window_start: 'Jul 2025', window_end: 'Jun 2026' };
 
@@ -1577,6 +1601,221 @@ function drawWaterfall(mov, totals, months, periodStart, periodEnd) {
   });
 }
 
+/* ─────────────────────────────────────────────
+   RETENTION DRILL-DOWN MODAL
+───────────────────────────────────────────── */
+function closeRetModal() {
+  document.getElementById('retModal').style.display = 'none';
+}
+
+function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
+  const startM  = months[0];
+  const endM    = months[months.length - 1];
+
+  // Classify every company that appeared in either window
+  const allCompanies = new Set([...Object.keys(snapStart), ...Object.keys(snapEnd)]);
+  const rows = [];
+  allCompanies.forEach(function(name) {
+    const s = snapStart[name] || 0;
+    const e = snapEnd[name]   || 0;
+    let status;
+    if      (s > 0 && e > 0) status = 'retained';
+    else if (s > 0 && e === 0) status = 'churned';
+    else                       status = 'new';
+    rows.push({ name, startMRR: s, endMRR: e, status });
+  });
+
+  const retained       = rows.filter(r => r.status === 'retained');
+  const churned        = rows.filter(r => r.status === 'churned');
+  const newRows        = rows.filter(r => r.status === 'new');
+  const startTotal     = rows.filter(r => r.startMRR > 0).reduce((s,r) => s + r.startMRR, 0);
+  const endTotal       = rows.filter(r => r.endMRR > 0).reduce((s,r) => s + r.endMRR, 0);
+  const retainedStart  = retained.reduce((s,r) => s + r.startMRR, 0);
+  const retainedEnd    = retained.reduce((s,r) => s + r.endMRR,   0);
+  const churnedMRR     = churned.reduce((s,r) => s + r.startMRR, 0);
+
+  const grr    = startTotal > 0 ? (retainedStart / startTotal * 100) : 0;
+  const nrr    = startTotal > 0 ? (retainedEnd   / startTotal * 100) : 0;
+  const yoyArr = startTotal > 0 ? ((endTotal - startTotal) / startTotal * 100) : 0;
+
+  const fmt  = v => v >= 1000 ? '$' + (v/1000).toFixed(1) + 'K' : '$' + Math.round(v);
+  const pct  = v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+  const tag  = s => `<span class="ret-tag ret-tag-${s}">${s}</span>`;
+
+  function tableRows(arr, showEnd) {
+    if (!arr.length) return '<tr><td colspan="4" style="color:var(--text-muted);padding:12px 10px">None in this window</td></tr>';
+    return arr.sort((a,b) => b.startMRR - a.startMRR).map(function(r) {
+      const delta = r.endMRR - r.startMRR;
+      return `<tr>
+        <td>${r.name}</td>
+        <td class="num">${r.startMRR > 0 ? fmt(r.startMRR) : '—'}</td>
+        ${showEnd ? `<td class="num">${r.endMRR > 0 ? fmt(r.endMRR) : '—'}</td>
+        <td class="num" style="color:${delta >= 0 ? '#1a6e17' : '#a01f3c'}">${r.startMRR > 0 && r.endMRR > 0 ? pct(delta/r.startMRR*100) : '—'}</td>` : ''}
+      </tr>`;
+    }).join('');
+  }
+
+  let title, subLine, formulaHtml, bodyHtml;
+
+  const filterNote = _ownerFilter !== 'ALL'
+    ? ` · ${_ownerFilter}` : (calcEntities.length < 3 ? ` · ${calcEntities.join('+')}` : '');
+
+  if (type === 'grr') {
+    title   = 'L12M GRR — Gross Revenue Retention';
+    subLine = `${startM} → ${endM}${filterNote} · ${retained.length} retained of ${rows.filter(r=>r.startMRR>0).length} starting customers`;
+    formulaHtml = `
+      <div class="ret-formula">
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Formula</span>
+          <span style="color:var(--text-secondary);font-size:13px">Retained start MRR ÷ Total start MRR</span>
+        </div>
+        <hr class="ret-formula-divider">
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Total start MRR (${startM})</span>
+          <span class="ret-formula-val">${fmt(startTotal)}</span>
+          <span class="ret-formula-note">${rows.filter(r=>r.startMRR>0).length} customers</span>
+        </div>
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Churned MRR</span>
+          <span class="ret-formula-val" style="color:var(--cranberry)">−${fmt(churnedMRR)}</span>
+          <span class="ret-formula-note">${churned.length} customers lost</span>
+        </div>
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Retained start MRR</span>
+          <span class="ret-formula-val">${fmt(retainedStart)}</span>
+          <span class="ret-formula-note">${retained.length} customers still active at ${endM}</span>
+        </div>
+        <hr class="ret-formula-divider">
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">GRR</span>
+          <span class="ret-formula-result">${fmt(retainedStart)} ÷ ${fmt(startTotal)} = ${grr.toFixed(1)}%</span>
+        </div>
+      </div>`;
+    bodyHtml = `
+      <div class="ret-section-label">Retained customers (${retained.length})</div>
+      <div class="ret-table-wrap">
+        <table class="ret-table">
+          <thead><tr><th>Customer</th><th class="num">Start MRR (${startM})</th><th class="num">End MRR (${endM})</th><th class="num">Change</th></tr></thead>
+          <tbody>${tableRows(retained, true)}</tbody>
+        </table>
+      </div>
+      <div class="ret-section-label" style="margin-top:1rem">Churned customers (${churned.length}) — excluded from numerator</div>
+      <div class="ret-table-wrap">
+        <table class="ret-table">
+          <thead><tr><th>Customer</th><th class="num">Start MRR (${startM})</th></tr></thead>
+          <tbody>${tableRows(churned, false)}</tbody>
+        </table>
+      </div>`;
+
+  } else if (type === 'nrr') {
+    title   = 'L12M NRR — Net Revenue Retention';
+    subLine = `${startM} → ${endM}${filterNote} · includes expansions & contractions on retained cohort`;
+    const expMRR = retainedEnd - retainedStart;
+    formulaHtml = `
+      <div class="ret-formula">
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Formula</span>
+          <span style="color:var(--text-secondary);font-size:13px">Retained end MRR ÷ Total start MRR</span>
+        </div>
+        <hr class="ret-formula-divider">
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Total start MRR (${startM})</span>
+          <span class="ret-formula-val">${fmt(startTotal)}</span>
+        </div>
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Retained start MRR</span>
+          <span class="ret-formula-val">${fmt(retainedStart)}</span>
+          <span class="ret-formula-note">${churned.length} churned excluded</span>
+        </div>
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Net expansion (retained cohort)</span>
+          <span class="ret-formula-val" style="color:${expMRR >= 0 ? '#1a6e17' : 'var(--cranberry)'}">
+            ${expMRR >= 0 ? '+' : ''}${fmt(expMRR)}</span>
+          <span class="ret-formula-note">End MRR ${fmt(retainedEnd)} vs start ${fmt(retainedStart)}</span>
+        </div>
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Retained end MRR</span>
+          <span class="ret-formula-val">${fmt(retainedEnd)}</span>
+        </div>
+        <hr class="ret-formula-divider">
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">NRR</span>
+          <span class="ret-formula-result">${fmt(retainedEnd)} ÷ ${fmt(startTotal)} = ${nrr.toFixed(1)}%</span>
+        </div>
+      </div>`;
+    bodyHtml = `
+      <div class="ret-section-label">Retained customers — ranked by MRR change (${retained.length})</div>
+      <div class="ret-table-wrap">
+        <table class="ret-table">
+          <thead><tr><th>Customer</th><th class="num">Start MRR (${startM})</th><th class="num">End MRR (${endM})</th><th class="num">Change</th></tr></thead>
+          <tbody>${tableRows(retained, true)}</tbody>
+        </table>
+      </div>`;
+
+  } else {
+    // yoy
+    title   = 'YoY ARR Growth';
+    subLine = `${startM} → ${endM}${filterNote}`;
+    formulaHtml = `
+      <div class="ret-formula">
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Formula</span>
+          <span style="color:var(--text-secondary);font-size:13px">(End ARR − Start ARR) ÷ Start ARR</span>
+        </div>
+        <hr class="ret-formula-divider">
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Start ARR (${startM})</span>
+          <span class="ret-formula-val">${fmt(startTotal * 12)}</span>
+          <span class="ret-formula-note">${fmt(startTotal)} MRR × 12 · ${rows.filter(r=>r.startMRR>0).length} customers</span>
+        </div>
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">End ARR (${endM})</span>
+          <span class="ret-formula-val">${fmt(endTotal * 12)}</span>
+          <span class="ret-formula-note">${fmt(endTotal)} MRR × 12 · ${rows.filter(r=>r.endMRR>0).length} customers</span>
+        </div>
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">New customers</span>
+          <span class="ret-formula-val" style="color:#1a6e17">+${fmt(newRows.reduce((s,r)=>s+r.endMRR,0) * 12)} ARR</span>
+          <span class="ret-formula-note">${newRows.length} customers not in ${startM}</span>
+        </div>
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Churned</span>
+          <span class="ret-formula-val" style="color:var(--cranberry)">−${fmt(churnedMRR * 12)} ARR</span>
+          <span class="ret-formula-note">${churned.length} customers</span>
+        </div>
+        <hr class="ret-formula-divider">
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">YoY ARR growth</span>
+          <span class="ret-formula-result">(${fmt(endTotal * 12)} − ${fmt(startTotal * 12)}) ÷ ${fmt(startTotal * 12)} = ${yoyArr >= 0 ? '+' : ''}${yoyArr.toFixed(1)}%</span>
+        </div>
+      </div>`;
+    bodyHtml = `
+      <div class="ret-section-label">New customers in ${endM} (${newRows.length})</div>
+      <div class="ret-table-wrap">
+        <table class="ret-table">
+          <thead><tr><th>Customer</th><th class="num">End MRR (${endM})</th></tr></thead>
+          <tbody>${tableRows(newRows, false).replace(/—/g, '').replace(/<td class="num">.*?<\/td>\s*<\/tr>/g, (m,i) =>
+            m.replace('—','')
+          )}</tbody>
+        </table>
+      </div>
+      <div class="ret-section-label" style="margin-top:1rem">Churned customers (${churned.length})</div>
+      <div class="ret-table-wrap">
+        <table class="ret-table">
+          <thead><tr><th>Customer</th><th class="num">Start MRR (${startM})</th></tr></thead>
+          <tbody>${tableRows(churned, false)}</tbody>
+        </table>
+      </div>`;
+  }
+
+  document.getElementById('retModalTitle').textContent = title;
+  document.getElementById('retModalSub').textContent   = subLine;
+  document.getElementById('retModalBody').innerHTML    = formulaHtml + bodyHtml;
+  const overlay = document.getElementById('retModal');
+  overlay.style.display = 'flex';
+  overlay.scrollTop = 0;
+}
+
 /* boot */
 load();
 window.addEventListener('load', () => renderMRR({ uploadDate: '10 Jun 2026' }, null));
@@ -1623,5 +1862,19 @@ window.addEventListener('load', () => renderMRR({ uploadDate: '10 Jun 2026' }, n
       </div>
     </div>
   </div>
+  <!-- ══ RETENTION DRILL-DOWN MODAL ══ -->
+  <div id="retModal" class="ret-modal-overlay" onclick="if(event.target===this)closeRetModal()">
+    <div class="ret-modal">
+      <div class="ret-modal-header">
+        <div>
+          <div class="ret-modal-title" id="retModalTitle">GRR Calculation</div>
+          <div class="ret-modal-sub" id="retModalSub"></div>
+        </div>
+        <button class="ret-modal-close" onclick="closeRetModal()">✕</button>
+      </div>
+      <div class="ret-modal-body" id="retModalBody"></div>
+    </div>
+  </div>
+
 </body>
 </html>
