@@ -162,6 +162,13 @@
     .modal-table tr:hover td{background:var(--bg)}
     .modal-footer{padding:.75rem 1.5rem;border-top:1px solid var(--border);font-size:12px;color:var(--text-muted);flex-shrink:0;display:flex;justify-content:space-between}
     .ent-pill{font-size:10px;font-weight:600;padding:1px 6px;border-radius:3px;letter-spacing:.03em}
+    .mom-pill{font-size:10px;font-weight:600;padding:1px 6px;border-radius:3px;letter-spacing:.03em;display:inline-block}
+    .mom-delta{font-size:11px;font-weight:600;margin-left:4px;color:var(--text-secondary)}
+    .mom-new{background:#e6f5f4;color:#0d6b65}
+    .mom-exp{background:#e6f0fb;color:#185fa5}
+    .mom-con{background:#fff0e6;color:#8a4a10}
+    .mom-churn{background:#fce8ee;color:#a01f3c}
+    .row-churned td{opacity:0.6}
     .ent-NO{background:#daedec;color:#114B5C}
     .ent-SE{background:#e6e8f5;color:#2d3580}
     .ent-US{background:#fce8ee;color:#a01f3c}
@@ -711,7 +718,27 @@ function openMonthModal(month) {
   let rows = [];
   entities.forEach(e => {
     const snap = (SNAPSHOTS[e] || {})[month] || [];
-    snap.forEach(r => rows.push({ company: r.Company, mrr_local: r.mrr, mrr_usd: r.mrr_usd, entity: e }));
+    const src = e === 'NO' ? MRR_NO : e === 'SE' ? MRR_SE : MRR_US;
+    const mov = (src.movements || {})[month] || {};
+    const fx = FX[e];
+    // Build lookup maps from movements
+    const newSet = new Set((mov.new || []).map(r => r.Company));
+    const churnSet = new Set((mov.churned || []).map(r => r.Company));
+    const expMap = {};
+    (mov.expansions || []).forEach(r => { expMap[r.Company] = r.mrr * fx; });
+    const conMap = {};
+    (mov.contractions || []).forEach(r => { conMap[r.Company] = r.mrr * fx; });
+    snap.forEach(r => {
+      let mom_type = 'flat', mom_delta = 0;
+      if (newSet.has(r.Company))       { mom_type = 'new';         mom_delta = r.mrr_usd; }
+      else if (expMap[r.Company])      { mom_type = 'expansion';   mom_delta = expMap[r.Company]; }
+      else if (conMap[r.Company])      { mom_type = 'contraction'; mom_delta = conMap[r.Company]; }
+      rows.push({ company: r.Company, mrr_local: r.mrr, mrr_usd: r.mrr_usd, entity: e, mom_type, mom_delta });
+    });
+    // Also add churned (they were active last month, not in snap)
+    (mov.churned || []).forEach(r => {
+      rows.push({ company: r.Company, mrr_local: r.mrr, mrr_usd: r.mrr * fx, entity: e, mom_type: 'churned', mom_delta: -(r.mrr * fx) });
+    });
   });
   rows.sort((a,b) => b.mrr_usd - a.mrr_usd);
   _modalData = rows;
@@ -764,23 +791,34 @@ function sortModal(col) {
 
 function refreshModalTable() {
   const q = (document.getElementById('modalSearch').value || '').toLowerCase();
+  const changesOnly = document.getElementById('changesOnly') && document.getElementById('changesOnly').checked;
   let rows = _modalData.filter(r => {
     if (_modalEntityFilter !== 'ALL' && r.entity !== _modalEntityFilter) return false;
     if (q && !r.company.toLowerCase().includes(q)) return false;
+    if (changesOnly && r.mom_type === 'flat') return false;
     return true;
   });
   const { col, dir } = _modalSort;
   rows.sort((a, b) => {
-    const av = col === 'company' || col === 'entity' ? (a[col]||'').toLowerCase() : (a[col]||0);
-    const bv = col === 'company' || col === 'entity' ? (b[col]||'').toLowerCase() : (b[col]||0);
+    const strCols = ['company', 'entity', 'mom_type'];
+    const av = strCols.includes(col) ? (a[col]||'').toLowerCase() : (a[col]||0);
+    const bv = strCols.includes(col) ? (b[col]||'').toLowerCase() : (b[col]||0);
     return av < bv ? -dir : av > bv ? dir : 0;
   });
   const total = rows.reduce((s,r) => s + r.mrr_usd, 0);
-  document.getElementById('modalBody').innerHTML = rows.map(r =>
-    '<tr><td>' + r.company + '</td>' +
+  const momLabel = { new: 'New', expansion: 'Expansion', contraction: 'Contraction', churned: 'Churned', flat: '' };
+  const momClass = { new: 'mom-new', expansion: 'mom-exp', contraction: 'mom-con', churned: 'mom-churn', flat: '' };
+  document.getElementById('modalBody').innerHTML = rows.map(r => {
+    const mLabel = momLabel[r.mom_type] || '';
+    const mClass = momClass[r.mom_type] || '';
+    const delta = r.mom_delta ? ' ' + (r.mom_delta > 0 ? '+' : '') + usdFmt(r.mom_delta) : '';
+    const momCell = mLabel ? '<span class="mom-pill ' + mClass + '">' + mLabel + '</span>' + (r.mom_type !== 'churned' && r.mom_type !== 'new' ? '<span class="mom-delta">' + delta + '</span>' : '') : '';
+    const rowClass = r.mom_type === 'churned' ? ' class="row-churned"' : '';
+    return '<tr' + rowClass + '><td>' + r.company + '</td>' +
     '<td><span class="ent-pill ent-' + r.entity + '">' + r.entity + '</span></td>' +
-    '<td>' + usdFmt(r.mrr_usd) + '</td></tr>'
-  ).join('');
+    '<td>' + momCell + '</td>' +
+    '<td>' + (r.mom_type === 'churned' ? '<span style="color:var(--text-muted);text-decoration:line-through">' + usdFmt(r.mrr_usd) + '</span>' : usdFmt(r.mrr_usd)) + '</td></tr>';
+  }).join('');
   document.getElementById('modalCount').textContent = rows.length + ' customers shown';
   document.getElementById('modalTotal').textContent = 'Total: ' + usdFmt(total);
 }
@@ -801,7 +839,7 @@ window.addEventListener('load', () => renderMRR({ uploadDate: '10 Jun 2026' }, n
         <button class="modal-close" onclick="closeModal()" aria-label="Close">×</button>
       </div>
       <div class="modal-toolbar">
-        <input class="modal-search" id="modalSearch" type="text" placeholder="Search customer…" oninput="filterModal()">
+        <input class="modal-search" id="modalSearch" type="text" placeholder="Search customer…" oninput="filterModal()"><label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary);white-space:nowrap;cursor:pointer"><input type="checkbox" id="changesOnly" onchange="filterModal()"> Changes only</label>
         <div class="modal-entity-filter" id="modalEntityFilter"></div>
       </div>
       <div class="modal-body">
@@ -809,6 +847,7 @@ window.addEventListener('load', () => renderMRR({ uploadDate: '10 Jun 2026' }, n
           <thead><tr>
             <th onclick="sortModal('company')" id="th-company">Customer</th>
             <th onclick="sortModal('entity')" id="th-entity">Entity</th>
+            <th onclick="sortModal('mom_type')" id="th-mom_type">MoM</th>
             <th onclick="sortModal('mrr_usd')" id="th-mrr_usd" class="sort-desc">MRR (USD)</th>
           </tr></thead>
           <tbody id="modalBody"></tbody>
