@@ -1252,7 +1252,7 @@ function refreshMetaTable() {
 
   let rows = Object.entries(CUSTOMER_META).map(([id, v]) => {
     const ov = _metaOverrides[id] || {};
-    return { id, ...v, icp: ov.icp !== undefined ? ov.icp : v.icp, logo: ov.logo !== undefined ? ov.logo : v.logo, _ov: ov };
+    return { id, ...v, icp: ov.icp !== undefined ? ov.icp : v.icp, logo: ov.logo !== undefined ? ov.logo : v.logo, livescreen: ov.livescreen !== undefined ? ov.livescreen : v.livescreen, _ov: ov };
   }).filter(r => {
     if (!_metaFilters.has(r.entity)) return false;
     if (icpOnly && r.icp !== true) return false;
