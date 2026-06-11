@@ -42,7 +42,7 @@
     /* ── Layout ── */
     main{max-width:880px;margin:0 auto;padding:2.5rem 2rem}
     .page{display:none}
-    .page.active{display:block}
+    .page.active{display:block;max-width:1280px;margin:0 auto;padding:1.5rem 2rem}
 
     /* ── Closing page (unchanged) ── */
     .page-title{font-size:22px;font-weight:700;color:var(--dark-teal);margin-bottom:6px;letter-spacing:-.01em}
@@ -1467,9 +1467,8 @@ function renderFin() {
   h += "</div>";
   var r40color = ruleOf40 >= 40 ? "#1EAFAA" : ruleOf40 >= 20 ? "var(--dark-teal)" : "var(--cranberry)";
   h += '<div class="fin-section-label">Rule of 40' + badgeMay + '</div>';
-  h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">';
+  h += '<div style="display:grid;grid-template-columns:1fr;gap:1rem;margin-bottom:1.5rem;max-width:600px">';
   h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;border-top:3px solid '+r40color+'">' + '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:.75rem">Rule of 40 Score</div>' + '<div style="font-size:48px;font-weight:700;color:'+r40color+';line-height:1">' + ruleOf40.toFixed(1) + '</div>' + '<div style="font-size:11px;color:var(--text-muted);margin-top:.5rem">' + (ruleOf40>=40?"\u2705 Above benchmark (40)":"\u26A0\uFE0F Below benchmark (40)") + '</div>' + '<div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);font-size:12px;color:var(--text-secondary)">' + '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>ARR Growth YoY (May 25 \u2192 May 26)</span><strong style="color:var(--dark-teal)">' + pct(arrGrowth) + '</strong></div>' + '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>EBITDAC Margin (May 2026)</span><strong style="color:' + mc(ebitdacMrg) + '">' + pct(ebitdacMrg) + '</strong></div>' + '<div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px dashed var(--border)"><span style="font-weight:600">Rule of 40 = ARR Growth + EBITDAC Margin</span><strong>' + ruleOf40.toFixed(1) + '</strong></div>' + '</div></div>';
-  h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem">' + '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:.75rem">ARR Trend</div>' + '<div style="font-size:22px;font-weight:700;color:var(--dark-teal)">$' + (arrMay26/1e6).toFixed(2) + 'M <span style="font-size:12px;color:var(--teal);font-weight:600">+' + arrGrowth.toFixed(1) + '% YoY</span></div>' + '<div style="font-size:11px;color:var(--text-muted);margin:.4rem 0">May 2025: $' + (arrMay25/1e6).toFixed(2) + 'M \u2192 May 2026: $' + (arrMay26/1e6).toFixed(2) + 'M</div>' + spark(arrVals,"#1EAFAA",60) + '</div>';
   h += "</div>";
   document.getElementById("fin-content").innerHTML = h;
   if (window._finCharts) { window._finCharts.forEach(function(c){if(c&&c.destroy)c.destroy();}); }
