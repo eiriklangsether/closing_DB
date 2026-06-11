@@ -1268,7 +1268,10 @@ function refreshMetaTable() {
     if (activeOnly && r.latest_mrr_usd === 0) return false;
     if (_metaMappingOnly) {
       if (r.livescreen) return false;
-      const hasIssue = r.icp === null || r.icp === undefined || !r.logo || !r.in_sf;
+      const icpOk  = r.icp === true || r.icp === false;
+      const logoOk = !!r.logo;
+      const sfOk   = r.in_sf || (icpOk && logoOk); // SF not required if ICP+logo manually set
+      const hasIssue = !icpOk || !logoOk || !sfOk;
       if (!hasIssue) return false;
     }
     if (_metaSearch) {
