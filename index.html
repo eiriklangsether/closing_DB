@@ -818,6 +818,11 @@ function renderMRR(data, selectedMonth) {
           ownerSnap(e, startM).forEach(function(d) { snapStart[d.Company] = (snapStart[d.Company]||0) + (d.mrr_usd||0); });
           ownerSnap(e, endM).forEach(function(d)   { snapEnd[d.Company]   = (snapEnd[d.Company]||0)   + (d.mrr_usd||0); });
         });
+        // Include SalesRabbit if toggled — treated as fully retained single account
+        if (_showSR && _activeEntity !== 'PLG' && _ownerFilter === 'ALL') {
+          snapStart['SalesRabbit (reseller)'] = SR_MONTHLY[startM] || 0;
+          snapEnd['SalesRabbit (reseller)']   = SR_MONTHLY[endM]   || 0;
+        }
         const startNames    = new Set(Object.keys(snapStart).filter(n => snapStart[n] > 0));
         const endNames      = new Set(Object.keys(snapEnd).filter(n => snapEnd[n] > 0));
         const retained      = [...startNames].filter(n => endNames.has(n));
@@ -1005,15 +1010,15 @@ let _modalEntityFilter = 'ALL';
 
 function openMonthModal(month, entityOverride) {
   const entity = entityOverride || _activeEntity;
-  const entities = entity === 'ALL' ? ['NO','SE','US'] : [entity];
+  const entities = entity === 'ALL' ? (_showPLG ? ['NO','SE','US','PLG'] : ['NO','SE','US']) : [entity];
   let rows = [];
   entities.forEach(e => {
     const allSnap = (SNAPSHOTS[e] || {})[month] || [];
     const snap = _ownerFilter === 'ALL' ? allSnap
       : allSnap.filter(function(d) { return NAME_OWNER_MAP[d.Company] === _ownerFilter; });
-    const src = e === 'NO' ? MRR_NO : e === 'SE' ? MRR_SE : MRR_US;
+    const src = e === 'NO' ? MRR_NO : e === 'SE' ? MRR_SE : e === 'PLG' ? MRR_PLG : MRR_US;
     const mov = (src.movements || {})[month] || {};
-    const fx = FX[e];
+    const fx = FX[e] || 1.0;
     // Build lookup maps from movements
     const newSet = new Set((mov.new || []).map(r => r.Company));
     const churnSet = new Set((mov.churned || []).map(r => r.Company));
@@ -1041,9 +1046,10 @@ function openMonthModal(month, entityOverride) {
   _modalEntityFilter = 'ALL';
 
   document.getElementById('modalTitle').textContent = month + ' — Active customers';
-  const total = rows.reduce((s,r) => s + r.mrr_usd, 0);
+  const srAdj = (_showSR && entity !== 'PLG') ? (SR_MONTHLY[month] || 0) : 0;
+  const total = rows.reduce((s,r) => s + r.mrr_usd, 0) + srAdj;
   document.getElementById('modalSub').textContent =
-    rows.length + ' customers · ' + usdFmt(total) + ' MRR';
+    rows.length + ' customers' + (srAdj ? ' + SalesRabbit' : '') + ' · ' + usdFmt(total) + ' MRR';
   document.getElementById('modalSearch').value = '';
 
   // Entity filter pills
