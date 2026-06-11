@@ -322,6 +322,18 @@
     </div>
     <div id="mrr-content"><div class="empty">Loading…</div></div>
   </div>
+  <!-- ══ FINANCIAL KPIs PAGE ══ -->
+  <div id="page-fin" class="page">
+    <div class="page-title">Financial KPIs</div>
+    <div id="fin-content"></div>
+  </div>
+
+  <!-- ══ CUSTOMER METADATA PAGE ══ -->
+  <div id="page-meta" class="page">
+    <div class="page-title">Customer metadata</div>
+    <div id="meta-content"><div class="empty">Loading…</div></div>
+  </div>
+
 </main>
 
 <script>
@@ -1951,18 +1963,6 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
 load();
 window.addEventListener('load', () => renderMRR({ uploadDate: '10 Jun 2026' }, null));
 </script>
-  <!-- ══ FINANCIAL KPIs PAGE ══ -->
-  <div id="page-fin" class="page">
-    <div class="page-title">Financial KPIs</div>
-    <div id="fin-content"></div>
-  </div>
-
-  <!-- ══ CUSTOMER METADATA PAGE ══ -->
-  <div id="page-meta" class="page">
-    <div class="page-title">Customer metadata</div>
-    <div id="meta-content"><div class="empty">Loading…</div></div>
-  </div>
-
   <div id="customerModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()">
     <div class="modal">
       <div class="modal-header">
