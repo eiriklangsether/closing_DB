@@ -9,30 +9,50 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const kvUrl  = process.env.KV_REST_API_URL;
+  const kvUrl   = process.env.KV_REST_API_URL;
   const kvToken = process.env.KV_REST_API_TOKEN;
 
+  // ── GET: read overrides from KV ──
   if (req.method === 'GET') {
     try {
-      const r = await fetch(`${kvUrl}/get/meta-overrides`, {
+      const r    = await fetch(`${kvUrl}/get/meta-overrides`, {
         headers: { Authorization: `Bearer ${kvToken}` },
       });
       const json = await r.json();
-      const raw = json.result;
+      const raw  = json.result;
       if (!raw) return res.status(200).json({ ok: true, data: {} });
-      const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      return res.status(200).json({ ok: true, data });
+      // KV stores { value: JSON.stringify(data) } — unwrap same as api/data.js
+      const parsed   = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      const unwrapped = parsed?.value
+        ? (typeof parsed.value === 'string' ? JSON.parse(parsed.value) : parsed.value)
+        : parsed;
+      return res.status(200).json({ ok: true, data: unwrapped });
     } catch(e) {
       return res.status(200).json({ ok: true, data: {} });
     }
   }
 
+  // ── POST: write overrides to KV ──
   if (req.method === 'POST') {
     try {
+      // Parse body manually — Vercel serverless doesn't auto-parse without a framework
+      let body = req.body;
+      if (typeof body === 'string') {
+        body = JSON.parse(body);
+      } else if (!body) {
+        // Read raw stream
+        const chunks = [];
+        for await (const chunk of req) chunks.push(chunk);
+        body = JSON.parse(Buffer.concat(chunks).toString());
+      }
+
       const r = await fetch(`${kvUrl}/set/meta-overrides`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${kvToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ value: JSON.stringify(req.body) }),
+        headers: {
+          Authorization: `Bearer ${kvToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ value: JSON.stringify(body) }),
       });
       if (!r.ok) return res.status(500).json({ error: 'KV write failed' });
       return res.status(200).json({ ok: true });
