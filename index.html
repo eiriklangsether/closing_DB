@@ -346,6 +346,15 @@ function switchPage(p, btn) {
 
 async function load() {
   try {
+    // Load overrides from KV first so they're available when tabs render
+    try {
+      const ovRes = await fetch('/api/overrides', { credentials: 'include' });
+      if (ovRes.ok) {
+        const ovJson = await ovRes.json();
+        if (ovJson.ok && ovJson.data) _metaOverrides = ovJson.data;
+      }
+    } catch(e) { /* overrides unavailable — use defaults */ }
+
     const res = await fetch('/api/data', { credentials: 'include' });
     if (res.status === 401) { window.location.href = '/login.html'; return; }
     const json = await res.json();
@@ -1435,6 +1444,13 @@ function applyCardOverride(id, field, value) {
   }
   // Refresh table without closing card
   refreshMetaTable();
+  // Persist overrides to KV
+  fetch('/api/overrides', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(_metaOverrides),
+  }).catch(function() {}); // fire-and-forget, silent fail
 }
 function ccEscHandler(e) { if (e.key === 'Escape') closeCustomerCard(); }
 function closeCustomerCard() {
