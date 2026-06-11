@@ -2,5 +2,15 @@
   "version": 2,
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" }
+  ],
+  "headers": [
+    {
+      "source": "/login.html",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    },
+    {
+      "source": "/",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    }
   ]
 }
