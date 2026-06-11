@@ -1430,6 +1430,8 @@ function applyCardOverride(id, field, value) {
   } else if (field === 'logo') {
     if (value.trim() === '') delete _metaOverrides[id].logo;
     else _metaOverrides[id].logo = value.trim();
+  } else if (field === 'livescreen') {
+    _metaOverrides[id].livescreen = (value === true || value === 'true');
   }
   // Refresh table without closing card
   refreshMetaTable();
