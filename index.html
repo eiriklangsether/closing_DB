@@ -666,7 +666,7 @@ function renderMRR(data, selectedMonth) {
   const movMonths = months.slice(1);
   if (!selectedMonth || !movMonths.includes(selectedMonth)) selectedMonth = movMonths[movMonths.length - 1];
 
-  const entities = _activeEntity === 'ALL' ? ['NO','SE','US'] : [_activeEntity];
+  const entities = _activeEntity === 'ALL' ? (_showPLG ? ['NO','SE','US','PLG'] : ['NO','SE','US']) : [_activeEntity];
   const totals = (function() {
     if (_ownerFilter === 'ALL') return getMRRTotals(_activeEntity, months);
     const t = {};
