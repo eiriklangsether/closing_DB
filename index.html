@@ -1509,7 +1509,13 @@ function renderFin() {
     renderR40();
   };
   function renderR40() {
-    var isViking   = _r40Method === 'viking';
+    var d = window._r40 || {};
+    var arrGrowth = d.arrGrowth || 0; var ebitdacMrg = d.ebitdacMrg || 0;
+    var adjMargin = d.adjMargin || 0; var deltaDefRev = d.deltaDefRev || 0;
+    var pct = d.pct || function(v){return (v>=0?'+':'')+v.toFixed(1)+'%';};
+    var mc  = d.mc  || function(v){return v>=0?'var(--dark-teal)':'var(--cranberry)';};
+    var fmt = d.fmt || function(v){return '$'+Math.round(v);};
+    var isViking   = window._r40Method === 'viking';
     var score      = isViking ? (arrGrowth + adjMargin) : (arrGrowth + ebitdacMrg);
     var scoreColor = score >= 40 ? '#1EAFAA' : score >= 20 ? 'var(--dark-teal)' : 'var(--cranberry)';
     var topBorder  = 'border-top:3px solid ' + scoreColor;
@@ -1546,6 +1552,10 @@ function renderFin() {
     document.getElementById('r40-rows').innerHTML = rowsHtml;
     document.getElementById('r40-note').innerHTML = methodNote;
   }
+  // Stash values on window so renderR40 can access them after renderFin returns
+  window._r40 = { arrGrowth: arrGrowth, ebitdacMrg: ebitdacMrg, adjMargin: adjMargin,
+    deltaDefRev: deltaDefRev, ruleOf40: ruleOf40,
+    pct: pct, mc: mc, fmt: fmt };
   window._r40Method = 'standard';
   window.renderR40 = renderR40;
 
