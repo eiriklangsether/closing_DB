@@ -1504,6 +1504,10 @@ function renderFin() {
   var r40color = ruleOf40 >= 40 ? "#1EAFAA" : ruleOf40 >= 20 ? "var(--dark-teal)" : "var(--cranberry)";
   // Rule of 40 — two methods
   var _r40Method = 'standard'; // 'standard' or 'viking'
+  window.setR40Method = function(btn, idx) {
+    window._r40Method = idx === 0 ? 'standard' : 'viking';
+    renderR40();
+  };
   function renderR40() {
     var isViking   = _r40Method === 'viking';
     var score      = isViking ? (arrGrowth + adjMargin) : (arrGrowth + ebitdacMrg);
@@ -1513,10 +1517,10 @@ function renderFin() {
 
     var toggleHtml =
       '<div style="display:flex;gap:6px;margin-bottom:1rem">' +
-      '<button onclick="window._r40Method=\'standard\';renderR40()" style="flex:1;padding:5px 0;font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;border:1px solid var(--border);' +
+      '<button onclick="window.setR40Method(this,0)" style="flex:1;padding:5px 0;font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;border:1px solid var(--border);' +
       (isViking ? 'background:var(--surface);color:var(--text-muted)' : 'background:var(--dark-teal);color:#fff;border-color:var(--dark-teal)') +
       '">Standard</button>' +
-      '<button onclick="window._r40Method=\'viking\';renderR40()" style="flex:1;padding:5px 0;font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;border:1px solid var(--border);' +
+      '<button onclick="window.setR40Method(this,1)" style="flex:1;padding:5px 0;font-size:11px;font-weight:600;border-radius:6px;cursor:pointer;border:1px solid var(--border);' +
       (!isViking ? 'background:var(--surface);color:var(--text-muted)' : 'background:var(--dark-teal);color:#fff;border-color:var(--dark-teal)') +
       '">Viking Growth</button>' +
       '</div>';
