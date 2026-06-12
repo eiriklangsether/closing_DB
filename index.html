@@ -1276,7 +1276,7 @@ function refreshMetaTable() {
     }
     if (_metaSearch) {
       const q = _metaSearch;
-      if (!r.name.toLowerCase().includes(q) && !(r.logo||'').toLowerCase().includes(q)) return false;
+      if (!r.name.toLowerCase().includes(q) && !(r.logo||'').toLowerCase().includes(q) && !(r.customer_id||'').toLowerCase().includes(q)) return false;
     }
     return true;
   });
