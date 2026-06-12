@@ -1477,7 +1477,9 @@ function renderFin() {
   var arrMay26      = 7471236;
   var arrGrowth     = 12.6;
   var ebitdacMrg    = 8.4;
-  var ruleOf40      = 21.0;
+  var deltaDefRev   = -205913;
+  var adjMargin     = 5.8;
+  var ruleOf40      = 18.4;
   var may = { opIncome: opIncome[opIncome.length-1], prodRevIncSR: prodRevIncSR[prodRevIncSR.length-1], prodRevExcSR: prodRevExcSR[prodRevExcSR.length-1], opExpenses: opExpenses[opExpenses.length-1], ebitda: ebitdaVals[ebitdaVals.length-1], ebitdac: ebitdacVals[ebitdacVals.length-1], profit: profitVals[profitVals.length-1] };
   function fmtUSD(v) { var s = v < 0 ? "\u2212" : "", a = Math.abs(v); if (a >= 1e6) return s + "$" + (a/1e6).toFixed(2) + "M"; if (a >= 1e3) return s + "$" + Math.round(a/1e3) + "K"; return s + "$" + Math.round(a).toLocaleString(); }
   function pct(v) { return (v >= 0 ? "+" : "") + v.toFixed(1) + "%"; }
@@ -1502,7 +1504,11 @@ function renderFin() {
   var r40color = ruleOf40 >= 40 ? "#1EAFAA" : ruleOf40 >= 20 ? "var(--dark-teal)" : "var(--cranberry)";
   h += '<div class="fin-section-label">Rule of 40' + badgeMay + '</div>';
   h += '<div style="display:grid;grid-template-columns:1fr;gap:1rem;margin-bottom:1.5rem;max-width:600px">';
-  h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;border-top:3px solid '+r40color+'">' + '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:.75rem">Rule of 40 Score</div>' + '<div style="font-size:48px;font-weight:700;color:'+r40color+';line-height:1">' + ruleOf40.toFixed(1) + '</div>' + '<div style="font-size:11px;color:var(--text-muted);margin-top:.5rem">' + (ruleOf40>=40?"\u2705 Above benchmark (40)":"\u26A0\uFE0F Below benchmark (40)") + '</div>' + '<div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);font-size:12px;color:var(--text-secondary)">' + '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>ARR Growth YoY (May 25 \u2192 May 26)</span><strong style="color:var(--dark-teal)">' + pct(arrGrowth) + '</strong></div>' + '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>EBITDAC Margin (L12M)</span><strong style="color:' + mc(ebitdacMrg) + '">' + pct(ebitdacMrg) + '</strong></div>' + '<div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px dashed var(--border)"><span style="font-weight:600">Rule of 40 = ARR Growth + EBITDAC Margin</span><strong>' + ruleOf40.toFixed(1) + '</strong></div>' + '</div></div>';
+  h += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;border-top:3px solid '+r40color+'">' + '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:.75rem">Rule of 40 Score</div>' + '<div style="font-size:48px;font-weight:700;color:'+r40color+';line-height:1">' + ruleOf40.toFixed(1) + '</div>' + '<div style="font-size:11px;color:var(--text-muted);margin-top:.5rem">' + (ruleOf40>=40?"\u2705 Above benchmark (40)":"\u26A0\uFE0F Below benchmark (40)") + '</div>' + '<div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);font-size:12px;color:var(--text-secondary)">' + '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>ARR Growth YoY (May 25 \u2192 May 26)</span><strong style="color:var(--dark-teal)">' + pct(arrGrowth) + '</strong></div>' + 
+'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>EBITDAC L12M</span><strong style="color:' + mc(ebitdacMrg) + '">' + pct(ebitdacMrg) + '</strong></div>' + 
+'<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Δ Deferred Revenue (May’25→May’26)</span><strong style="color:' + (deltaDefRev < 0 ? 'var(--cranberry)' : 'var(--teal)') + '">' + (deltaDefRev >= 0 ? '+' : '') + (deltaDefRev/1000).toFixed(0) + 'K</strong></div>' + 
+'<div style="display:flex;justify-content:space-between;margin-bottom:4px;padding-top:4px;border-top:1px dashed var(--border)"><span>Adjusted Margin (EBITDAC + Δ Def. Rev.)</span><strong style="color:' + mc(adjMargin) + '">' + pct(adjMargin) + '</strong></div>' + 
+'<div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px dashed var(--border)"><span style="font-weight:600">Rule of 40 = ARR Growth + Adjusted Margin</span><strong>' + ruleOf40.toFixed(1) + '</strong></div>' + '</div></div>';
   h += "</div>";
   document.getElementById("fin-content").innerHTML = h;
   if (window._finCharts) { window._finCharts.forEach(function(c){if(c&&c.destroy)c.destroy();}); }
