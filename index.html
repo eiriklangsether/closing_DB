@@ -916,7 +916,7 @@ function renderMRR(data, selectedMonth) {
       <div class="movement-card">
         <div class="movement-card-header">
           <span class="movement-card-title churned-title">Churned</span>
-          <span class="movement-total neg">−${usdFmt(mov.churned_total)} MRR</span>
+          <span class="movement-total neg">−${usdFmt(Math.abs(mov.churned_total))} MRR</span>
         </div>
         ${movRows(movChurned, 'neg', 'churned_' + movPeriodEnd)}
       </div>
@@ -930,7 +930,7 @@ function renderMRR(data, selectedMonth) {
       <div class="movement-card">
         <div class="movement-card-header">
           <span class="movement-card-title contraction-title">Contractions</span>
-          <span class="movement-total ${mov.contraction_total < 0 ? 'amber' : 'neutral'}">${usdFmt(Math.abs(mov.contraction_total))}</span>
+          <span class="movement-total amber">−${usdFmt(Math.abs(mov.contraction_total))}</span>
         </div>
         ${movRows(movCon, 'amber', 'con_' + movPeriodEnd)}
       </div>
