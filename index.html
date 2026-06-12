@@ -170,7 +170,6 @@
     .ret-all-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;padding:.75rem 0;border-top:1px solid var(--border);margin-top:1rem;font-size:13px;font-weight:600;color:var(--dark-teal);user-select:none}
     .ret-all-toggle:hover{color:var(--teal)}
     .ret-all-arrow{transition:transform .2s;font-size:11px;display:inline-block}
-    .ret-all-arrow.open{transform:rotate(90deg)}
     .ret-all-body{display:none;margin-top:.5rem}
     .ret-all-body.open{display:block}
     .ret-tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600}
@@ -1597,6 +1596,13 @@ function drawWaterfall(mov, totals, months, periodStart, periodEnd) {
 /* ─────────────────────────────────────────────
    RETENTION DRILL-DOWN MODAL
 ───────────────────────────────────────────── */
+function toggleRetAll(el) {
+  var body = el.nextElementSibling;
+  var arrow = el.querySelector('.ret-all-arrow');
+  if (body) body.classList.toggle('open');
+  if (arrow) arrow.classList.toggle('open');
+}
+
 function closeRetModal() {
   document.getElementById('retModal').style.display = 'none';
 }
@@ -1706,9 +1712,12 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
           <thead><tr><th>Customer</th><th class="num">Start MRR (${startM})</th></tr></thead>
           <tbody>${tableRows(churned, false)}</tbody>
         </table>
-      </div>' +
+      </div>`;
 
-      '<div class="ret-all-toggle" onclick="this.nextElementSibling.classList.toggle(\'open\');this.querySelector(\'ret-all-arrow\').classList.toggle(\'open\')">' + '<span class="ret-all-arrow">&#9658;</span> All customers in calculation (' + rows.filter(function(r){return r.startMRR>0;}).length + ')</div>' + '<div class="ret-all-body">' + '<div class="ret-table-wrap"><table class="ret-table">' + '<thead><tr><th>Customer</th><th class="num">Start MRR</th><th class="num">End MRR</th><th class="num">Change</th><th>Status</th></tr></thead>' + '<tbody>' + rows.filter(function(r){return r.startMRR>0;}).sort(function(a,b){return b.startMRR-a.startMRR;}).map(function(r){var delta=r.endMRR-r.startMRR;var sc=r.status==='retained'?'#1a6e17':r.status==='churned'?'#a01f3c':'var(--dark-teal)';var chgTd=r.startMRR>0&&r.endMRR>0?'<td class="num" style="color:'+(delta>=0?'#1a6e17':'#a01f3c')+ '">'+pct(delta/r.startMRR*100)+'</td>':'<td class="num" style="color:var(--text-muted)">&mdash;</td>';var endTd=r.endMRR>0?'<td class="num">'+fmt(r.endMRR)+'</td>':'<td class="num" style="color:var(--text-muted)">&mdash;</td>';return '<tr><td>'+r.name+'</td><td class="num">'+fmt(r.startMRR)+'</td>'+endTd+chgTd+'<td><span style="font-size:11px;font-weight:600;color:'+sc+'">'+r.status+'</span></td></tr>';}).join('') + '</tbody></table></div></div>';
+  var allRows = rows.filter(function(r){return r.startMRR>0;}).sort(function(a,b){return b.startMRR-a.startMRR;});
+  var allTbody = allRows.map(function(r){var d=r.endMRR-r.startMRR;var sc=r.status==='retained'?'#1a6e17':r.status==='churned'?'#a01f3c':'var(--dark-teal)';var eTd=r.endMRR>0?'<td class="num">'+fmt(r.endMRR)+'</td>':'<td class="num" style="color:var(--text-muted)">&mdash;</td>';var cTd=r.startMRR>0&&r.endMRR>0?'<td class="num" style="color:'+(d>=0?'#1a6e17':'#a01f3c')+'">'+pct(d/r.startMRR*100)+'</td>':'<td class="num">&mdash;</td>';return '<tr><td>'+r.name+'</td><td class="num">'+fmt(r.startMRR)+'</td>'+eTd+cTd+'<td><span style="font-size:11px;font-weight:600;color:'+sc+'">'+r.status+'</span></td></tr>';}).join('');
+  var allSection = '<div class="ret-all-toggle" onclick="toggleRetAll(this)">' + '<span class="ret-all-arrow">&#9658;</span> All customers in calculation (' + allRows.length + ')' + '</div>' + '<div class="ret-all-body">' + '<div class="ret-table-wrap"><table class="ret-table">' + '<thead><tr><th>Customer</th><th class="num">Start MRR</th><th class="num">End MRR</th><th class="num">Change</th><th>Status</th></tr></thead>' + '<tbody>' + allTbody + '</tbody>' + '</table></div></div>';
+    bodyHtml += allSection;
 
   } else if (type === 'nrr') {
     title   = 'L12M NRR — Net Revenue Retention';
@@ -1806,9 +1815,12 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
           <thead><tr><th>Customer</th><th class="num">Start MRR (${startM})</th></tr></thead>
           <tbody>${tableRows(churned, false)}</tbody>
         </table>
-      </div>' +
+      </div>`;
 
-      '<div class="ret-all-toggle" onclick="this.nextElementSibling.classList.toggle(\'open\');this.querySelector(\'ret-all-arrow\').classList.toggle(\'open\')">' + '<span class="ret-all-arrow">&#9658;</span> All customers in calculation (' + rows.filter(function(r){return r.startMRR>0;}).length + ')</div>' + '<div class="ret-all-body">' + '<div class="ret-table-wrap"><table class="ret-table">' + '<thead><tr><th>Customer</th><th class="num">Start MRR</th><th class="num">End MRR</th><th class="num">Change</th><th>Status</th></tr></thead>' + '<tbody>' + rows.filter(function(r){return r.startMRR>0;}).sort(function(a,b){return b.startMRR-a.startMRR;}).map(function(r){var delta=r.endMRR-r.startMRR;var sc=r.status==='retained'?'#1a6e17':r.status==='churned'?'#a01f3c':'var(--dark-teal)';var chgTd=r.startMRR>0&&r.endMRR>0?'<td class="num" style="color:'+(delta>=0?'#1a6e17':'#a01f3c')+ '">'+pct(delta/r.startMRR*100)+'</td>':'<td class="num" style="color:var(--text-muted)">&mdash;</td>';var endTd=r.endMRR>0?'<td class="num">'+fmt(r.endMRR)+'</td>':'<td class="num" style="color:var(--text-muted)">&mdash;</td>';return '<tr><td>'+r.name+'</td><td class="num">'+fmt(r.startMRR)+'</td>'+endTd+chgTd+'<td><span style="font-size:11px;font-weight:600;color:'+sc+'">'+r.status+'</span></td></tr>';}).join('') + '</tbody></table></div></div>';
+  var allRows = rows.filter(function(r){return r.startMRR>0;}).sort(function(a,b){return b.startMRR-a.startMRR;});
+  var allTbody = allRows.map(function(r){var d=r.endMRR-r.startMRR;var sc=r.status==='retained'?'#1a6e17':r.status==='churned'?'#a01f3c':'var(--dark-teal)';var eTd=r.endMRR>0?'<td class="num">'+fmt(r.endMRR)+'</td>':'<td class="num" style="color:var(--text-muted)">&mdash;</td>';var cTd=r.startMRR>0&&r.endMRR>0?'<td class="num" style="color:'+(d>=0?'#1a6e17':'#a01f3c')+'">'+pct(d/r.startMRR*100)+'</td>':'<td class="num">&mdash;</td>';return '<tr><td>'+r.name+'</td><td class="num">'+fmt(r.startMRR)+'</td>'+eTd+cTd+'<td><span style="font-size:11px;font-weight:600;color:'+sc+'">'+r.status+'</span></td></tr>';}).join('');
+  var allSection = '<div class="ret-all-toggle" onclick="toggleRetAll(this)">' + '<span class="ret-all-arrow">&#9658;</span> All customers in calculation (' + allRows.length + ')' + '</div>' + '<div class="ret-all-body">' + '<div class="ret-table-wrap"><table class="ret-table">' + '<thead><tr><th>Customer</th><th class="num">Start MRR</th><th class="num">End MRR</th><th class="num">Change</th><th>Status</th></tr></thead>' + '<tbody>' + allTbody + '</tbody>' + '</table></div></div>';
+    bodyHtml += allSection;
   }
 
   document.getElementById('retModalTitle').textContent = title;
