@@ -782,7 +782,7 @@ function renderMRR(data, selectedMonth) {
           <span class="known-issue-tag">${i.tag}</span>
           <span style="flex:1">${i.text}</span>
           ${i.srToggle ? `<button class="sr-btn${_showSR ? ' sr-btn-active' : ''}" onclick="toggleSR(this)">${_showSR ? 'Hide SalesRabbit' : 'Include SalesRabbit'}</button>` : ''}
-        </div>`).join('')}<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:12px 0 6px">Manual Changes</div>MANUAL_CHANGES.map(i => `<div class="known-issue-row">\n          <span class="known-issue-tag" style="background:var(--teal-lighter);color:var(--dark-teal)">${i.tag}</span>\n          <span style="flex:1">${i.text}</span>\n        </div>`).join('')
+        </div>`).join('')}<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:12px 0 6px">Manual Changes</div>MANUAL_CHANGES.map(function(i){return '<div class="known-issue-row">'+'<span class="known-issue-tag" style="background:var(--teal-lighter);color:var(--dark-teal)">'+i.tag+'</span>'+'<span style="flex:1">'+i.text+'</span>'+'</div>';}).join('')
       </div>
     </div>` : '';
 
