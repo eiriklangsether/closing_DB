@@ -535,21 +535,24 @@ const FX = { NO: 0.0990, SE: 0.1056, US: 1.0, EUR: 1.1658, GBP: 1.3390 };
 let _showPLG = false;
 const KNOWN_ISSUES = [
   {
-    tag: 'Gjensidige · Dec 2025',
-    text: 'Gjensidige Business Services AB shows a contraction of NOK 130,455 in Dec 2025. This is a data artefact — the actual MRR in December should be NOK 174K (not NOK 44K as shown). The NOK 130K contraction did not occur. Manual fix applied: Dec 2025 MRR set to the Nov 2025 value ($17,271.22) in CUSTOMER_META.'
-  },
-  {
     tag: 'SalesRabbit · Jul–Nov 2025',
     text: 'SalesRabbit reseller revenue is not included in the Chargebee MRR data above (except their standard subscription). Three invoices totalling $2.25M were periodized across May 2023–Nov 2025, of which $510K falls within this dashboard window. Toggle to add it to the charts.',
     srToggle: true
   },
   {
-    tag: 'Tryg forsikring (11247) · Dec 2025',
-    text: 'Tryg forsikring (11247) shows an incorrect contraction in Dec 2025 due to a data error in Chargebee. Manual fix applied: Dec 2025 MRR set to the Nov 2025 value in CUSTOMER_META.'
-  },
-  {
     tag: 'DWH reconciliation',
     text: 'Dashboard vs DWH (MRR_USD_Fixed) for Jul–Oct 2025 shows a consistent residual of ±0.4% (~$2K/month). This is structural: the DWH includes Historical File customers not present in the Chargebee exports. SalesRabbit does not appear in the DWH. Nov 2025 gap (~$6.5K) reflects the same residual. Dec 2025 gap (~$17.7K) is driven by the Gjensidige artefact and churn timing differences. May–Jun 2026 and beyond: DWH not yet updated for those months.'
+  }
+];
+
+const MANUAL_CHANGES = [
+  {
+    tag: 'Gjensidige Business Services AB · Dec 2025',
+    text: 'Dec 2025 MRR was misrepresented in Chargebee, showing a contraction of NOK 130,455 that did not occur. Original value: $4,356.19. Changed to: $17,271.22 (Nov 2025 value). Reason: Data artefact in CB — actual MRR was stable month-over-month.'
+  },
+  {
+    tag: 'Tryg forsikring (11247) · Dec 2025',
+    text: 'Dec 2025 MRR was misrepresented in Chargebee, showing an incorrect contraction. Original value: $4,991.29. Changed to: $6,537.89 (Nov 2025 value). Reason: Data artefact in CB — actual MRR was stable month-over-month.'
   }
 ];
 
@@ -775,11 +778,11 @@ function renderMRR(data, selectedMonth) {
         <span class="known-issues-chevron${issuesOpen ? ' open' : ''}">▼</span>
       </div>
       <div class="known-issues-body${issuesOpen ? ' open' : ''}" id="knownIssuesBody">
-        ${KNOWN_ISSUES.map(i => `<div class="known-issue-row">
+        ${<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:6px">Known Issues</div>KNOWN_ISSUES.map(i => `<div class="known-issue-row">
           <span class="known-issue-tag">${i.tag}</span>
           <span style="flex:1">${i.text}</span>
           ${i.srToggle ? `<button class="sr-btn${_showSR ? ' sr-btn-active' : ''}" onclick="toggleSR(this)">${_showSR ? 'Hide SalesRabbit' : 'Include SalesRabbit'}</button>` : ''}
-        </div>`).join('')}
+        </div>`).join('')}<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:12px 0 6px">Manual Changes</div>MANUAL_CHANGES.map(i => `<div class="known-issue-row">\n          <span class="known-issue-tag" style="background:var(--teal-lighter);color:var(--dark-teal)">${i.tag}</span>\n          <span style="flex:1">${i.text}</span>\n        </div>`).join('')
       </div>
     </div>` : '';
 
