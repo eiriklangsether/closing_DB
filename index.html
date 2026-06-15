@@ -271,6 +271,32 @@
     .fin-teaser-metric-val{font-size:22px;font-weight:700;color:var(--dark-teal);letter-spacing:.02em;filter:blur(5px);user-select:none}
     .fin-teaser-metric-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
 
+
+    #page-export .export-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1rem}
+    #page-export .export-section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:.75rem}
+    #page-export .export-options{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem}
+    #page-export .export-opt{display:flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px;background:var(--surface);color:var(--text-primary);transition:all .15s}
+    #page-export .export-opt.active{background:var(--dark-teal);color:#fff;border-color:var(--dark-teal)}
+    #page-export .export-opt:hover:not(.active){background:var(--teal-lighter);border-color:var(--teal)}
+    #page-export .export-toggle{display:flex;gap:.35rem;flex-wrap:wrap}
+    #page-export .export-toggle .export-opt{min-width:90px;justify-content:center}
+    #page-export .export-meta-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.4rem;margin-bottom:.5rem}
+    #page-export .export-meta-check{display:flex;align-items:center;gap:7px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;cursor:pointer;background:var(--surface)}
+    #page-export .export-meta-check input{cursor:pointer;accent-color:var(--teal)}
+    #page-export .export-actions{display:flex;gap:.75rem;margin-top:1.5rem}
+    #page-export .btn-export{padding:9px 22px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;gap:7px;transition:opacity .15s}
+    #page-export .btn-export:hover{opacity:.85}
+    #page-export .btn-csv{background:var(--dark-teal);color:#fff}
+    #page-export .btn-xlsx{background:#1F4E79;color:#fff}
+    #page-export .export-preview{margin-top:1.5rem;overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius)}
+    #page-export .export-preview table{width:100%;border-collapse:collapse;font-size:12px}
+    #page-export .export-preview th{background:var(--surface);padding:7px 10px;text-align:left;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);border-bottom:1px solid var(--border);white-space:nowrap}
+    #page-export .export-preview th.num{text-align:right}
+    #page-export .export-preview td{padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text-primary);white-space:nowrap}
+    #page-export .export-preview td.num{text-align:right;font-variant-numeric:tabular-nums}
+    #page-export .export-preview tr:last-child td{border-bottom:none}
+    #page-export .export-preview tr:nth-child(even) td{background:var(--teal-lighter)20}
+    #page-export .export-row-count{font-size:12px;color:var(--text-muted);margin-top:.5rem}
     .fin-kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;display:flex;flex-direction:column;gap:.2rem}
     .fin-kpi-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)}
     .fin-kpi-value{font-size:24px;font-weight:700;line-height:1.1}
@@ -298,6 +324,7 @@
     <button class="nav-tab" onclick="switchPage('mrr', this)">Business KPIs</button>
     <button class="nav-tab" onclick="switchPage('fin', this)">Financial KPIs</button>
     <button class="nav-tab" onclick="switchPage('meta', this)">Customer metadata</button>
+    <button class="nav-tab" onclick="switchPage('export', this)">Export</button>
   </div>
   <div class="header-right">Internal · Finance team</div>
 </header>
@@ -336,6 +363,7 @@ function switchPage(p, btn) {
   document.getElementById('page-' + p).classList.add('active');
   if (p === 'meta' && (!document.getElementById('metaBody') || document.getElementById('metaBody').innerHTML === '')) renderMeta();
   if (p === 'fin'  && document.getElementById('fin-content').innerHTML === '') renderFin();
+  if (p === 'export' && document.getElementById('export-content').innerHTML === '') renderExport();
   if (btn) btn.classList.add('active');
 }
 
@@ -1642,6 +1670,285 @@ function drawWaterfall(mov, totals, months, periodStart, periodEnd) {
 /* ─────────────────────────────────────────────
    RETENTION DRILL-DOWN MODAL
 ───────────────────────────────────────────── */
+
+function renderExport() {
+  // State
+  var _exLevel   = 'customer';  // 'customer' | 'logo'
+  var _exMetric  = 'mrr';       // 'mrr' | 'arr'
+  var _exPeriod  = { from: 'Jul 2025', to: 'Apr 2026' };
+  var _exMeta    = { entity: true, icp: false, logo: false, owner: false };
+
+  var ALL_MONTHS = ["Jul 2025", "Aug 2025", "Sep 2025", "Oct 2025", "Nov 2025", "Dec 2025", "Jan 2026", "Feb 2026", "Mar 2026", "Apr 2026", "May 2026", "Jun 2026"];
+
+  function buildRows() {
+    var fromIdx = ALL_MONTHS.indexOf(_exPeriod.from);
+    var toIdx   = ALL_MONTHS.indexOf(_exPeriod.to);
+    if (fromIdx === -1) fromIdx = 0;
+    if (toIdx   === -1) toIdx   = ALL_MONTHS.length - 1;
+    var months = ALL_MONTHS.slice(fromIdx, toIdx + 1);
+    var mult   = _exMetric === 'arr' ? 12 : 1;
+
+    if (_exLevel === 'customer') {
+      var rows = [];
+      Object.values(CUSTOMER_META).forEach(function(c) {
+        var hasAny = months.some(function(m){ return (c.mrr || {})[m] > 0; });
+        if (!hasAny) return;
+        var row = { name: c.name };
+        if (_exMeta.entity) row.entity = c.entity || '';
+        if (_exMeta.icp)    row.icp    = c.icp === true ? 'Yes' : c.icp === false ? 'No' : '';
+        if (_exMeta.logo)   row.logo   = c.logo || '';
+        if (_exMeta.owner)  row.owner  = c.owner_name || '';
+        months.forEach(function(m) {
+          var v = ((c.mrr || {})[m] || 0) * mult;
+          row[m] = v > 0 ? Math.round(v * 100) / 100 : '';
+        });
+        rows.push(row);
+      });
+      rows.sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+      return { rows: rows, months: months };
+    } else {
+      // Logo level — aggregate
+      var logoMap = {};
+      Object.values(CUSTOMER_META).forEach(function(c) {
+        var logo = (c.logo || '').trim();
+        if (!logo || c.entity === 'PLG') return;
+        if (!logoMap[logo]) logoMap[logo] = {
+          entity: '',
+          icp: '',
+          owner: c.owner_name || '',
+          mrr: {}
+        };
+        months.forEach(function(m) {
+          var v = ((c.mrr || {})[m] || 0);
+          logoMap[logo].mrr[m] = (logoMap[logo].mrr[m] || 0) + v;
+        });
+      });
+      var rows = Object.keys(logoMap).map(function(logo) {
+        var d = logoMap[logo];
+        var hasAny = months.some(function(m){ return d.mrr[m] > 0; });
+        if (!hasAny) return null;
+        var row = { name: logo };
+        months.forEach(function(m) {
+          var v = (d.mrr[m] || 0) * mult;
+          row[m] = v > 0 ? Math.round(v * 100) / 100 : '';
+        });
+        return row;
+      }).filter(Boolean);
+      rows.sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+      return { rows: rows, months: months };
+    }
+  }
+
+  function fmtNum(v) {
+    if (!v) return '';
+    return v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function renderPreview(data) {
+    var rows = data.rows; var months = data.months;
+    var metaCols = [];
+    if (_exLevel === 'customer') {
+      if (_exMeta.entity) metaCols.push({ key: 'entity', label: 'Entity' });
+      if (_exMeta.icp)    metaCols.push({ key: 'icp',    label: 'ICP' });
+      if (_exMeta.logo)   metaCols.push({ key: 'logo',   label: 'Logo' });
+      if (_exMeta.owner)  metaCols.push({ key: 'owner',  label: 'Owner' });
+    }
+    var metric = _exMetric.toUpperCase();
+    var thead = '<tr><th>' + (_exLevel === 'customer' ? 'Customer' : 'Logo') + '</th>' +
+      metaCols.map(function(c){ return '<th>' + c.label + '</th>'; }).join('') +
+      months.map(function(m){ return '<th class="num">' + m + ' ' + metric + '</th>'; }).join('') +
+      '</tr>';
+    var preview = rows.slice(0, 8);
+    var tbody = preview.map(function(r) {
+      return '<tr><td>' + r.name + '</td>' +
+        metaCols.map(function(c){ return '<td>' + (r[c.key] || '') + '</td>'; }).join('') +
+        months.map(function(m){ return '<td class="num">' + fmtNum(r[m]) + '</td>'; }).join('') +
+        '</tr>';
+    }).join('');
+    var remaining = rows.length - 8;
+    var ellipsis = remaining > 0 ? '<tr><td colspan="' + (1 + metaCols.length + months.length) + '" style="text-align:center;color:var(--text-muted);font-style:italic;padding:8px">… and ' + remaining + ' more rows</td></tr>' : '';
+    return '<table><thead>' + thead + '</thead><tbody>' + tbody + ellipsis + '</tbody></table>';
+  }
+
+  function toCSV(data) {
+    var rows = data.rows; var months = data.months;
+    var metaCols = [];
+    if (_exLevel === 'customer') {
+      if (_exMeta.entity) metaCols.push('entity');
+      if (_exMeta.icp)    metaCols.push('icp');
+      if (_exMeta.logo)   metaCols.push('logo');
+      if (_exMeta.owner)  metaCols.push('owner');
+    }
+    var metric = _exMetric.toUpperCase();
+    var headers = [_exLevel === 'customer' ? 'Customer' : 'Logo']
+      .concat(metaCols.map(function(k){ return k.charAt(0).toUpperCase()+k.slice(1); }))
+      .concat(months.map(function(m){ return m + ' ' + metric; }));
+    var lines = [headers.map(function(h){ return '"'+h+'"'; }).join(',')];
+    rows.forEach(function(r) {
+      var cells = ['"' + (r.name||'').replace(/"/g,'""') + '"'];
+      metaCols.forEach(function(k){ cells.push('"' + (r[k]||'') + '"'); });
+      months.forEach(function(m){ cells.push(r[m] !== '' ? r[m] : '0'); });
+      lines.push(cells.join(','));
+    });
+    return lines.join('\n');
+  }
+
+  function downloadCSV() {
+    var data = buildRows();
+    var csv  = toCSV(data);
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href = url; a.download = 'salesscreen_mrr_export.csv'; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadXLSX() {
+    var data   = buildRows();
+    var rows   = data.rows;
+    var months = data.months;
+    var metaCols = [];
+    if (_exLevel === 'customer') {
+      if (_exMeta.entity) metaCols.push({ key: 'entity', label: 'Entity' });
+      if (_exMeta.icp)    metaCols.push({ key: 'icp',    label: 'ICP' });
+      if (_exMeta.logo)   metaCols.push({ key: 'logo',   label: 'Logo' });
+      if (_exMeta.owner)  metaCols.push({ key: 'owner',  label: 'Owner' });
+    }
+    var metric  = _exMetric.toUpperCase();
+    var nameCol = _exLevel === 'customer' ? 'Customer' : 'Logo';
+    var headers = [nameCol]
+      .concat(metaCols.map(function(c){ return c.label; }))
+      .concat(months.map(function(m){ return m + ' ' + metric; }));
+
+    // Build worksheet as array of arrays
+    var ws_data = [headers];
+    rows.forEach(function(r) {
+      var row = [r.name];
+      metaCols.forEach(function(c){ row.push(r[c.key] || ''); });
+      months.forEach(function(m){ row.push(r[m] !== '' ? r[m] : 0); });
+      ws_data.push(row);
+    });
+
+    // Use SheetJS if available, else fall back to CSV download
+    if (typeof XLSX !== 'undefined') {
+      var wb = XLSX.utils.book_new();
+      var ws = XLSX.utils.aoa_to_sheet(ws_data);
+      // Style numeric cols
+      var numFmt = '#,##0.00';
+      var startCol = 1 + metaCols.length;
+      for (var ri = 1; ri < ws_data.length; ri++) {
+        for (var ci = startCol; ci < headers.length; ci++) {
+          var cell_ref = XLSX.utils.encode_cell({ r: ri, c: ci });
+          if (ws[cell_ref]) ws[cell_ref].z = numFmt;
+        }
+      }
+      XLSX.utils.book_append_sheet(wb, ws, 'MRR Export');
+      XLSX.writeFile(wb, 'salesscreen_mrr_export.xlsx');
+    } else {
+      // Fallback: download as CSV with .xlsx extension note
+      downloadCSV();
+    }
+  }
+
+  function refresh() {
+    var data = buildRows();
+    document.getElementById('exp-preview').innerHTML = renderPreview(data);
+    document.getElementById('exp-row-count').textContent = data.rows.length + ' rows · ' + data.months.length + ' months · ' + (_exMetric === 'arr' ? 'ARR' : 'MRR') + ' · ' + (_exLevel === 'customer' ? 'Customer' : 'Logo') + ' level';
+  }
+
+  window.expSetLevel = function(v, el) {
+    _exLevel = v;
+    document.querySelectorAll('#exp-level .export-opt').forEach(function(b){ b.classList.remove('active'); });
+    el.classList.add('active');
+    refresh();
+  };
+  window.expSetMetric = function(v, el) {
+    _exMetric = v;
+    document.querySelectorAll('#exp-metric .export-opt').forEach(function(b){ b.classList.remove('active'); });
+    el.classList.add('active');
+    refresh();
+  };
+  window.expSetFrom = function(v) { _exPeriod.from = v; refresh(); };
+  window.expSetTo   = function(v) { _exPeriod.to   = v; refresh(); };
+  window.expToggleMeta = function(key, el) {
+    _exMeta[key] = !_exMeta[key];
+    el.classList.toggle('active', _exMeta[key]);
+    refresh();
+  };
+  window.expDownloadCSV  = downloadCSV;
+  window.expDownloadXLSX = downloadXLSX;
+
+  // Build months options for selects
+  var monthOpts = ALL_MONTHS.map(function(m) {
+    return '<option value="' + m + '">' + m + '</option>';
+  }).join('');
+  var monthOptsTo = ALL_MONTHS.map(function(m) {
+    var sel = m === 'Apr 2026' ? ' selected' : '';
+    return '<option value="' + m + '"' + sel + '>' + m + '</option>';
+  }).join('');
+  var monthOptsFrom = ALL_MONTHS.map(function(m) {
+    var sel = m === 'Jul 2025' ? ' selected' : '';
+    return '<option value="' + m + '"' + sel + '>' + m + '</option>';
+  }).join('');
+
+  var html =
+    '<div class="export-card">' +
+      '<div class="export-section-label">Period</div>' +
+      '<div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">' +
+        '<div style="display:flex;align-items:center;gap:8px;font-size:13px">' +
+          '<label style="color:var(--text-muted);font-size:12px">From</label>' +
+          '<select onchange="expSetFrom(this.value)" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface);color:var(--text-primary)">' + monthOptsFrom + '</select>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:8px;font-size:13px">' +
+          '<label style="color:var(--text-muted);font-size:12px">To</label>' +
+          '<select onchange="expSetTo(this.value)" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface);color:var(--text-primary)">' + monthOptsTo + '</select>' +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="export-card">' +
+      '<div class="export-section-label">Granularity</div>' +
+      '<div class="export-toggle" id="exp-level">' +
+        '<button class="export-opt active" onclick="expSetLevel(\'customer\',this)">Customer level</button>' +
+        '<button class="export-opt" onclick="expSetLevel(\'logo\',this)">Logo level</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="export-card">' +
+      '<div class="export-section-label">Metric</div>' +
+      '<div class="export-toggle" id="exp-metric">' +
+        '<button class="export-opt active" onclick="expSetMetric(\'mrr\',this)">MRR</button>' +
+        '<button class="export-opt" onclick="expSetMetric(\'arr\',this)">ARR</button>' +
+      '</div>' +
+    '</div>' +
+    '<div class="export-card">' +
+      '<div class="export-section-label">Additional columns</div>' +
+      '<div class="export-meta-grid">' +
+        '<label class="export-meta-check"><input type="checkbox" checked onchange="expToggleMeta(\'entity\',this.parentElement)"> Entity</label>' +
+        '<label class="export-meta-check"><input type="checkbox" onchange="expToggleMeta(\'icp\',this.parentElement)"> ICP</label>' +
+        '<label class="export-meta-check"><input type="checkbox" onchange="expToggleMeta(\'logo\',this.parentElement)"> Logo / Group</label>' +
+        '<label class="export-meta-check"><input type="checkbox" onchange="expToggleMeta(\'owner\',this.parentElement)"> Account owner</label>' +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--text-muted)">Logo level exports always group by logo — additional columns not applicable.</div>' +
+    '</div>' +
+    '<div class="export-actions">' +
+      '<button class="btn-export btn-csv" onclick="expDownloadCSV()">⬇ Download CSV</button>' +
+      '<button class="btn-export btn-xlsx" onclick="expDownloadXLSX()">⬇ Download Excel</button>' +
+    '</div>' +
+    '<div class="export-preview" id="exp-preview"></div>' +
+    '<div class="export-row-count" id="exp-row-count"></div>';
+
+  document.getElementById('export-content').innerHTML = html;
+
+  // Load SheetJS for Excel export
+  if (typeof XLSX === 'undefined') {
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = function() { console.log('SheetJS loaded'); };
+    document.head.appendChild(s);
+  }
+
+  refresh();
+}
+
 function closeRetModal() {
   document.getElementById('retModal').style.display = 'none';
 }
@@ -1870,7 +2177,13 @@ window.addEventListener('load', () => renderMRR({ uploadDate: '10 Jun 2026' }, n
     <div id="fin-content"></div>
   </div>
 
-  <!-- ══ CUSTOMER METADATA PAGE ══ -->
+  <!-- ══ EXPORT PAGE ══ -->
+  <div id="page-export" class="page">
+    <div class="page-title">Export</div>
+    <div id="export-content"></div>
+  </div>
+
+<!-- ══ CUSTOMER METADATA PAGE ══ -->
   <div id="page-meta" class="page">
     <div class="page-title">Customer metadata</div>
     <div id="meta-content"><div class="empty">Loading…</div></div>
