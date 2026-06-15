@@ -1672,194 +1672,208 @@ function drawWaterfall(mov, totals, months, periodStart, periodEnd) {
 ───────────────────────────────────────────── */
 
 function renderExport() {
-  // State
-  var _exLevel   = 'customer';  // 'customer' | 'logo'
-  var _exMetric  = 'mrr';       // 'mrr' | 'arr'
-  var _exPeriod  = { from: 'Jul 2025', to: 'Apr 2026' };
-  var _exMeta    = { entity: true, icp: false, logo: false, owner: false };
+  var _exLevel  = 'customer';
+  var _exMetric = 'mrr';
+  var _exPeriod = { from: 'Jul 2025', to: 'Apr 2026' };
+  var _exMeta   = { entity: true, icp: false, logo: false, owner: false };
 
   var ALL_MONTHS = ["Jul 2025", "Aug 2025", "Sep 2025", "Oct 2025", "Nov 2025", "Dec 2025", "Jan 2026", "Feb 2026", "Mar 2026", "Apr 2026", "May 2026", "Jun 2026"];
+
+  function getMetaCols() {
+    if (_exLevel !== 'customer') return [];
+    var cols = [];
+    if (_exMeta.entity) cols.push({ key: 'entity', label: 'Entity' });
+    if (_exMeta.icp)    cols.push({ key: 'icp',    label: 'ICP' });
+    if (_exMeta.logo)   cols.push({ key: 'logo',   label: 'Logo / Group' });
+    if (_exMeta.owner)  cols.push({ key: 'owner',  label: 'Account Owner' });
+    return cols;
+  }
 
   function buildRows() {
     var fromIdx = ALL_MONTHS.indexOf(_exPeriod.from);
     var toIdx   = ALL_MONTHS.indexOf(_exPeriod.to);
-    if (fromIdx === -1) fromIdx = 0;
-    if (toIdx   === -1) toIdx   = ALL_MONTHS.length - 1;
+    if (fromIdx < 0) fromIdx = 0;
+    if (toIdx   < 0) toIdx   = ALL_MONTHS.length - 1;
     var months = ALL_MONTHS.slice(fromIdx, toIdx + 1);
     var mult   = _exMetric === 'arr' ? 12 : 1;
 
+    var rows = [];
+
     if (_exLevel === 'customer') {
-      var rows = [];
       Object.values(CUSTOMER_META).forEach(function(c) {
-        var hasAny = months.some(function(m){ return (c.mrr || {})[m] > 0; });
+        var hasAny = months.some(function(m){ return ((c.mrr||{})[m]||0) > 0; });
         if (!hasAny) return;
-        var row = { name: c.name };
-        if (_exMeta.entity) row.entity = c.entity || '';
-        if (_exMeta.icp)    row.icp    = c.icp === true ? 'Yes' : c.icp === false ? 'No' : '';
-        if (_exMeta.logo)   row.logo   = c.logo || '';
-        if (_exMeta.owner)  row.owner  = c.owner_name || '';
+        var row = { name: c.name,
+          entity: c.entity || '',
+          icp:    c.icp === true ? 'Yes' : c.icp === false ? 'No' : '',
+          logo:   (c.logo || '').trim(),
+          owner:  c.owner_name || '',
+          _flag: false };
         months.forEach(function(m) {
-          var v = ((c.mrr || {})[m] || 0) * mult;
-          row[m] = v > 0 ? Math.round(v * 100) / 100 : '';
+          var v = ((c.mrr||{})[m]||0) * mult;
+          row[m] = v > 0 ? Math.round(v * 100) / 100 : 0;
         });
         rows.push(row);
       });
       rows.sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
-      return { rows: rows, months: months };
+
     } else {
-      // Logo level — aggregate
+      // Logo level — aggregate. PLG excluded. No-logo bucket at top flagged red.
       var logoMap = {};
+      var noLogoMrr = {};
+      months.forEach(function(m){ noLogoMrr[m] = 0; });
+      var hasNoLogo = false;
+
       Object.values(CUSTOMER_META).forEach(function(c) {
+        if (c.entity === 'PLG') return;
         var logo = (c.logo || '').trim();
-        if (!logo || c.entity === 'PLG') return;
-        if (!logoMap[logo]) logoMap[logo] = {
-          entity: '',
-          icp: '',
-          owner: c.owner_name || '',
-          mrr: {}
-        };
         months.forEach(function(m) {
-          var v = ((c.mrr || {})[m] || 0);
-          logoMap[logo].mrr[m] = (logoMap[logo].mrr[m] || 0) + v;
+          var v = ((c.mrr||{})[m]||0);
+          if (!logo) {
+            noLogoMrr[m] = (noLogoMrr[m]||0) + v;
+            if (v > 0) hasNoLogo = true;
+          } else {
+            if (!logoMap[logo]) { logoMap[logo] = {}; months.forEach(function(m2){ logoMap[logo][m2]=0; }); }
+            logoMap[logo][m] = (logoMap[logo][m]||0) + v;
+          }
         });
       });
-      var rows = Object.keys(logoMap).map(function(logo) {
-        var d = logoMap[logo];
-        var hasAny = months.some(function(m){ return d.mrr[m] > 0; });
-        if (!hasAny) return null;
-        var row = { name: logo };
-        months.forEach(function(m) {
-          var v = (d.mrr[m] || 0) * mult;
-          row[m] = v > 0 ? Math.round(v * 100) / 100 : '';
-        });
-        return row;
-      }).filter(Boolean);
-      rows.sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
-      return { rows: rows, months: months };
+
+      // No-logo row at top
+      if (hasNoLogo) {
+        var nlRow = { name: '(No logo assigned)', _flag: true };
+        months.forEach(function(m){ nlRow[m] = Math.round((noLogoMrr[m]||0)*mult*100)/100; });
+        rows.push(nlRow);
+      }
+
+      // Logo rows sorted A-Z
+      Object.keys(logoMap).sort().forEach(function(logo) {
+        var hasAny = months.some(function(m){ return (logoMap[logo][m]||0) > 0; });
+        if (!hasAny) return;
+        var row = { name: logo, _flag: false };
+        months.forEach(function(m){ row[m] = Math.round((logoMap[logo][m]||0)*mult*100)/100; });
+        rows.push(row);
+      });
     }
+
+    // Total row
+    var totalRow = { name: 'TOTAL', _total: true };
+    months.forEach(function(m){
+      totalRow[m] = Math.round(rows.reduce(function(s,r){ return s + (r[m]||0); }, 0) * 100) / 100;
+    });
+    rows.push(totalRow);
+
+    return { rows: rows, months: months };
   }
 
   function fmtNum(v) {
-    if (!v) return '';
+    if (!v && v !== 0) return '';
+    if (v === 0) return '—';
     return v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
   function renderPreview(data) {
     var rows = data.rows; var months = data.months;
-    var metaCols = [];
-    if (_exLevel === 'customer') {
-      if (_exMeta.entity) metaCols.push({ key: 'entity', label: 'Entity' });
-      if (_exMeta.icp)    metaCols.push({ key: 'icp',    label: 'ICP' });
-      if (_exMeta.logo)   metaCols.push({ key: 'logo',   label: 'Logo' });
-      if (_exMeta.owner)  metaCols.push({ key: 'owner',  label: 'Owner' });
-    }
+    var metaCols = getMetaCols();
+    var ncols = 1 + metaCols.length + months.length;
     var metric = _exMetric.toUpperCase();
-    var thead = '<tr><th>' + (_exLevel === 'customer' ? 'Customer' : 'Logo') + '</th>' +
+    var nameLabel = _exLevel === 'customer' ? 'Customer' : 'Logo / Group';
+
+    var thead = '<tr><th>' + nameLabel + '</th>' +
       metaCols.map(function(c){ return '<th>' + c.label + '</th>'; }).join('') +
       months.map(function(m){ return '<th class="num">' + m + ' ' + metric + '</th>'; }).join('') +
       '</tr>';
-    var preview = rows.slice(0, 8);
-    var tbody = preview.map(function(r) {
-      return '<tr><td>' + r.name + '</td>' +
-        metaCols.map(function(c){ return '<td>' + (r[c.key] || '') + '</td>'; }).join('') +
+
+    // Show first 10 data rows + total
+    var dataRows = rows.filter(function(r){ return !r._total; });
+    var totalRow = rows.find(function(r){ return r._total; });
+    var preview  = dataRows.slice(0, 10);
+    var remaining = dataRows.length - 10;
+
+    function rowHtml(r) {
+      var style = r._flag  ? ' style="background:#FCE4D6;font-weight:600"'
+                : r._total ? ' style="background:#BDD7EE;font-weight:700"'
+                : '';
+      return '<tr' + style + '><td>' + r.name + '</td>' +
+        metaCols.map(function(c){ return '<td>' + (r[c.key]||'') + '</td>'; }).join('') +
         months.map(function(m){ return '<td class="num">' + fmtNum(r[m]) + '</td>'; }).join('') +
         '</tr>';
-    }).join('');
-    var remaining = rows.length - 8;
-    var ellipsis = remaining > 0 ? '<tr><td colspan="' + (1 + metaCols.length + months.length) + '" style="text-align:center;color:var(--text-muted);font-style:italic;padding:8px">… and ' + remaining + ' more rows</td></tr>' : '';
-    return '<table><thead>' + thead + '</thead><tbody>' + tbody + ellipsis + '</tbody></table>';
+    }
+
+    var tbody = preview.map(rowHtml).join('');
+    if (remaining > 0) tbody += '<tr><td colspan="' + ncols + '" style="text-align:center;color:var(--text-muted);font-style:italic;padding:8px">\u2026 and ' + remaining + ' more rows</td></tr>';
+    if (totalRow) tbody += rowHtml(totalRow);
+
+    return '<table><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table>';
   }
 
-  function toCSV(data) {
+  function buildExportData(data) {
     var rows = data.rows; var months = data.months;
-    var metaCols = [];
-    if (_exLevel === 'customer') {
-      if (_exMeta.entity) metaCols.push('entity');
-      if (_exMeta.icp)    metaCols.push('icp');
-      if (_exMeta.logo)   metaCols.push('logo');
-      if (_exMeta.owner)  metaCols.push('owner');
-    }
+    var metaCols = getMetaCols();
     var metric = _exMetric.toUpperCase();
-    var headers = [_exLevel === 'customer' ? 'Customer' : 'Logo']
-      .concat(metaCols.map(function(k){ return k.charAt(0).toUpperCase()+k.slice(1); }))
+    var nameLabel = _exLevel === 'customer' ? 'Customer' : 'Logo / Group';
+    var headers = [nameLabel]
+      .concat(metaCols.map(function(c){ return c.label; }))
       .concat(months.map(function(m){ return m + ' ' + metric; }));
-    var lines = [headers.map(function(h){ return '"'+h+'"'; }).join(',')];
+    var matrix = [headers];
     rows.forEach(function(r) {
-      var cells = ['"' + (r.name||'').replace(/"/g,'""') + '"'];
-      metaCols.forEach(function(k){ cells.push('"' + (r[k]||'') + '"'); });
-      months.forEach(function(m){ cells.push(r[m] !== '' ? r[m] : '0'); });
-      lines.push(cells.join(','));
+      var row = [r.name];
+      metaCols.forEach(function(c){ row.push(r[c.key]||''); });
+      months.forEach(function(m){ row.push(r[m]||0); });
+      matrix.push(row);
     });
-    return lines.join('\n');
+    return { matrix: matrix, metaColCount: metaCols.length };
   }
 
   function downloadCSV() {
     var data = buildRows();
-    var csv  = toCSV(data);
-    var blob = new Blob([csv], { type: 'text/csv' });
+    var exp  = buildExportData(data);
+    var lines = exp.matrix.map(function(row, ri) {
+      return row.map(function(cell, ci) {
+        if (ri === 0 || ci < 1 + exp.metaColCount) return '"' + String(cell).replace(/"/g,'""') + '"';
+        return cell;
+      }).join(',');
+    });
+    var blob = new Blob([lines.join('\n')], { type: 'text/csv' });
     var url  = URL.createObjectURL(blob);
-    var a    = document.createElement('a');
-    a.href = url; a.download = 'salesscreen_mrr_export.csv'; a.click();
+    var a    = document.createElement('a'); a.href = url; a.download = 'salesscreen_export.csv'; a.click();
     URL.revokeObjectURL(url);
   }
 
   function downloadXLSX() {
-    var data   = buildRows();
-    var rows   = data.rows;
-    var months = data.months;
-    var metaCols = [];
-    if (_exLevel === 'customer') {
-      if (_exMeta.entity) metaCols.push({ key: 'entity', label: 'Entity' });
-      if (_exMeta.icp)    metaCols.push({ key: 'icp',    label: 'ICP' });
-      if (_exMeta.logo)   metaCols.push({ key: 'logo',   label: 'Logo' });
-      if (_exMeta.owner)  metaCols.push({ key: 'owner',  label: 'Owner' });
-    }
-    var metric  = _exMetric.toUpperCase();
-    var nameCol = _exLevel === 'customer' ? 'Customer' : 'Logo';
-    var headers = [nameCol]
-      .concat(metaCols.map(function(c){ return c.label; }))
-      .concat(months.map(function(m){ return m + ' ' + metric; }));
-
-    // Build worksheet as array of arrays
-    var ws_data = [headers];
-    rows.forEach(function(r) {
-      var row = [r.name];
-      metaCols.forEach(function(c){ row.push(r[c.key] || ''); });
-      months.forEach(function(m){ row.push(r[m] !== '' ? r[m] : 0); });
-      ws_data.push(row);
-    });
-
-    // Use SheetJS if available, else fall back to CSV download
+    var data = buildRows();
+    var exp  = buildExportData(data);
     if (typeof XLSX !== 'undefined') {
       var wb = XLSX.utils.book_new();
-      var ws = XLSX.utils.aoa_to_sheet(ws_data);
-      // Style numeric cols
+      var ws = XLSX.utils.aoa_to_sheet(exp.matrix);
+      var startCol = 1 + exp.metaColCount;
       var numFmt = '#,##0.00';
-      var startCol = 1 + metaCols.length;
-      for (var ri = 1; ri < ws_data.length; ri++) {
-        for (var ci = startCol; ci < headers.length; ci++) {
-          var cell_ref = XLSX.utils.encode_cell({ r: ri, c: ci });
-          if (ws[cell_ref]) ws[cell_ref].z = numFmt;
+      for (var ri = 1; ri < exp.matrix.length; ri++) {
+        for (var ci = startCol; ci < exp.matrix[0].length; ci++) {
+          var ref = XLSX.utils.encode_cell({ r: ri, c: ci });
+          if (ws[ref]) ws[ref].z = numFmt;
         }
       }
-      XLSX.utils.book_append_sheet(wb, ws, 'MRR Export');
-      XLSX.writeFile(wb, 'salesscreen_mrr_export.xlsx');
-    } else {
-      // Fallback: download as CSV with .xlsx extension note
-      downloadCSV();
-    }
+      XLSX.utils.book_append_sheet(wb, ws, 'Export');
+      XLSX.writeFile(wb, 'salesscreen_export.xlsx');
+    } else { downloadCSV(); }
   }
 
   function refresh() {
     var data = buildRows();
+    var dataRows = data.rows.filter(function(r){ return !r._total; });
     document.getElementById('exp-preview').innerHTML = renderPreview(data);
-    document.getElementById('exp-row-count').textContent = data.rows.length + ' rows · ' + data.months.length + ' months · ' + (_exMetric === 'arr' ? 'ARR' : 'MRR') + ' · ' + (_exLevel === 'customer' ? 'Customer' : 'Logo') + ' level';
+    document.getElementById('exp-row-count').textContent =
+      dataRows.length + ' rows \xb7 ' + data.months.length + ' months \xb7 ' +
+      _exMetric.toUpperCase() + ' \xb7 ' + (_exLevel === 'customer' ? 'Customer' : 'Logo') + ' level';
   }
 
   window.expSetLevel = function(v, el) {
     _exLevel = v;
     document.querySelectorAll('#exp-level .export-opt').forEach(function(b){ b.classList.remove('active'); });
     el.classList.add('active');
+    var metaCard = document.getElementById('exp-meta-card');
+    if (metaCard) metaCard.style.opacity = v === 'logo' ? '0.4' : '1';
     refresh();
   };
   window.expSetMetric = function(v, el) {
@@ -1870,37 +1884,30 @@ function renderExport() {
   };
   window.expSetFrom = function(v) { _exPeriod.from = v; refresh(); };
   window.expSetTo   = function(v) { _exPeriod.to   = v; refresh(); };
-  window.expToggleMeta = function(key, el) {
+  window.expToggleMeta = function(key) {
     _exMeta[key] = !_exMeta[key];
-    el.classList.toggle('active', _exMeta[key]);
     refresh();
   };
   window.expDownloadCSV  = downloadCSV;
   window.expDownloadXLSX = downloadXLSX;
 
-  // Build months options for selects
-  var monthOpts = ALL_MONTHS.map(function(m) {
-    return '<option value="' + m + '">' + m + '</option>';
+  var monthOptsFrom = ALL_MONTHS.map(function(m){
+    return '<option value="' + m + '"' + (m === 'Jul 2025' ? ' selected' : '') + '>' + m + '</option>';
   }).join('');
-  var monthOptsTo = ALL_MONTHS.map(function(m) {
-    var sel = m === 'Apr 2026' ? ' selected' : '';
-    return '<option value="' + m + '"' + sel + '>' + m + '</option>';
-  }).join('');
-  var monthOptsFrom = ALL_MONTHS.map(function(m) {
-    var sel = m === 'Jul 2025' ? ' selected' : '';
-    return '<option value="' + m + '"' + sel + '>' + m + '</option>';
+  var monthOptsTo = ALL_MONTHS.map(function(m){
+    return '<option value="' + m + '"' + (m === 'Apr 2026' ? ' selected' : '') + '>' + m + '</option>';
   }).join('');
 
   var html =
     '<div class="export-card">' +
       '<div class="export-section-label">Period</div>' +
-      '<div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">' +
-        '<div style="display:flex;align-items:center;gap:8px;font-size:13px">' +
-          '<label style="color:var(--text-muted);font-size:12px">From</label>' +
+      '<div style="display:flex;align-items:center;gap:1.25rem;flex-wrap:wrap">' +
+        '<div style="display:flex;align-items:center;gap:8px">' +
+          '<label style="font-size:12px;color:var(--text-muted)">From</label>' +
           '<select onchange="expSetFrom(this.value)" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface);color:var(--text-primary)">' + monthOptsFrom + '</select>' +
         '</div>' +
-        '<div style="display:flex;align-items:center;gap:8px;font-size:13px">' +
-          '<label style="color:var(--text-muted);font-size:12px">To</label>' +
+        '<div style="display:flex;align-items:center;gap:8px">' +
+          '<label style="font-size:12px;color:var(--text-muted)">To</label>' +
           '<select onchange="expSetTo(this.value)" style="padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface);color:var(--text-primary)">' + monthOptsTo + '</select>' +
         '</div>' +
       '</div>' +
@@ -1919,35 +1926,33 @@ function renderExport() {
         '<button class="export-opt" onclick="expSetMetric(\'arr\',this)">ARR</button>' +
       '</div>' +
     '</div>' +
-    '<div class="export-card">' +
-      '<div class="export-section-label">Additional columns</div>' +
+    '<div class="export-card" id="exp-meta-card">' +
+      '<div class="export-section-label">Additional columns <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);font-size:10px">(customer level only)</span></div>' +
       '<div class="export-meta-grid">' +
-        '<label class="export-meta-check"><input type="checkbox" checked onchange="expToggleMeta(\'entity\',this.parentElement)"> Entity</label>' +
-        '<label class="export-meta-check"><input type="checkbox" onchange="expToggleMeta(\'icp\',this.parentElement)"> ICP</label>' +
-        '<label class="export-meta-check"><input type="checkbox" onchange="expToggleMeta(\'logo\',this.parentElement)"> Logo / Group</label>' +
-        '<label class="export-meta-check"><input type="checkbox" onchange="expToggleMeta(\'owner\',this.parentElement)"> Account owner</label>' +
+        '<label class="export-meta-check"><input type="checkbox" id="chk-entity" checked onchange="expToggleMeta(\'entity\')"> Entity</label>' +
+        '<label class="export-meta-check"><input type="checkbox" id="chk-icp"    onchange="expToggleMeta(\'icp\')"> ICP</label>' +
+        '<label class="export-meta-check"><input type="checkbox" id="chk-logo"   onchange="expToggleMeta(\'logo\')"> Logo / Group</label>' +
+        '<label class="export-meta-check"><input type="checkbox" id="chk-owner"  onchange="expToggleMeta(\'owner\')"> Account owner</label>' +
       '</div>' +
-      '<div style="font-size:11px;color:var(--text-muted)">Logo level exports always group by logo — additional columns not applicable.</div>' +
     '</div>' +
     '<div class="export-actions">' +
-      '<button class="btn-export btn-csv" onclick="expDownloadCSV()">⬇ Download CSV</button>' +
-      '<button class="btn-export btn-xlsx" onclick="expDownloadXLSX()">⬇ Download Excel</button>' +
+      '<button class="btn-export btn-csv" onclick="expDownloadCSV()">\u2b07 Download CSV</button>' +
+      '<button class="btn-export btn-xlsx" onclick="expDownloadXLSX()">\u2b07 Download Excel</button>' +
     '</div>' +
     '<div class="export-preview" id="exp-preview"></div>' +
     '<div class="export-row-count" id="exp-row-count"></div>';
 
   document.getElementById('export-content').innerHTML = html;
 
-  // Load SheetJS for Excel export
   if (typeof XLSX === 'undefined') {
     var s = document.createElement('script');
     s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-    s.onload = function() { console.log('SheetJS loaded'); };
     document.head.appendChild(s);
   }
 
   refresh();
 }
+
 
 function closeRetModal() {
   document.getElementById('retModal').style.display = 'none';
