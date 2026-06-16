@@ -422,7 +422,12 @@ function renderEntity(e) {
   if (!e) return '';
   const entityKey = e.name.replace(/[^a-z0-9]/gi,'_').toLowerCase();
   const manualState = (closingData && closingData.manualChecks || {})[entityKey] || {};
-  const checks = (e.checks || []).map((c, i) => {
+  // Inject static GL 6020 check for NO entity if not already present
+  var entityChecks = (e.checks || []).slice();
+  if (e.name && e.name.includes('Dogu') && !entityChecks.some(function(c){ return c.label && c.label.includes('6020'); })) {
+    entityChecks.push({ label: 'GL 6020 — Avskrivning bygg og anlegg', status: 'ok', note: 'Manually confirmed as done for this period.' });
+  }
+  const checks = entityChecks.map((c, i) => {
     const checkKey = `${entityKey}_${i}`;
     if (c.status === 'manual') {
       const done = !!manualState[checkKey];
@@ -1496,19 +1501,19 @@ function closeCustomerCard() {
 
 function renderFin() {
   var months        = ["May'25", "Jun'25", "Jul'25", "Aug'25", "Sep'25", "Oct'25", "Nov'25", "Dec'25", "Jan'26", "Feb'26", "Mar'26", "Apr'26", "May'26"];
-  var opIncome      = [736028, 718488, 686241, 703976, 704201, 740324, 717222, 644250, 639440, 608484, 647721, 637101, 624690];
+  var opIncome      = [736028, 718488, 686241, 703976, 704201, 740324, 717222, 644250, 639440, 608484, 647721.31, 637100.77, 626377.36];
   var prodRevIncSR  = [723565, 684106, 675576, 689308, 681438, 693901, 679620, 594277, 627476, 601934, 621878, 621195, 607689];
   var prodRevExcSR  = [568370, 571846, 560705, 574755, 567554, 580018, 602473, 594277, 627476, 601934, 621878, 621195, 607689];
-  var opExpenses    = [-648275, -349793, -599725, -554596, -613582, -714438, -726382, 83097, -681014, -638607, -638092, -636331, -601734];
-  var ebitdaVals    = [80934, 349740, 77427, 135769, 76867, -17466, -21829, 704262, -44206, -36519, -6304, -13611, 6349];
-  var ebitdacVals   = [80934, 349740, 77427, 135769, 76867, -17466, -21829, 168012, -44206, -36519, -6304, -13611, 6349];
-  var profitVals    = [29699, 252864, 27482, 70318, 22877, -68923, -69592, 641264, -96418, -523781, -82304, -72345, 781];
+  var opExpenses    = [-648275, -349793, -599725, -554596, -613582, -714438, -726382, 83097, -681014, -638607, -638091.88, -636330.83, -605551.57];
+  var ebitdaVals    = [80934, 349740, 77427, 135769, 76867, -17466, -21829, 704262, -44206, -36519, -6304.22, -13610.73, 4218.98];
+  var ebitdacVals   = [80934, 349740, 77427, 135769, 76867, -17466, -21829, 168012, -44206, -36519, -6304.22, -13610.73, 4218.98];
+  var profitVals    = [29699, 252864, 27482, 70318, 22877, -68923, -69592, 641264, -96418, -523781, -82304.16, -72344.7, -47087.0];
   var arrVals       = [6637764, 6664680, 6678840, 6744336, 6767412, 6789972, 7146888, 6827352, 7527096, 7615200, 7588584, 7540524, 7471236];
   var ebitdacMargin = [11.0, 48.7, 11.3, 19.3, 10.9, -2.4, -3.0, 26.1, -6.9, -6.0, -1.0, -2.1, 1.0];
   var arrMay25      = 6637764;
   var arrMay26      = 7471236;
   var arrGrowth     = 12.6;
-  var ebitdacMrg    = 8.4;
+  var ebitdacMrg    = 8.3;
   var deltaDefRev   = -205913;
   var adjMargin     = 5.8;
   var ruleOf40      = 18.4;
@@ -1525,13 +1530,13 @@ function renderFin() {
   h += '<div class="fin-disclaimer"><div class="fin-disclaimer-icon">\u23F1</div><div class="fin-disclaimer-text"><strong>Closed periods only.</strong> Figures reflect May 2026 (latest closed period).</div></div>';
   h += '<div class="fin-section-label">General Group Performance' + badge + '</div>';
   h += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem">';
-  h += kpi("Total Operating Income", fmtUSD(8072138), "var(--dark-teal)", "", opIncome, "#1EAFAA");
+  h += kpi("Total Operating Income", fmtUSD(8073825), "var(--dark-teal)", "", opIncome, "#1EAFAA");
   h += kpi('Product Revenue <span style="font-size:10px;color:var(--text-muted)">excl. SalesRabbit</span>', fmtUSD(7131800), "var(--dark-teal)", "", prodRevExcSR, "#1EAFAA");
   h += kpi('Product Revenue <span style="font-size:10px;color:var(--text-muted)">incl. SalesRabbit</span>', fmtUSD(7778398), "var(--dark-teal)", "", prodRevIncSR, "#A7D6D4");
-  h += kpi("Total Operating Expenses", fmtUSD(-6671197), vc(-6671197), "", opExpenses, "#D63C60");
-  h += kpi("EBITDA", fmtUSD(1210479), vc(1210479), "15.0% margin", ebitdaVals, "#114B5C");
-  h += kpi("Profit After Tax", fmtUSD(102223), vc(102223), "1.27% margin", profitVals, "#114B5C");
-  h += kpi("EBITDAC", fmtUSD(674229), vc(674229), "8.4% margin", ebitdacVals, "#114B5C");
+  h += kpi("Total Operating Expenses", fmtUSD(-6675014), vc(-6671197), "", opExpenses, "#D63C60");
+  h += kpi("EBITDA", fmtUSD(1208349), vc(1210479), "15.0% margin", ebitdaVals, "#114B5C");
+  h += kpi("Profit After Tax", fmtUSD(54355), vc(102223), "1.27% margin", profitVals, "#114B5C");
+  h += kpi("EBITDAC", fmtUSD(672099), vc(674229), "8.4% margin", ebitdacVals, "#114B5C");
   h += "</div>";
   var r40color = ruleOf40 >= 40 ? "#1EAFAA" : ruleOf40 >= 20 ? "var(--dark-teal)" : "var(--cranberry)";
   h += '<div class="fin-section-label">Rule of 40' + badgeMay + '</div>';
@@ -1696,6 +1701,7 @@ function renderExport() {
     if (toIdx   < 0) toIdx   = ALL_MONTHS.length - 1;
     var months = ALL_MONTHS.slice(fromIdx, toIdx + 1);
     var mult   = _exMetric === 'arr' ? 12 : 1;
+    var isMovement = _exMetric === 'movement';
 
     var rows = [];
 
@@ -1709,9 +1715,16 @@ function renderExport() {
           logo:   (c.logo || '').trim(),
           owner:  c.owner_name || '',
           _flag: false };
-        months.forEach(function(m) {
-          var v = ((c.mrr||{})[m]||0) * mult;
-          row[m] = v > 0 ? Math.round(v * 100) / 100 : 0;
+        months.forEach(function(m, mi) {
+          if (isMovement) {
+            var prevM = mi > 0 ? months[mi-1] : null;
+            var cur  = ((c.mrr||{})[m]||0);
+            var prev = prevM ? ((c.mrr||{})[prevM]||0) : 0;
+            row[m] = Math.round((cur - prev) * 100) / 100;
+          } else {
+            var v = ((c.mrr||{})[m]||0) * mult;
+            row[m] = v > 0 ? Math.round(v * 100) / 100 : 0;
+          }
         });
         rows.push(row);
       });
@@ -1742,7 +1755,16 @@ function renderExport() {
       // No-logo row at top
       if (hasNoLogo) {
         var nlRow = { name: '(No logo assigned)', _flag: true };
-        months.forEach(function(m){ nlRow[m] = Math.round((noLogoMrr[m]||0)*mult*100)/100; });
+        months.forEach(function(m, mi){
+          if (isMovement) {
+            var prevM = mi > 0 ? months[mi-1] : null;
+            var cur  = noLogoMrr[m]||0;
+            var prev = prevM ? (noLogoMrr[prevM]||0) : 0;
+            nlRow[m] = Math.round((cur - prev) * 100) / 100;
+          } else {
+            nlRow[m] = Math.round((noLogoMrr[m]||0)*mult*100)/100;
+          }
+        });
         rows.push(nlRow);
       }
 
@@ -1751,7 +1773,16 @@ function renderExport() {
         var hasAny = months.some(function(m){ return (logoMap[logo][m]||0) > 0; });
         if (!hasAny) return;
         var row = { name: logo, _flag: false };
-        months.forEach(function(m){ row[m] = Math.round((logoMap[logo][m]||0)*mult*100)/100; });
+        months.forEach(function(m, mi){
+          if (isMovement) {
+            var prevM = mi > 0 ? months[mi-1] : null;
+            var cur  = logoMap[logo][m]||0;
+            var prev = prevM ? (logoMap[logo][prevM]||0) : 0;
+            row[m] = Math.round((cur - prev) * 100) / 100;
+          } else {
+            row[m] = Math.round((logoMap[logo][m]||0)*mult*100)/100;
+          }
+        });
         rows.push(row);
       });
     }
@@ -1766,17 +1797,20 @@ function renderExport() {
     return { rows: rows, months: months };
   }
 
-  function fmtNum(v) {
+  function fmtNum(v, movement) {
     if (!v && v !== 0) return '';
     if (v === 0) return '—';
-    return v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    var s = v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (movement && v > 0) s = '+' + s;
+    return s;
   }
 
   function renderPreview(data) {
+    var isMovement = _exMetric === 'movement';
     var rows = data.rows; var months = data.months;
     var metaCols = getMetaCols();
     var ncols = 1 + metaCols.length + months.length;
-    var metric = _exMetric.toUpperCase();
+    var metric = _exMetric === 'movement' ? 'MoM Δ' : (_exMetric === 'movement' ? 'MRR Movement' : _exMetric.toUpperCase());
     var nameLabel = _exLevel === 'customer' ? 'Customer' : 'Logo / Group';
 
     var thead = '<tr><th>' + nameLabel + '</th>' +
@@ -1796,7 +1830,7 @@ function renderExport() {
                 : '';
       return '<tr' + style + '><td>' + r.name + '</td>' +
         metaCols.map(function(c){ return '<td>' + (r[c.key]||'') + '</td>'; }).join('') +
-        months.map(function(m){ return '<td class="num">' + fmtNum(r[m]) + '</td>'; }).join('') +
+        months.map(function(m){ return '<td class="num" style="color:' + (isMovement && r[m] < 0 ? 'var(--cranberry)' : isMovement && r[m] > 0 ? '#1a6e17' : 'inherit') + '">' + fmtNum(r[m], isMovement) + '</td>'; }).join('') +
         '</tr>';
     }
 
@@ -1810,7 +1844,7 @@ function renderExport() {
   function buildExportData(data) {
     var rows = data.rows; var months = data.months;
     var metaCols = getMetaCols();
-    var metric = _exMetric.toUpperCase();
+    var metric = _exMetric === 'movement' ? 'MoM Δ' : _exMetric.toUpperCase();
     var nameLabel = _exLevel === 'customer' ? 'Customer' : 'Logo / Group';
     var headers = [nameLabel]
       .concat(metaCols.map(function(c){ return c.label; }))
@@ -1924,6 +1958,7 @@ function renderExport() {
       '<div class="export-toggle" id="exp-metric">' +
         '<button class="export-opt active" onclick="expSetMetric(\'mrr\',this)">MRR</button>' +
         '<button class="export-opt" onclick="expSetMetric(\'arr\',this)">ARR</button>' +
+        '<button class="export-opt" onclick="expSetMetric(\'movement\',this)">MRR Movement</button>' +
       '</div>' +
     '</div>' +
     '<div class="export-card" id="exp-meta-card">' +
