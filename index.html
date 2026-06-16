@@ -1702,6 +1702,7 @@ function renderExport() {
     var months = ALL_MONTHS.slice(fromIdx, toIdx + 1);
     var mult   = _exMetric === 'arr' ? 12 : 1;
     var isMovement = _exMetric === 'movement';
+    var prevPeriodMonth = fromIdx > 0 ? ALL_MONTHS[fromIdx - 1] : null;
 
     var rows = [];
 
@@ -1717,7 +1718,7 @@ function renderExport() {
           _flag: false };
         months.forEach(function(m, mi) {
           if (isMovement) {
-            var prevM = mi > 0 ? months[mi-1] : null;
+            var prevM = mi > 0 ? months[mi-1] : prevPeriodMonth;
             var cur  = ((c.mrr||{})[m]||0);
             var prev = prevM ? ((c.mrr||{})[prevM]||0) : 0;
             row[m] = Math.round((cur - prev) * 100) / 100;
@@ -1757,7 +1758,7 @@ function renderExport() {
         var nlRow = { name: '(No logo assigned)', _flag: true };
         months.forEach(function(m, mi){
           if (isMovement) {
-            var prevM = mi > 0 ? months[mi-1] : null;
+            var prevM = mi > 0 ? months[mi-1] : prevPeriodMonth;
             var cur  = noLogoMrr[m]||0;
             var prev = prevM ? (noLogoMrr[prevM]||0) : 0;
             nlRow[m] = Math.round((cur - prev) * 100) / 100;
@@ -1775,7 +1776,7 @@ function renderExport() {
         var row = { name: logo, _flag: false };
         months.forEach(function(m, mi){
           if (isMovement) {
-            var prevM = mi > 0 ? months[mi-1] : null;
+            var prevM = mi > 0 ? months[mi-1] : prevPeriodMonth;
             var cur  = logoMap[logo][m]||0;
             var prev = prevM ? (logoMap[logo][prevM]||0) : 0;
             row[m] = Math.round((cur - prev) * 100) / 100;
