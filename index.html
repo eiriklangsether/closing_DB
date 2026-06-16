@@ -1551,7 +1551,7 @@ function renderFin() {
 
   // Score display
   h += '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:.5rem">Rule of 40 Score</div>';
-  h += '<div id="r40score" style="font-size:48px;font-weight:700;color:var(--dark-teal);line-height:1">21.0</div>';
+  h += '<div id="r40score" style="font-size:48px;font-weight:700;color:var(--dark-teal);line-height:1">20.9</div>';
   h += '<div id="r40bench" style="font-size:11px;color:var(--text-muted);margin-top:.5rem">⚠️ Below benchmark (40)</div>';
 
   // Breakdown rows
@@ -1559,7 +1559,7 @@ function renderFin() {
   h += '<div id="r40rows">';
   // Standard rows (shown by default)
   h += '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>ARR Growth YoY (May 25 → May 26)</span><strong style="color:var(--dark-teal)">+12.6%</strong></div>';
-  h += '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>EBITDAC Margin (L12M)</span><strong style="color:var(--dark-teal)">+8.4%</strong></div>';
+  h += '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>EBITDAC Margin (L12M)</span><strong style="color:var(--dark-teal)">+8.3%</strong></div>';
   h += '<div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px dashed var(--border)"><span style="font-weight:600">Rule of 40 = ARR Growth + EBITDAC Margin</span><strong>21.0</strong></div>';
   h += '</div>';
   h += '</div>';
@@ -1576,7 +1576,7 @@ function renderFin() {
     document.getElementById('r40btnVkg').style.background = isV ? 'var(--dark-teal)' : 'var(--surface)';
     document.getElementById('r40btnVkg').style.color      = isV ? '#fff' : 'var(--text-muted)';
     document.getElementById('r40btnVkg').style.borderColor= isV ? 'var(--dark-teal)' : 'var(--border)';
-    var score = isV ? 18.4 : 21.0;
+    var score = isV ? 18.4 : 20.9;
     var color = score >= 40 ? '#1EAFAA' : score >= 20 ? 'var(--dark-teal)' : 'var(--cranberry)';
     document.getElementById('r40card').style.borderTop  = '3px solid ' + color;
     document.getElementById('r40score').textContent     = score.toFixed(1);
@@ -1585,7 +1585,7 @@ function renderFin() {
     document.getElementById('r40note').textContent      = isV ? 'Viking Growth: EBITDAC + Δ deferred revenue' : 'Standard: EBITDAC margin only';
     var rows =
       '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>ARR Growth YoY (May 25 → May 26)</span><strong style="color:var(--dark-teal)">+12.6%</strong></div>' +
-      '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>EBITDAC Margin (L12M)</span><strong style="color:var(--dark-teal)">+8.4%</strong></div>' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>EBITDAC Margin (L12M)</span><strong style="color:var(--dark-teal)">+8.3%</strong></div>' +
       (isV ?
         '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Δ Deferred Revenue</span><strong style="color:var(--cranberry)">-$206K (-2.6%)</strong></div>' +
         '<div style="display:flex;justify-content:space-between;margin-bottom:4px;padding-top:4px;border-top:1px dashed var(--border)"><span>Adjusted Margin</span><strong style="color:var(--dark-teal)">+5.8%</strong></div>'
