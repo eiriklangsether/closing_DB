@@ -2083,7 +2083,116 @@ function closeRetModal() {
 }
 
 function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
-  if (type !== 'ltv' && (!snapStart || !snapEnd || !months)) return;
+  // LTV: handled before any snapStart/months dereference
+  if (type === 'ltv') {
+
+    const d = window._ltvData;
+    if (!d) return;
+    const mode = window._ltvMode || 'all';
+    const r = mode === 'icp' ? d.icp : d.all;
+    const label = mode === 'icp' ? 'ICP only' : 'All customers';
+    const fmtPct = function(v) { return v.toFixed(2) + '%'; };
+    title   = 'LTV — Customer Lifetime Value (' + label + ')';
+    subLine = d.startM + ' → ' + d.endM + ' · Revenue churn basis · Gross margin excluded';
+    formulaHtml = '<div class="ret-formula">' +
+      '<div class="ret-formula-row"><span class="ret-formula-label">Formula</span>' +
+      '<span style="color:var(--text-secondary);font-size:13px">ARPU ÷ Monthly revenue churn rate</span></div>' +
+      '<hr class="ret-formula-divider">' +
+      '<div class="ret-formula-row"><span class="ret-formula-label">ARPU (' + d.startM + ')</span>' +
+      '<span class="ret-formula-val">' + fmt(r.ltv.arpu) + '/mo</span>' +
+      '<span class="ret-formula-note">Start MRR ' + fmt(r.ret.sT) + ' ÷ ' + r.ret.sN + ' customers</span></div>' +
+      '<div class="ret-formula-row"><span class="ret-formula-label">L12M GRR</span>' +
+      '<span class="ret-formula-val">' + r.ret.grr.toFixed(1) + '%</span>' +
+      '<span class="ret-formula-note">Gross revenue retention Jul 2025 → Jun 2026</span></div>' +
+      '<div class="ret-formula-row"><span class="ret-formula-label">Annual revenue churn</span>' +
+      '<span class="ret-formula-val" style="color:var(--cranberry)">' + fmtPct(r.ltv.annChurn) + '</span>' +
+      '<span class="ret-formula-note">1 − GRR = ' + fmtPct(r.ltv.annChurn) + '</span></div>' +
+      '<div class="ret-formula-row"><span class="ret-formula-label">Monthly revenue churn</span>' +
+      '<span class="ret-formula-val" style="color:var(--cranberry)">' + fmtPct(r.ltv.annChurn/12) + '/mo</span>' +
+      '<span class="ret-formula-note">Annual churn ÷ 12</span></div>' +
+      '<hr class="ret-formula-divider">' +
+      '<div class="ret-formula-row"><span class="ret-formula-label">LTV</span>' +
+      '<span class="ret-formula-result">' + fmt(r.ltv.arpu) + ' ÷ ' + fmtPct(r.ltv.annChurn/12) + ' = ' + fmt(r.ltv.ltv) + '</span></div>' +
+      '<div style="margin-top:12px;padding:10px;background:var(--teal-lighter);border-radius:8px;font-size:12px;color:var(--dark-teal);line-height:1.6">' +
+      '<strong>Caveats:</strong> Gross margin excluded (LTV is overstated vs true economic LTV). ' +
+      'Churn rate derived from L12M GRR (Jul 2025–Jun 2026). ' +
+      'Assumes steady-state churn — not adjusted for cohort ageing or expansion. ' +
+      'ICP toggle uses ICP-flagged customers from CUSTOMER_META only.' +
+      '</div></div>';
+    var dAll = d.all, dICP = d.icp;
+    bodyHtml = '<div class="ret-section-label">All vs ICP comparison</div>' +
+      '<div class="ret-table-wrap"><table class="ret-table"><thead><tr>' +
+      '<th>Metric</th><th class="num">All customers</th><th class="num">ICP only</th></tr></thead><tbody>' +
+      '<tr><td>Customers at start</td><td class="num">' + dAll.ret.sN + '</td><td class="num">' + dICP.ret.sN + '</td></tr>' +
+      '<tr><td>Start MRR</td><td class="num">' + fmt(dAll.ret.sT) + '</td><td class="num">' + fmt(dICP.ret.sT) + '</td></tr>' +
+      '<tr><td>ARPU (start)</td><td class="num">' + fmt(dAll.ltv.arpu) + '/mo</td><td class="num">' + fmt(dICP.ltv.arpu) + '/mo</td></tr>' +
+      '<tr><td>L12M GRR</td><td class="num">' + dAll.ret.grr.toFixed(1) + '%</td><td class="num">' + dICP.ret.grr.toFixed(1) + '%</td></tr>' +
+      '<tr><td>Annual rev churn</td><td class="num" style="color:var(--cranberry)">' + dAll.ltv.annChurn.toFixed(1) + '%</td>' +
+      '<td class="num" style="color:var(--cranberry)">' + dICP.ltv.annChurn.toFixed(1) + '%</td></tr>' +
+      '<tr><td><strong>LTV</strong></td><td class="num"><strong>' + fmt(dAll.ltv.ltv) + '</strong></td>' +
+      '<td class="num"><strong>' + fmt(dICP.ltv.ltv) + '</strong></td></tr>' +
+      '</tbody></table></div>';
+
+  } else if (type === 'ltv') {
+    const d = window._ltvData;
+    if (!d) return;
+    const mode = window._ltvMode || 'all';
+    const r = mode === 'icp' ? d.icp : d.all;
+    const label = mode === 'icp' ? 'ICP only' : 'All customers';
+    const fmtPct = function(v) { return v.toFixed(2) + '%'; };
+    title   = 'LTV \u2014 Customer Lifetime Value (' + label + ')';
+    subLine = d.startM + ' \u2192 ' + d.endM + ' \u00b7 Revenue churn basis \u00b7 Gross margin excluded';
+    formulaHtml =
+      '<div class="ret-formula">' +
+      '<div class="ret-formula-row"><span class="ret-formula-label">Formula</span>' +
+      '<span style="color:var(--text-secondary);font-size:13px">ARPU \u00f7 Monthly revenue churn rate</span></div>' +
+      '<hr class="ret-formula-divider">' +
+      '<div class="ret-formula-row"><span class="ret-formula-label">ARPU (' + d.startM + ')</span>' +
+      '<span class="ret-formula-val">' + fmt(r.ltv.arpu) + '/mo</span>' +
+      '<span class="ret-formula-note">Start MRR ' + fmt(r.ret.sT) + ' \u00f7 ' + r.ret.sN + ' customers</span></div>' +
+      '<div class="ret-formula-row"><span class="ret-formula-label">L12M GRR</span>' +
+      '<span class="ret-formula-val">' + r.ret.grr.toFixed(1) + '%</span>' +
+      '<span class="ret-formula-note">Gross revenue retention Jul 2025 \u2192 Jun 2026</span></div>' +
+      '<div class="ret-formula-row"><span class="ret-formula-label">Annual revenue churn</span>' +
+      '<span class="ret-formula-val" style="color:var(--cranberry)">' + fmtPct(r.ltv.annChurn) + '</span>' +
+      '<span class="ret-formula-note">1 \u2212 GRR = ' + fmtPct(r.ltv.annChurn) + '</span></div>' +
+      '<div class="ret-formula-row"><span class="ret-formula-label">Monthly revenue churn</span>' +
+      '<span class="ret-formula-val" style="color:var(--cranberry)">' + fmtPct(r.ltv.annChurn/12) + '/mo</span>' +
+      '<span class="ret-formula-note">Annual churn \u00f7 12</span></div>' +
+      '<hr class="ret-formula-divider">' +
+      '<div class="ret-formula-row"><span class="ret-formula-label">LTV</span>' +
+      '<span class="ret-formula-result">' + fmt(r.ltv.arpu) + ' \u00f7 ' + fmtPct(r.ltv.annChurn/12) + ' = ' + fmt(r.ltv.ltv) + '</span></div>' +
+      '<div style="margin-top:12px;padding:10px;background:var(--teal-lighter);border-radius:8px;font-size:12px;color:var(--dark-teal);line-height:1.6">' +
+      '<strong>Caveats:</strong> Gross margin excluded (LTV overstated vs true economic LTV). ' +
+      'Churn derived from L12M GRR (Jul 2025\u2013Jun 2026). ' +
+      'Assumes steady-state churn \u2014 not adjusted for cohort ageing or expansion. ' +
+      'ICP toggle uses ICP-flagged customers from CUSTOMER_META only.' +
+      '</div></div>';
+    var dAll = d.all, dICP = d.icp;
+    bodyHtml =
+      '<div class="ret-section-label">All vs ICP comparison</div>' +
+      '<div class="ret-table-wrap"><table class="ret-table"><thead><tr>' +
+      '<th>Metric</th><th class="num">All customers</th><th class="num">ICP only</th></tr></thead><tbody>' +
+      '<tr><td>Customers at start</td><td class="num">' + dAll.ret.sN + '</td><td class="num">' + dICP.ret.sN + '</td></tr>' +
+      '<tr><td>Start MRR</td><td class="num">' + fmt(dAll.ret.sT) + '</td><td class="num">' + fmt(dICP.ret.sT) + '</td></tr>' +
+      '<tr><td>ARPU (start)</td><td class="num">' + fmt(dAll.ltv.arpu) + '/mo</td><td class="num">' + fmt(dICP.ltv.arpu) + '/mo</td></tr>' +
+      '<tr><td>L12M GRR</td><td class="num">' + dAll.ret.grr.toFixed(1) + '%</td><td class="num">' + dICP.ret.grr.toFixed(1) + '%</td></tr>' +
+      '<tr><td>Annual rev churn</td><td class="num" style="color:var(--cranberry)">' + dAll.ltv.annChurn.toFixed(1) + '%</td>' +
+      '<td class="num" style="color:var(--cranberry)">' + dICP.ltv.annChurn.toFixed(1) + '%</td></tr>' +
+      '<tr><td><strong>LTV</strong></td><td class="num"><strong>' + fmt(dAll.ltv.ltv) + '</strong></td>' +
+      '<td class="num"><strong>' + fmt(dICP.ltv.ltv) + '</strong></td></tr>' +
+      '</tbody></table></div>';
+
+    document.getElementById('retModalTitle').textContent = title;
+    document.getElementById('retModalSub').textContent   = subLine;
+    document.getElementById('retModalBody').innerHTML    = formulaHtml + bodyHtml;
+    const ov = document.getElementById('retModal');
+    ov.style.display = 'flex';
+    ov.scrollTop = 0;
+    return;
+  }
+
+  if (!snapStart || !snapEnd || !months) return;
   const startM  = months[0];
   const endM    = months[months.length - 1];
 
@@ -2234,103 +2343,6 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
         </table>
       </div>`;
 
-  } else if (type === 'ltv') {
-    const d = window._ltvData;
-    if (!d) return;
-    const mode = window._ltvMode || 'all';
-    const r = mode === 'icp' ? d.icp : d.all;
-    const label = mode === 'icp' ? 'ICP only' : 'All customers';
-    const fmtPct = function(v) { return v.toFixed(2) + '%'; };
-    title   = 'LTV — Customer Lifetime Value (' + label + ')';
-    subLine = d.startM + ' → ' + d.endM + ' · Revenue churn basis · Gross margin excluded';
-    formulaHtml = '<div class="ret-formula">' +
-      '<div class="ret-formula-row"><span class="ret-formula-label">Formula</span>' +
-      '<span style="color:var(--text-secondary);font-size:13px">ARPU ÷ Monthly revenue churn rate</span></div>' +
-      '<hr class="ret-formula-divider">' +
-      '<div class="ret-formula-row"><span class="ret-formula-label">ARPU (' + d.startM + ')</span>' +
-      '<span class="ret-formula-val">' + fmt(r.ltv.arpu) + '/mo</span>' +
-      '<span class="ret-formula-note">Start MRR ' + fmt(r.ret.sT) + ' ÷ ' + r.ret.sN + ' customers</span></div>' +
-      '<div class="ret-formula-row"><span class="ret-formula-label">L12M GRR</span>' +
-      '<span class="ret-formula-val">' + r.ret.grr.toFixed(1) + '%</span>' +
-      '<span class="ret-formula-note">Gross revenue retention Jul 2025 → Jun 2026</span></div>' +
-      '<div class="ret-formula-row"><span class="ret-formula-label">Annual revenue churn</span>' +
-      '<span class="ret-formula-val" style="color:var(--cranberry)">' + fmtPct(r.ltv.annChurn) + '</span>' +
-      '<span class="ret-formula-note">1 − GRR = ' + fmtPct(r.ltv.annChurn) + '</span></div>' +
-      '<div class="ret-formula-row"><span class="ret-formula-label">Monthly revenue churn</span>' +
-      '<span class="ret-formula-val" style="color:var(--cranberry)">' + fmtPct(r.ltv.annChurn/12) + '/mo</span>' +
-      '<span class="ret-formula-note">Annual churn ÷ 12</span></div>' +
-      '<hr class="ret-formula-divider">' +
-      '<div class="ret-formula-row"><span class="ret-formula-label">LTV</span>' +
-      '<span class="ret-formula-result">' + fmt(r.ltv.arpu) + ' ÷ ' + fmtPct(r.ltv.annChurn/12) + ' = ' + fmt(r.ltv.ltv) + '</span></div>' +
-      '<div style="margin-top:12px;padding:10px;background:var(--teal-lighter);border-radius:8px;font-size:12px;color:var(--dark-teal);line-height:1.6">' +
-      '<strong>Caveats:</strong> Gross margin excluded (LTV is overstated vs true economic LTV). ' +
-      'Churn rate derived from L12M GRR (Jul 2025–Jun 2026). ' +
-      'Assumes steady-state churn — not adjusted for cohort ageing or expansion. ' +
-      'ICP toggle uses ICP-flagged customers from CUSTOMER_META only.' +
-      '</div></div>';
-    var dAll = d.all, dICP = d.icp;
-    bodyHtml = '<div class="ret-section-label">All vs ICP comparison</div>' +
-      '<div class="ret-table-wrap"><table class="ret-table"><thead><tr>' +
-      '<th>Metric</th><th class="num">All customers</th><th class="num">ICP only</th></tr></thead><tbody>' +
-      '<tr><td>Customers at start</td><td class="num">' + dAll.ret.sN + '</td><td class="num">' + dICP.ret.sN + '</td></tr>' +
-      '<tr><td>Start MRR</td><td class="num">' + fmt(dAll.ret.sT) + '</td><td class="num">' + fmt(dICP.ret.sT) + '</td></tr>' +
-      '<tr><td>ARPU (start)</td><td class="num">' + fmt(dAll.ltv.arpu) + '/mo</td><td class="num">' + fmt(dICP.ltv.arpu) + '/mo</td></tr>' +
-      '<tr><td>L12M GRR</td><td class="num">' + dAll.ret.grr.toFixed(1) + '%</td><td class="num">' + dICP.ret.grr.toFixed(1) + '%</td></tr>' +
-      '<tr><td>Annual rev churn</td><td class="num" style="color:var(--cranberry)">' + dAll.ltv.annChurn.toFixed(1) + '%</td>' +
-      '<td class="num" style="color:var(--cranberry)">' + dICP.ltv.annChurn.toFixed(1) + '%</td></tr>' +
-      '<tr><td><strong>LTV</strong></td><td class="num"><strong>' + fmt(dAll.ltv.ltv) + '</strong></td>' +
-      '<td class="num"><strong>' + fmt(dICP.ltv.ltv) + '</strong></td></tr>' +
-      '</tbody></table></div>';
-
-  } else if (type === 'ltv') {
-    const d = window._ltvData;
-    if (!d) return;
-    const mode = window._ltvMode || 'all';
-    const r = mode === 'icp' ? d.icp : d.all;
-    const label = mode === 'icp' ? 'ICP only' : 'All customers';
-    const fmtPct = function(v) { return v.toFixed(2) + '%'; };
-    title   = 'LTV \u2014 Customer Lifetime Value (' + label + ')';
-    subLine = d.startM + ' \u2192 ' + d.endM + ' \u00b7 Revenue churn basis \u00b7 Gross margin excluded';
-    formulaHtml =
-      '<div class="ret-formula">' +
-      '<div class="ret-formula-row"><span class="ret-formula-label">Formula</span>' +
-      '<span style="color:var(--text-secondary);font-size:13px">ARPU \u00f7 Monthly revenue churn rate</span></div>' +
-      '<hr class="ret-formula-divider">' +
-      '<div class="ret-formula-row"><span class="ret-formula-label">ARPU (' + d.startM + ')</span>' +
-      '<span class="ret-formula-val">' + fmt(r.ltv.arpu) + '/mo</span>' +
-      '<span class="ret-formula-note">Start MRR ' + fmt(r.ret.sT) + ' \u00f7 ' + r.ret.sN + ' customers</span></div>' +
-      '<div class="ret-formula-row"><span class="ret-formula-label">L12M GRR</span>' +
-      '<span class="ret-formula-val">' + r.ret.grr.toFixed(1) + '%</span>' +
-      '<span class="ret-formula-note">Gross revenue retention Jul 2025 \u2192 Jun 2026</span></div>' +
-      '<div class="ret-formula-row"><span class="ret-formula-label">Annual revenue churn</span>' +
-      '<span class="ret-formula-val" style="color:var(--cranberry)">' + fmtPct(r.ltv.annChurn) + '</span>' +
-      '<span class="ret-formula-note">1 \u2212 GRR = ' + fmtPct(r.ltv.annChurn) + '</span></div>' +
-      '<div class="ret-formula-row"><span class="ret-formula-label">Monthly revenue churn</span>' +
-      '<span class="ret-formula-val" style="color:var(--cranberry)">' + fmtPct(r.ltv.annChurn/12) + '/mo</span>' +
-      '<span class="ret-formula-note">Annual churn \u00f7 12</span></div>' +
-      '<hr class="ret-formula-divider">' +
-      '<div class="ret-formula-row"><span class="ret-formula-label">LTV</span>' +
-      '<span class="ret-formula-result">' + fmt(r.ltv.arpu) + ' \u00f7 ' + fmtPct(r.ltv.annChurn/12) + ' = ' + fmt(r.ltv.ltv) + '</span></div>' +
-      '<div style="margin-top:12px;padding:10px;background:var(--teal-lighter);border-radius:8px;font-size:12px;color:var(--dark-teal);line-height:1.6">' +
-      '<strong>Caveats:</strong> Gross margin excluded (LTV overstated vs true economic LTV). ' +
-      'Churn derived from L12M GRR (Jul 2025\u2013Jun 2026). ' +
-      'Assumes steady-state churn \u2014 not adjusted for cohort ageing or expansion. ' +
-      'ICP toggle uses ICP-flagged customers from CUSTOMER_META only.' +
-      '</div></div>';
-    var dAll = d.all, dICP = d.icp;
-    bodyHtml =
-      '<div class="ret-section-label">All vs ICP comparison</div>' +
-      '<div class="ret-table-wrap"><table class="ret-table"><thead><tr>' +
-      '<th>Metric</th><th class="num">All customers</th><th class="num">ICP only</th></tr></thead><tbody>' +
-      '<tr><td>Customers at start</td><td class="num">' + dAll.ret.sN + '</td><td class="num">' + dICP.ret.sN + '</td></tr>' +
-      '<tr><td>Start MRR</td><td class="num">' + fmt(dAll.ret.sT) + '</td><td class="num">' + fmt(dICP.ret.sT) + '</td></tr>' +
-      '<tr><td>ARPU (start)</td><td class="num">' + fmt(dAll.ltv.arpu) + '/mo</td><td class="num">' + fmt(dICP.ltv.arpu) + '/mo</td></tr>' +
-      '<tr><td>L12M GRR</td><td class="num">' + dAll.ret.grr.toFixed(1) + '%</td><td class="num">' + dICP.ret.grr.toFixed(1) + '%</td></tr>' +
-      '<tr><td>Annual rev churn</td><td class="num" style="color:var(--cranberry)">' + dAll.ltv.annChurn.toFixed(1) + '%</td>' +
-      '<td class="num" style="color:var(--cranberry)">' + dICP.ltv.annChurn.toFixed(1) + '%</td></tr>' +
-      '<tr><td><strong>LTV</strong></td><td class="num"><strong>' + fmt(dAll.ltv.ltv) + '</strong></td>' +
-      '<td class="num"><strong>' + fmt(dICP.ltv.ltv) + '</strong></td></tr>' +
-      '</tbody></table></div>';
 
   } else {
     // yoy
