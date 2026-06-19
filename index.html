@@ -978,15 +978,17 @@ function renderMRR(data, selectedMonth) {
         h+='<div class="metric-label">ICP GRR <span style="'+ti+'">L12M</span><span style="font-size:10px;margin-left:4px;opacity:.5">\u2197</span></div>';
         h+='<div class="metric-value '+(icp.grr>=95?'':'metric-warn')+'">'+icp.grr.toFixed(1)+'%</div>';
         h+='<div class="metric-sub">Gross revenue retention \u00b7 ICP only</div></div>';
-        var ltvMode=window._ltvMode||'all';
-        var ltvShow=ltvMode==='icp'?ltvICP:ltvAll;
-        var ltvLabel=ltvMode==='icp'?'ICP':'All';
-        h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._ltvModal()" title="Click for formula">';
-        h+='<div class="metric-label">LTV <span style="'+ti+'">L12M</span> ';
-        h+='<button onclick="event.stopPropagation();window._ltvToggle()" style="font-size:10px;padding:1px 7px;border-radius:10px;border:1px solid var(--teal);background:var(--teal-lighter);color:var(--dark-teal);cursor:pointer;font-weight:600">'+ltvLabel+'</button>';
-        h+='<span style="font-size:10px;margin-left:4px;opacity:.5">\u2197</span></div>';
-        h+='<div class="metric-value" style="color:var(--dark-teal)">'+usdFmt(Math.round(ltvShow.ltv))+'</div>';
-        h+='<div class="metric-sub">ARPU '+usdFmt(Math.round(ltvShow.arpu))+'/mo \u00b7 rev churn '+ltvShow.annChurn.toFixed(1)+'%/yr</div>';
+        // LTV — All customers
+        h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._ltvAllModal()" title="Click for formula">';
+        h+='<div class="metric-label">LTV <span style="'+ti+'">All customers</span><span style="font-size:10px;margin-left:4px;opacity:.5">\u2197</span></div>';
+        h+='<div class="metric-value" style="color:var(--dark-teal)">'+usdFmt(Math.round(ltvAll.ltv))+'</div>';
+        h+='<div class="metric-sub">ARPU '+usdFmt(Math.round(ltvAll.arpu))+'/mo \u00b7 churn '+ltvAll.annChurn.toFixed(1)+'%/yr</div>';
+        h+='</div>';
+        // LTV — ICP only
+        h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._ltvIcpModal()" title="Click for formula">';
+        h+='<div class="metric-label">LTV <span style="'+ti+'">ICP only</span><span style="font-size:10px;margin-left:4px;opacity:.5">\u2197</span></div>';
+        h+='<div class="metric-value" style="color:var(--dark-teal)">'+usdFmt(Math.round(ltvICP.ltv))+'</div>';
+        h+='<div class="metric-sub">ARPU '+usdFmt(Math.round(ltvICP.arpu))+'/mo \u00b7 churn '+ltvICP.annChurn.toFixed(1)+'%/yr</div>';
         h+='</div>';
         return h;
       })()} 
@@ -1062,11 +1064,8 @@ function renderMRR(data, selectedMonth) {
     openRetModal(type, window._icpRetData.snapStart, window._icpRetData.snapEnd,
                  window._icpRetData.months, ['ICP']);
   };
-  window._ltvModal  = function() { openRetModal('ltv', null, null, null, null); };
-  window._ltvToggle = function() {
-    window._ltvMode = (window._ltvMode === 'icp' ? 'all' : 'icp');
-    renderMRR();
-  };
+  window._ltvAllModal = function() { window._ltvMode = 'all'; openRetModal('ltv', null, null, null, null); };
+  window._ltvIcpModal = function() { window._ltvMode = 'icp'; openRetModal('ltv', null, null, null, null); };
   drawCharts(months, totals, selectedMonth);
   drawWaterfall(mov, totals, months, movPeriodStart, movPeriodEnd);
 }
