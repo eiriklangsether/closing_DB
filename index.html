@@ -2134,6 +2134,15 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
       '</tbody></table></div>';
 
 
+  
+
+    document.getElementById('retModalTitle').textContent = title;
+    document.getElementById('retModalSub').textContent   = subLine;
+    document.getElementById('retModalBody').innerHTML    = formulaHtml + bodyHtml;
+    const ov = document.getElementById('retModal');
+    ov.style.display = 'flex';
+    ov.scrollTop = 0;
+    return;
   } else {
     // yoy
     title   = 'YoY ARR Growth';
