@@ -915,6 +915,51 @@ function renderMRR(data, selectedMonth) {
       })()} 
     </div>
 
+        <!-- ICP-only metrics row -->
+    <div class="metrics-row" style="margin-top:.5rem">
+      ${(function() {
+        var icpS={},icpE={};
+        var sM=months[0],eM=months[months.length-1];
+        Object.values(CUSTOMER_META).forEach(function(c){
+          if(c.icp!==true||c.entity==='PLG') return;
+          if(_activeEntity!=='ALL'&&c.entity!==_activeEntity) return;
+          var sv=(c.mrr||{})[sM]||0, ev=(c.mrr||{})[eM]||0;
+          if(sv>0) icpS[c.name]=(icpS[c.name]||0)+sv;
+          if(ev>0) icpE[c.name]=(icpE[c.name]||0)+ev;
+        });
+        var sN=new Set(Object.keys(icpS).filter(function(n){return icpS[n]>0;}));
+        var eN=new Set(Object.keys(icpE).filter(function(n){return icpE[n]>0;}));
+        var ret=[...sN].filter(function(n){return eN.has(n);});
+        var sT=Object.values(icpS).reduce(function(a,v){return a+v;},0);
+        var eT=Object.values(icpE).reduce(function(a,v){return a+v;},0);
+        var rC=ret.reduce(function(a,n){return a+Math.min(icpS[n]||0,icpE[n]||0);},0);
+        var rE=ret.reduce(function(a,n){return a+(icpE[n]||0);},0);
+        var iGRR=sT>0?Math.min(100,Math.round(rC/sT*1000)/10):0;
+        var iNRR=sT>0?Math.round(rE/sT*1000)/10:0;
+        var iAs=sT*12,iAe=eT*12;
+        var iGw=iAs>0?Math.round((iAe-iAs)/iAs*1000)/10:0;
+        var tl='border-top:2px solid var(--teal)';
+        var h='';
+        h+='<div class="metric-card" style="'+tl+'">';
+        h+='<div class="metric-label">ICP ARR <span style="font-size:10px;opacity:.55">'+eM+'</span></div>';
+        h+='<div class="metric-value" style="color:var(--dark-teal)">'+usdFmt(iAe)+'</div>';
+        h+='<div class="metric-sub">ICP customers only · excl. PLG</div></div>';
+        h+='<div class="metric-card" style="'+tl+'">';
+        h+='<div class="metric-label">ICP ARR Growth <span style="font-size:10px;opacity:.55">YoY</span></div>';
+        h+='<div class="metric-value '+(iGw>=0?'metric-pos':'metric-warn')+'">'+(iGw>=0?'+':'')+iGw.toFixed(1)+'%</div>';
+        h+='<div class="metric-sub">'+usdFmt(iAs)+' → '+usdFmt(iAe)+'</div></div>';
+        h+='<div class="metric-card" style="'+tl+'">';
+        h+='<div class="metric-label">ICP NRR <span style="font-size:10px;opacity:.55">L12M</span></div>';
+        h+='<div class="metric-value '+(iNRR>=100?'metric-pos':iNRR>=95?'':'metric-warn')+'">'+iNRR.toFixed(1)+'%</div>';
+        h+='<div class="metric-sub">Net revenue retention · ICP only</div></div>';
+        h+='<div class="metric-card" style="'+tl+'">';
+        h+='<div class="metric-label">ICP GRR <span style="font-size:10px;opacity:.55">L12M</span></div>';
+        h+='<div class="metric-value '+(iGRR>=95?'':'metric-warn')+'">'+iGRR.toFixed(1)+'%</div>';
+        h+='<div class="metric-sub">Gross revenue retention · ICP only</div></div>';
+        return h;
+      })()} 
+    </div>
+
     <div class="chart-section">
       <div class="chart-section-title">Monthly MRR — USD${_showSR ? '<span class="sr-warning">incl. SalesRabbit</span>' : ''}${_showPLG ? '<span class="sr-warning">incl. PLG</span>' : ''}</div>
       <div class="chart-wrap"><canvas id="mrrChart" role="img" aria-label="Monthly MRR line chart"></canvas></div>
