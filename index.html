@@ -992,9 +992,9 @@ function renderMRR(data, selectedMonth) {
         var ltvMode=window._ltvMode||'all';
         var ltvShow=ltvMode==='icp'?ltvICP:ltvAll;
         var ltvLabel=ltvMode==='icp'?'ICP':'All';
-        h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="openRetModal('ltv',null,null,null,null)" title="Click for formula">';
+        h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="openRetModal(&apos;ltv&apos;,null,null,null,null)" title="Click for formula">';
         h+='<div class="metric-label">LTV <span style="'+ti+'">L12M</span> ';
-        h+='<button onclick="event.stopPropagation();window._ltvMode=(window._ltvMode==='icp'?'all':'icp');renderMRR()" style="font-size:10px;padding:1px 7px;border-radius:10px;border:1px solid var(--teal);background:var(--teal-lighter);color:var(--dark-teal);cursor:pointer;font-weight:600">'+ltvLabel+'</button>';
+        h+='<button onclick="event.stopPropagation();window._ltvMode=(window._ltvMode===&apos;icp&apos;?&apos;all&apos;:&apos;icp&apos;);renderMRR()" style="font-size:10px;padding:1px 7px;border-radius:10px;border:1px solid var(--teal);background:var(--teal-lighter);color:var(--dark-teal);cursor:pointer;font-weight:600">'+ltvLabel+'</button>';
         h+='<span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>';
         h+='<div class="metric-value" style="color:var(--dark-teal)">'+usdFmt(Math.round(ltvShow.ltv))+'</div>';
         h+='<div class="metric-sub">ARPU '+usdFmt(Math.round(ltvShow.arpu))+'/mo · rev churn '+ltvShow.annChurn.toFixed(1)+'%/yr</div>';
