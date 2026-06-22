@@ -66,7 +66,27 @@ def main() -> int:
                 "string:\n    " + snippet[:160]
             )
 
-    # 3. Sanity: tab router and the five page switchers must be present.
+    # 3. Check critical variable declaration order in renderMRR
+    import re as _re
+    rf_m = _re.search(r'function renderMRR\(.*?\n\}', js, _re.DOTALL)
+    if rf_m:
+        rf = rf_m.group()
+        order_checks = [
+            ('custMoM', 'currCount'),
+            ('momAmt',  'currMRR'),
+            ('momAmt',  'prevMRR'),
+            ('kpiMoM',  'currMRR'),
+        ]
+        for later, earlier in order_checks:
+            m1 = _re.search(r'(const|let|var)\s+' + earlier + r'\b', rf)
+            m2 = _re.search(r'(const|let|var)\s+' + later  + r'\b', rf)
+            if m1 and m2 and m2.start() < m1.start():
+                problems.append(
+                    f"Variable order: '{later}' declared before '{earlier}' in renderMRR "
+                    f"(will ReferenceError at runtime)."
+                )
+
+    # 5. Sanity: tab router and the five page switchers must be present.
     if "function switchPage" not in html:
         problems.append("switchPage function missing.")
     for page in ["'closing'", "'mrr'", "'fin'", "'meta'", "'export'"]:
