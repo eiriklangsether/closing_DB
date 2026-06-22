@@ -742,11 +742,11 @@ function renderMRR(data, selectedMonth) {
     var s=new Set();
     ents.forEach(function(e){ ownerSnap(e,prevMonth).forEach(function(d){if((d.mrr_usd||0)>0)s.add(d.Company);}); });
     return s.size;
-  })() : currCount;
-  const custMoM   = currCount - prevSnap;
+  })() : 0;
   const momDelta = prevMRR ? currMRR - prevMRR : null;
   const momPct = prevMRR ? ((currMRR - prevMRR) / prevMRR * 100) : null;
   const currCount = counts[selectedMonth];
+  const custMoM   = currCount - prevSnap;
 
   const kpiMoM = momDelta !== null
     ? '<span class="' + (momDelta >= 0 ? 'kpi-delta-pos' : 'kpi-delta-neg') + '">' +
