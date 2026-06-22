@@ -919,12 +919,14 @@ function renderMRR(data, selectedMonth) {
     <div class="metrics-row" style="margin-top:.5rem">
       ${(function() {
         var sM=months[0],eM=months[months.length-1];
+        // All-customer snapshots
         var allS={},allE={};
         var calcEnt=_activeEntity==='ALL'?['NO','SE','US']:[_activeEntity];
         calcEnt.forEach(function(e){
           ownerSnap(e,sM).forEach(function(d){allS[d.Company]=(allS[d.Company]||0)+(d.mrr_usd||0);});
           ownerSnap(e,eM).forEach(function(d){allE[d.Company]=(allE[d.Company]||0)+(d.mrr_usd||0);});
         });
+        // ICP snapshots
         var icpS={},icpE={};
         Object.values(CUSTOMER_META).forEach(function(c){
           if(c.icp!==true||c.entity==='PLG') return;
@@ -933,6 +935,7 @@ function renderMRR(data, selectedMonth) {
           if(sv>0) icpS[c.name]=(icpS[c.name]||0)+sv;
           if(ev>0) icpE[c.name]=(icpE[c.name]||0)+ev;
         });
+        // Retention metrics from two snap dicts
         function calcRet(S,E){
           var sN=new Set(Object.keys(S).filter(function(n){return S[n]>0;}));
           var eN=new Set(Object.keys(E).filter(function(n){return E[n]>0;}));
@@ -943,56 +946,91 @@ function renderMRR(data, selectedMonth) {
           var rE=ret.reduce(function(a,n){return a+(E[n]||0);},0);
           var grr=sT>0?Math.min(100,Math.round(rC/sT*1000)/10):0;
           var nrr=sT>0?Math.round(rE/sT*1000)/10:0;
-          return {sT:sT,eT:eT,rC:rC,rE:rE,grr:grr,nrr:nrr,ret:ret.length,sN:sN.size};
+          return {sT:sT,eT:eT,rC:rC,rE:rE,grr:grr,nrr:nrr,ret:ret.length,sN:sN.size,
+                  sNset:sN,eNset:eN,retSet:new Set(ret)};
         }
-        function calcLTV(r){
+        // Three LTV variants
+        function calcAllLTV(r){
           var arpu=r.sN>0?r.sT/r.sN:0;
-          var annChurn=1-r.grr/100;
-          var mo=annChurn/12;
-          return {arpu:arpu,annChurn:annChurn*100,ltv:mo>0?arpu/mo:0};
+          // Revenue churn (from GRR)
+          var revAnn=1-r.grr/100;
+          var revMo=revAnn/12;
+          var ltvRev=revMo>0?arpu/revMo:0;
+          // Logo churn = (logos at start not in end) / logos at start
+          var logosLost=r.sN-r.ret;
+          var logoAnn=r.sN>0?logosLost/r.sN:0;
+          var logoMo=logoAnn/12;
+          var ltvLogo=logoMo>0?arpu/logoMo:0;
+          // Customer churn = same as logo churn here (customer = logo at this granularity)
+          // For completeness we label separately; numerically identical
+          return {
+            arpu:arpu,
+            rev:  {ann:revAnn*100,  mo:revMo*100,  ltv:ltvRev,  label:'Revenue churn'},
+            logo: {ann:logoAnn*100, mo:logoMo*100, ltv:ltvLogo, label:'Logo churn'},
+            cust: {ann:logoAnn*100, mo:logoMo*100, ltv:ltvLogo, label:'Customer churn'},
+          };
         }
         var icp=calcRet(icpS,icpE);
         var all=calcRet(allS,allE);
-        var ltvICP=calcLTV(icp);
-        var ltvAll=calcLTV(all);
+        var ltvAllV=calcAllLTV(all);
+        var ltvIcpV=calcAllLTV(icp);
+        // Store for modals
         window._icpRetData={snapStart:icpS,snapEnd:icpE,months:months};
-        window._ltvData={all:{ret:all,ltv:ltvAll},icp:{ret:icp,ltv:ltvICP},startM:sM,endM:eM};
+        window._ltvData={all:{ret:all,ltvV:ltvAllV},icp:{ret:icp,ltvV:ltvIcpV},startM:sM,endM:eM};
+        // Active churn mode
+        var cm=window._ltvChurnMode||'rev';
+        var modeLabel=cm==='rev'?'Revenue churn':cm==='logo'?'Logo churn':'Customer churn';
+        function ltvForMode(v){ return cm==='rev'?v.rev:cm==='logo'?v.logo:v.cust; }
+        var lAll=ltvForMode(ltvAllV);
+        var lIcp=ltvForMode(ltvIcpV);
+        // Render
         var tl='border-top:2px solid var(--teal)';
         var ti='font-size:10px;opacity:.55';
+        var tb='font-size:10px;padding:1px 7px;border-radius:10px;border:1px solid var(--teal);background:var(--teal-lighter);color:var(--dark-teal);cursor:pointer;font-weight:600;margin-left:4px';
         var h='';
         var iAe=icp.eT*12,iAs=icp.sT*12;
         var iGw=iAs>0?Math.round((iAe-iAs)/iAs*1000)/10:0;
+        // ICP ARR
         h+='<div class="metric-card" style="'+tl+'">';
         h+='<div class="metric-label">ICP ARR <span style="'+ti+'">'+eM+'</span></div>';
         h+='<div class="metric-value" style="color:var(--dark-teal)">'+usdFmt(iAe)+'</div>';
-        h+='<div class="metric-sub">ICP customers only \u00b7 excl. PLG</div></div>';
+        h+='<div class="metric-sub">ICP customers only · excl. PLG</div></div>';
+        // ICP ARR Growth
         h+='<div class="metric-card" style="'+tl+'">';
         h+='<div class="metric-label">ICP ARR Growth <span style="'+ti+'">YoY</span></div>';
         h+='<div class="metric-value '+(iGw>=0?'metric-pos':'metric-warn')+'">'+(iGw>=0?'+':'')+iGw.toFixed(1)+'%</div>';
-        h+='<div class="metric-sub">'+usdFmt(iAs)+' \u2192 '+usdFmt(iAe)+'</div></div>';
-        h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._icpModal(\'nrr\')" title="Click to see calculation">';
-        h+='<div class="metric-label">ICP NRR <span style="'+ti+'">L12M</span><span style="font-size:10px;margin-left:4px;opacity:.5">\u2197</span></div>';
+        h+='<div class="metric-sub">'+usdFmt(iAs)+' → '+usdFmt(iAe)+'</div></div>';
+        // ICP NRR
+        h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._icpModal('nrr')" title="Click to see calculation">';
+        h+='<div class="metric-label">ICP NRR <span style="'+ti+'">L12M</span><span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>';
         h+='<div class="metric-value '+(icp.nrr>=100?'metric-pos':icp.nrr>=95?'':'metric-warn')+'">'+icp.nrr.toFixed(1)+'%</div>';
-        h+='<div class="metric-sub">Net revenue retention \u00b7 ICP only</div></div>';
-        h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._icpModal(\'grr\')" title="Click to see calculation">';
-        h+='<div class="metric-label">ICP GRR <span style="'+ti+'">L12M</span><span style="font-size:10px;margin-left:4px;opacity:.5">\u2197</span></div>';
+        h+='<div class="metric-sub">Net revenue retention · ICP only</div></div>';
+        // ICP GRR
+        h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._icpModal('grr')" title="Click to see calculation">';
+        h+='<div class="metric-label">ICP GRR <span style="'+ti+'">L12M</span><span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>';
         h+='<div class="metric-value '+(icp.grr>=95?'':'metric-warn')+'">'+icp.grr.toFixed(1)+'%</div>';
-        h+='<div class="metric-sub">Gross revenue retention \u00b7 ICP only</div></div>';
-        // LTV — All customers
+        h+='<div class="metric-sub">Gross revenue retention · ICP only</div></div>';
+        // LTV All — with three-way toggle
+        var nextAll=cm==='rev'?'logo':cm==='logo'?'cust':'rev';
         h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._ltvAllModal()" title="Click for formula">';
-        h+='<div class="metric-label">LTV <span style="'+ti+'">All customers</span><span style="font-size:10px;margin-left:4px;opacity:.5">\u2197</span></div>';
-        h+='<div class="metric-value" style="color:var(--dark-teal)">'+usdFmt(Math.round(ltvAll.ltv))+'</div>';
-        h+='<div class="metric-sub">ARPU '+usdFmt(Math.round(ltvAll.arpu))+'/mo \u00b7 churn '+ltvAll.annChurn.toFixed(1)+'%/yr</div>';
+        h+='<div class="metric-label">LTV <span style="'+ti+'">All customers</span>';
+        h+='<button onclick="event.stopPropagation();window._ltvChurnMode=''+nextAll+'';renderMRR()" style="'+tb+'">'+modeLabel+'</button>';
+        h+='<span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>';
+        h+='<div class="metric-value" style="color:var(--dark-teal)">'+usdFmt(Math.round(lAll.ltv))+'</div>';
+        h+='<div class="metric-sub">ARPU '+usdFmt(Math.round(ltvAllV.arpu))+'/mo · churn '+lAll.ann.toFixed(1)+'%/yr</div>';
         h+='</div>';
-        // LTV — ICP only
+        // LTV ICP — same toggle
         h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._ltvIcpModal()" title="Click for formula">';
-        h+='<div class="metric-label">LTV <span style="'+ti+'">ICP only</span><span style="font-size:10px;margin-left:4px;opacity:.5">\u2197</span></div>';
-        h+='<div class="metric-value" style="color:var(--dark-teal)">'+usdFmt(Math.round(ltvICP.ltv))+'</div>';
-        h+='<div class="metric-sub">ARPU '+usdFmt(Math.round(ltvICP.arpu))+'/mo \u00b7 churn '+ltvICP.annChurn.toFixed(1)+'%/yr</div>';
+        h+='<div class="metric-label">LTV <span style="'+ti+'">ICP only</span>';
+        h+='<button onclick="event.stopPropagation();window._ltvChurnMode=''+nextAll+'';renderMRR()" style="'+tb+'">'+modeLabel+'</button>';
+        h+='<span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>';
+        h+='<div class="metric-value" style="color:var(--dark-teal)">'+usdFmt(Math.round(lIcp.ltv))+'</div>';
+        h+='<div class="metric-sub">ARPU '+usdFmt(Math.round(ltvIcpV.arpu))+'/mo · churn '+lIcp.ann.toFixed(1)+'%/yr</div>';
         h+='</div>';
         return h;
       })()} 
     </div>
+
 
     <div class="chart-section">
       <div class="chart-section-title">Monthly MRR — USD${_showSR ? '<span class="sr-warning">incl. SalesRabbit</span>' : ''}${_showPLG ? '<span class="sr-warning">incl. PLG</span>' : ''}</div>
@@ -1064,8 +1102,8 @@ function renderMRR(data, selectedMonth) {
     openRetModal(type, window._icpRetData.snapStart, window._icpRetData.snapEnd,
                  window._icpRetData.months, ['ICP']);
   };
-  window._ltvAllModal = function() { window._ltvMode = 'all'; openRetModal('ltv', null, null, null, null); };
-  window._ltvIcpModal = function() { window._ltvMode = 'icp'; openRetModal('ltv', null, null, null, null); };
+  window._ltvAllModal = function() { window._ltvSeg = 'all'; openRetModal('ltv', null, null, null, null); };
+  window._ltvIcpModal = function() { window._ltvSeg = 'icp'; openRetModal('ltv', null, null, null, null); };
   drawCharts(months, totals, selectedMonth);
   drawWaterfall(mov, totals, months, movPeriodStart, movPeriodEnd);
 }
@@ -2084,65 +2122,64 @@ function closeRetModal() {
 function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
   // LTV: handled before any snapStart/months dereference
   if (type === 'ltv') {
-
-    const d = window._ltvData;
+    var d = window._ltvData;
     if (!d) return;
-    const mode = window._ltvMode || 'all';
-    const r = mode === 'icp' ? d.icp : d.all;
-    const label = mode === 'icp' ? 'ICP only' : 'All customers';
-    const fmtPct = function(v) { return v.toFixed(2) + '%'; };
-    title   = 'LTV — Customer Lifetime Value (' + label + ')';
-    subLine = d.startM + ' → ' + d.endM + ' · Revenue churn basis · Gross margin excluded';
+    var cm = window._ltvChurnMode || 'rev';
+    var seg = (type === 'ltv' && snapStart === null) ? (window._ltvSeg || 'all') : 'all';
+    var r = seg === 'icp' ? d.icp : d.all;
+    var lv = cm === 'rev' ? r.ltvV.rev : cm === 'logo' ? r.ltvV.logo : r.ltvV.cust;
+    var segLabel = seg === 'icp' ? 'ICP only' : 'All customers';
+    var modeLabel = cm === 'rev' ? 'Revenue churn (GRR basis)' : cm === 'logo' ? 'Logo churn' : 'Customer churn';
+    var fmtPct = function(v) { return v.toFixed(2) + '%'; };
+    title   = 'LTV \u2014 ' + segLabel + ' \u00b7 ' + modeLabel;
+    subLine = d.startM + ' \u2192 ' + d.endM + ' \u00b7 Gross margin excluded';
+    var allV = d.all.ltvV; var icpV = d.icp.ltvV;
+    var allL = cm==='rev'?allV.rev:cm==='logo'?allV.logo:allV.cust;
+    var icpL = cm==='rev'?icpV.rev:cm==='logo'?icpV.logo:icpV.cust;
     formulaHtml = '<div class="ret-formula">' +
       '<div class="ret-formula-row"><span class="ret-formula-label">Formula</span>' +
-      '<span style="color:var(--text-secondary);font-size:13px">ARPU ÷ Monthly revenue churn rate</span></div>' +
+      '<span style="color:var(--text-secondary);font-size:13px">ARPU \u00f7 Monthly churn rate (' + modeLabel + ')</span></div>' +
       '<hr class="ret-formula-divider">' +
+      '<div class="ret-formula-row"><span class="ret-formula-label">Active mode</span>' +
+      '<span class="ret-formula-val">' + modeLabel + '</span>' +
+      '<span class="ret-formula-note">Toggle on the card to switch between Revenue / Logo / Customer churn</span></div>' +
       '<div class="ret-formula-row"><span class="ret-formula-label">ARPU (' + d.startM + ')</span>' +
-      '<span class="ret-formula-val">' + fmt(r.ltv.arpu) + '/mo</span>' +
-      '<span class="ret-formula-note">Start MRR ' + fmt(r.ret.sT) + ' ÷ ' + r.ret.sN + ' customers</span></div>' +
-      '<div class="ret-formula-row"><span class="ret-formula-label">L12M GRR</span>' +
-      '<span class="ret-formula-val">' + r.ret.grr.toFixed(1) + '%</span>' +
-      '<span class="ret-formula-note">Gross revenue retention Jul 2025 → Jun 2026</span></div>' +
-      '<div class="ret-formula-row"><span class="ret-formula-label">Annual revenue churn</span>' +
-      '<span class="ret-formula-val" style="color:var(--cranberry)">' + fmtPct(r.ltv.annChurn) + '</span>' +
-      '<span class="ret-formula-note">1 − GRR = ' + fmtPct(r.ltv.annChurn) + '</span></div>' +
-      '<div class="ret-formula-row"><span class="ret-formula-label">Monthly revenue churn</span>' +
-      '<span class="ret-formula-val" style="color:var(--cranberry)">' + fmtPct(r.ltv.annChurn/12) + '/mo</span>' +
-      '<span class="ret-formula-note">Annual churn ÷ 12</span></div>' +
+      '<span class="ret-formula-val">' + fmt(r.ltvV.arpu) + '/mo</span>' +
+      '<span class="ret-formula-note">Start MRR ' + fmt(r.ret.sT) + ' \u00f7 ' + r.ret.sN + ' customers</span></div>' +
+      '<div class="ret-formula-row"><span class="ret-formula-label">Annual churn rate</span>' +
+      '<span class="ret-formula-val" style="color:var(--cranberry)">' + fmtPct(lv.ann) + '/yr</span></div>' +
+      '<div class="ret-formula-row"><span class="ret-formula-label">Monthly churn rate</span>' +
+      '<span class="ret-formula-val" style="color:var(--cranberry)">' + fmtPct(lv.mo) + '/mo</span></div>' +
       '<hr class="ret-formula-divider">' +
       '<div class="ret-formula-row"><span class="ret-formula-label">LTV</span>' +
-      '<span class="ret-formula-result">' + fmt(r.ltv.arpu) + ' ÷ ' + fmtPct(r.ltv.annChurn/12) + ' = ' + fmt(r.ltv.ltv) + '</span></div>' +
+      '<span class="ret-formula-result">' + fmt(r.ltvV.arpu) + ' \u00f7 ' + fmtPct(lv.mo) + ' = ' + fmt(lv.ltv) + '</span></div>' +
       '<div style="margin-top:12px;padding:10px;background:var(--teal-lighter);border-radius:8px;font-size:12px;color:var(--dark-teal);line-height:1.6">' +
-      '<strong>Caveats:</strong> Gross margin excluded (LTV is overstated vs true economic LTV). ' +
-      'Churn rate derived from L12M GRR (Jul 2025–Jun 2026). ' +
-      'Assumes steady-state churn — not adjusted for cohort ageing or expansion. ' +
-      'ICP toggle uses ICP-flagged customers from CUSTOMER_META only.' +
+      '<strong>Caveats:</strong> Gross margin excluded. ' +
+      '<strong>Revenue churn</strong> (industry standard): uses GRR — weights by MRR, captures expansion. ' +
+      '<strong>Logo/Customer churn</strong>: counts lost accounts regardless of size — matches the PowerBI definition. ' +
+      'Logo and customer churn are numerically identical at this granularity.' +
       '</div></div>';
-    var dAll = d.all, dICP = d.icp;
-    bodyHtml = '<div class="ret-section-label">All vs ICP comparison</div>' +
+    bodyHtml = '<div class="ret-section-label">All customers vs ICP comparison \u00b7 ' + modeLabel + '</div>' +
       '<div class="ret-table-wrap"><table class="ret-table"><thead><tr>' +
       '<th>Metric</th><th class="num">All customers</th><th class="num">ICP only</th></tr></thead><tbody>' +
-      '<tr><td>Customers at start</td><td class="num">' + dAll.ret.sN + '</td><td class="num">' + dICP.ret.sN + '</td></tr>' +
-      '<tr><td>Start MRR</td><td class="num">' + fmt(dAll.ret.sT) + '</td><td class="num">' + fmt(dICP.ret.sT) + '</td></tr>' +
-      '<tr><td>ARPU (start)</td><td class="num">' + fmt(dAll.ltv.arpu) + '/mo</td><td class="num">' + fmt(dICP.ltv.arpu) + '/mo</td></tr>' +
-      '<tr><td>L12M GRR</td><td class="num">' + dAll.ret.grr.toFixed(1) + '%</td><td class="num">' + dICP.ret.grr.toFixed(1) + '%</td></tr>' +
-      '<tr><td>Annual rev churn</td><td class="num" style="color:var(--cranberry)">' + dAll.ltv.annChurn.toFixed(1) + '%</td>' +
-      '<td class="num" style="color:var(--cranberry)">' + dICP.ltv.annChurn.toFixed(1) + '%</td></tr>' +
-      '<tr><td><strong>LTV</strong></td><td class="num"><strong>' + fmt(dAll.ltv.ltv) + '</strong></td>' +
-      '<td class="num"><strong>' + fmt(dICP.ltv.ltv) + '</strong></td></tr>' +
+      '<tr><td>Customers at start</td><td class="num">' + d.all.ret.sN + '</td><td class="num">' + d.icp.ret.sN + '</td></tr>' +
+      '<tr><td>ARPU (start)</td><td class="num">' + fmt(allV.arpu) + '/mo</td><td class="num">' + fmt(icpV.arpu) + '/mo</td></tr>' +
+      '<tr><td>Annual churn (' + (cm==='rev'?'revenue':'logo') + ')</td>' +
+      '<td class="num" style="color:var(--cranberry)">' + allL.ann.toFixed(1) + '%</td>' +
+      '<td class="num" style="color:var(--cranberry)">' + icpL.ann.toFixed(1) + '%</td></tr>' +
+      '<tr><td><strong>LTV</strong></td>' +
+      '<td class="num"><strong>' + fmt(allL.ltv) + '</strong></td>' +
+      '<td class="num"><strong>' + fmt(icpL.ltv) + '</strong></td></tr>' +
       '</tbody></table></div>';
-
-
-  
-
     document.getElementById('retModalTitle').textContent = title;
     document.getElementById('retModalSub').textContent   = subLine;
     document.getElementById('retModalBody').innerHTML    = formulaHtml + bodyHtml;
-    const ov = document.getElementById('retModal');
+    var ov = document.getElementById('retModal');
     ov.style.display = 'flex';
     ov.scrollTop = 0;
     return;
-  } else {
+  }
+ else {
     // yoy
     title   = 'YoY ARR Growth';
 
