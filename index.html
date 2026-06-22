@@ -734,8 +734,16 @@ function renderMRR(data, selectedMonth) {
 
   const selIdx = months.indexOf(selectedMonth);
   const prevMonth = selIdx > 0 ? months[selIdx - 1] : null;
-  const currMRR = totals[selectedMonth];
-  const prevMRR = prevMonth ? totals[prevMonth] : null;
+  const currMRR   = totals[selectedMonth] || 0;
+  const prevMRR   = prevMonth ? (totals[prevMonth] || 0) : 0;
+  const momAmt    = prevMRR ? Math.round(currMRR - prevMRR) : 0;
+  const prevSnap  = prevMonth ? (function(){
+    var ents = _activeEntity==='ALL'?['NO','SE','US']:[_activeEntity];
+    var s=new Set();
+    ents.forEach(function(e){ ownerSnap(e,prevMonth).forEach(function(d){if((d.mrr_usd||0)>0)s.add(d.Company);}); });
+    return s.size;
+  })() : currCount;
+  const custMoM   = currCount - prevSnap;
   const momDelta = prevMRR ? currMRR - prevMRR : null;
   const momPct = prevMRR ? ((currMRR - prevMRR) / prevMRR * 100) : null;
   const currCount = counts[selectedMonth];
@@ -841,92 +849,50 @@ function renderMRR(data, selectedMonth) {
       </div>
     </div>
 
-    <div class="kpi-grid">
-      <div class="kpi">
-        <div class="kpi-label">MRR</div>
-        <div class="kpi-value">${usdFmt(currMRR)}</div>
-        <div class="kpi-sub">${selectedMonth} · ${entityLabel}${_showSR ? " · incl. SR" : ""}</div>
+    <div class="sect-head"><span class="sect-title">Scale · ${selectedMonth}</span><span class="sect-rule"></span></div>
+    <div class="bkpi-headline">
+      <div class="hcard">
+        <div class="hcard-label">MRR</div>
+        <div class="hcard-value">${usdFmt(currMRR)}</div>
+        <div class="hcard-foot">
+          <span class="dchip ${momAmt>0?'up':momAmt<0?'dn':'fl'}">${momAmt>0?'▲':momAmt<0?'▼':'—'} ${usdFmt(Math.abs(momAmt))} MoM</span>
+          <span class="hcard-sub">${prevMonth ? prevMonth+' → '+selectedMonth : selectedMonth} · excl. PLG</span>
+        </div>
       </div>
-      <div class="kpi">
-        <div class="kpi-label">ARR</div>
-        <div class="kpi-value">${usdFmt(currMRR * 12)}</div>
-        <div class="kpi-sub">MRR × 12${_showSR ? " · incl. SR" : ""}</div>
+      <div class="hcard">
+        <div class="hcard-label">ARR</div>
+        <div class="hcard-value">${usdFmt(currMRR*12)}</div>
+        <div class="hcard-foot">
+          <span class="dchip ${momAmt>0?'up':momAmt<0?'dn':'fl'}">${momAmt>0?'▲':momAmt<0?'▼':'—'} ${usdFmt(Math.abs(momAmt*12))} MoM</span>
+          <span class="hcard-sub">MRR × 12 · excl. PLG</span>
+        </div>
       </div>
-      <div class="kpi">
-        <div class="kpi-label">MoM change</div>
-        <div class="kpi-value" style="font-size:15px">${kpiMoM}</div>
-        <div class="kpi-sub">${prevMonth ? prevMonth + ' → ' + selectedMonth : 'No prior month'}</div>
-      </div>
-      <div class="kpi">
-        <div class="kpi-label">Active customers</div>
-        <div class="kpi-value">${currCount}</div>
-        <div class="kpi-sub">${entityLabel}</div>
+      <div class="hcard">
+        <div class="hcard-label">Active customers</div>
+        <div class="hcard-value">${currCount}</div>
+        <div class="hcard-foot">
+          <span class="dchip ${custMoM<0?'dn':custMoM>0?'up':'fl'}">${custMoM>0?'▲'+custMoM:custMoM<0?'▼'+Math.abs(custMoM):'—'} MoM</span>
+          <span class="hcard-sub">${entityLabel} · excl. PLG</span>
+        </div>
       </div>
     </div>
 
-    <div class="metrics-row">
+    <div class="sect-head"><span class="sect-title">Retention, growth &amp; unit economics · L12M</span><span class="sect-rule"></span></div>
+    <div class="cohort-grid">
       ${(function() {
-        let grr, nrr, yoy_arr, arr_start, arr_end;
-        // Always compute from snapshots so drill-down always works
-        const calcEntities = _activeEntity === "ALL" ? ["NO","SE","US"] : [_activeEntity];
-        const startM = months[0], endM = months[months.length-1];
-        const snapStart = {}, snapEnd = {};
-        calcEntities.forEach(function(e) {
-          ownerSnap(e, startM).forEach(function(d) { snapStart[d.Company] = (snapStart[d.Company]||0) + (d.mrr_usd||0); });
-          ownerSnap(e, endM).forEach(function(d)   { snapEnd[d.Company]   = (snapEnd[d.Company]||0)   + (d.mrr_usd||0); });
-        });
-        // Include SalesRabbit if toggled — treated as fully retained single account
-        if (_showSR && _activeEntity !== 'PLG' && _ownerFilter === 'ALL') {
-          snapStart['SalesRabbit (reseller)'] = SR_MONTHLY[startM] || 0;
-          snapEnd['SalesRabbit (reseller)']   = SR_MONTHLY[endM]   || 0;
-        }
-        const startNames    = new Set(Object.keys(snapStart).filter(n => snapStart[n] > 0));
-        const endNames      = new Set(Object.keys(snapEnd).filter(n => snapEnd[n] > 0));
-        const retained      = [...startNames].filter(n => endNames.has(n));
-        const startTotal    = Object.values(snapStart).reduce((s,v)=>s+v,0);
-        const endTotal      = Object.values(snapEnd).reduce((s,v)=>s+v,0);
-        const retainedStart = retained.reduce((s,n)=>s+(snapStart[n]||0),0);
-        const retainedEnd   = retained.reduce((s,n)=>s+(snapEnd[n]||0),0);
-        // GRR: retained revenue capped at start (excl. expansions, incl. contractions)
-        const retainedCapped = retained.reduce((s,n) => s + Math.min(snapStart[n]||0, snapEnd[n]||0), 0);
-        grr = startTotal > 0 ? Math.min(100, Math.round((retainedCapped / startTotal) * 1000) / 10) : 0;
-        nrr = startTotal > 0 ? Math.round((retainedEnd   / startTotal) * 1000) / 10 : 0;
-        arr_start = startTotal * 12; arr_end = endTotal * 12;
-        yoy_arr = arr_start > 0 ? Math.round((arr_end - arr_start) / arr_start * 1000) / 10 : 0;
-        // Store for drill-down modal
-        window._retData = { snapStart, snapEnd, months, calcEntities };
-        const ownerNote = _ownerFilter === "ALL" ? "" : '<span style="font-size:10px;color:var(--text-muted);margin-left:4px">(filtered)</span>';
-        return `
-      <div class="metric-card" onclick="openRetModal('grr',window._retData.snapStart,window._retData.snapEnd,window._retData.months,window._retData.calcEntities)" title="Click to see calculation">
-        <div class="metric-label">L12M GRR ${ownerNote}<span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>
-        <div class="metric-value ${grr >= 95 ? '' : 'metric-warn'}">${grr.toFixed(1)}%</div>
-        <div class="metric-sub">Gross revenue retention · excl. expansions</div>
-      </div>
-      <div class="metric-card" onclick="openRetModal('nrr',window._retData.snapStart,window._retData.snapEnd,window._retData.months,window._retData.calcEntities)" title="Click to see calculation">
-        <div class="metric-label">L12M NRR ${ownerNote}<span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>
-        <div class="metric-value ${nrr >= 100 ? 'metric-pos' : nrr >= 95 ? '' : 'metric-warn'}">${nrr.toFixed(1)}%</div>
-        <div class="metric-sub">Net revenue retention · incl. expansions</div>
-      </div>
-      <div class="metric-card" onclick="openRetModal('yoy',window._retData.snapStart,window._retData.snapEnd,window._retData.months,window._retData.calcEntities)" title="Click to see calculation">
-        <div class="metric-label">YoY ARR growth ${ownerNote}<span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>
-        <div class="metric-value ${yoy_arr >= 0 ? 'metric-pos' : 'metric-warn'}">${yoy_arr >= 0 ? '+' : ''}${yoy_arr.toFixed(1)}%</div>
-        <div class="metric-sub">${usdFmt(arr_start)} → ${usdFmt(arr_end)} · Jul 2025 vs Jun 2026</div>
-      </div>`;
-      })()} 
-    </div>
-
-        <!-- ICP-only metrics row -->
-    <div class="metrics-row" style="margin-top:.5rem">
-      ${(function() {
-        var sM=months[0],eM=months[months.length-1];
-        // All-customer snapshots
+        // ── Compute All + ICP retention metrics ──
+        const sM=months[0], eM=months[months.length-1];
+        // All-customer snaps
         var allS={},allE={};
-        var calcEnt=_activeEntity==='ALL'?['NO','SE','US']:[_activeEntity];
-        calcEnt.forEach(function(e){
+        (_activeEntity==='ALL'?['NO','SE','US']:[_activeEntity]).forEach(function(e){
           ownerSnap(e,sM).forEach(function(d){allS[d.Company]=(allS[d.Company]||0)+(d.mrr_usd||0);});
           ownerSnap(e,eM).forEach(function(d){allE[d.Company]=(allE[d.Company]||0)+(d.mrr_usd||0);});
         });
-        // ICP snapshots
+        if(_showSR && _activeEntity!=='PLG' && _ownerFilter==='ALL'){
+          allS['SalesRabbit (reseller)']=SR_MONTHLY[sM]||0;
+          allE['SalesRabbit (reseller)']=SR_MONTHLY[eM]||0;
+        }
+        // ICP snaps
         var icpS={},icpE={};
         Object.values(CUSTOMER_META).forEach(function(c){
           if(c.icp!==true||c.entity==='PLG') return;
@@ -935,7 +901,6 @@ function renderMRR(data, selectedMonth) {
           if(sv>0) icpS[c.name]=(icpS[c.name]||0)+sv;
           if(ev>0) icpE[c.name]=(icpE[c.name]||0)+ev;
         });
-        // Retention metrics from two snap dicts
         function calcRet(S,E){
           var sN=new Set(Object.keys(S).filter(function(n){return S[n]>0;}));
           var eN=new Set(Object.keys(E).filter(function(n){return E[n]>0;}));
@@ -946,156 +911,89 @@ function renderMRR(data, selectedMonth) {
           var rE=ret.reduce(function(a,n){return a+(E[n]||0);},0);
           var grr=sT>0?Math.min(100,Math.round(rC/sT*1000)/10):0;
           var nrr=sT>0?Math.round(rE/sT*1000)/10:0;
-          return {sT:sT,eT:eT,rC:rC,rE:rE,grr:grr,nrr:nrr,ret:ret.length,sN:sN.size,
-                  sNset:sN,eNset:eN,retSet:new Set(ret)};
+          var yoy=sT>0?Math.round((eT-sT)/sT*1000)/10:0;
+          return {sT:sT,eT:eT,rC:rC,rE:rE,grr:grr,nrr:nrr,yoy:yoy,ret:ret.length,sN:sN.size,
+                  sNset:sN,eNset:eN,retSet:new Set(ret),S:S,E:E};
         }
-        // Three LTV variants
-        function calcAllLTV(r){
+        function calcLTVv(r){
           var arpu=r.sN>0?r.sT/r.sN:0;
-          // Revenue churn (from GRR)
-          var revAnn=1-r.grr/100;
-          var revMo=revAnn/12;
-          var ltvRev=revMo>0?arpu/revMo:0;
-          // Logo churn = (logos at start not in end) / logos at start
-          var logosLost=r.sN-r.ret;
-          var logoAnn=r.sN>0?logosLost/r.sN:0;
-          var logoMo=logoAnn/12;
-          var ltvLogo=logoMo>0?arpu/logoMo:0;
-          // Customer churn = same as logo churn here (customer = logo at this granularity)
-          // For completeness we label separately; numerically identical
-          return {
-            arpu:arpu,
-            rev:  {ann:revAnn*100,  mo:revMo*100,  ltv:ltvRev,  label:'Revenue churn'},
-            logo: {ann:logoAnn*100, mo:logoMo*100, ltv:ltvLogo, label:'Logo churn'},
-            cust: {ann:logoAnn*100, mo:logoMo*100, ltv:ltvLogo, label:'Customer churn'},
-          };
+          var revAnn=1-r.grr/100; var revMo=revAnn/12;
+          var logoAnn=r.sN>0?(r.sN-r.ret)/r.sN:0; var logoMo=logoAnn/12;
+          return {arpu:arpu,rev:{ann:revAnn*100,mo:revMo*100,ltv:revMo>0?arpu/revMo:0},
+                  logo:{ann:logoAnn*100,mo:logoMo*100,ltv:logoMo>0?arpu/logoMo:0},
+                  cust:{ann:logoAnn*100,mo:logoMo*100,ltv:logoMo>0?arpu/logoMo:0}};
         }
-        var icp=calcRet(icpS,icpE);
-        var all=calcRet(allS,allE);
-        var ltvAllV=calcAllLTV(all);
-        var ltvIcpV=calcAllLTV(icp);
-        // Store for modals
-        window._icpRetData={snapStart:icpS,snapEnd:icpE,months:months};
-        window._ltvData={all:{ret:all,ltvV:ltvAllV},icp:{ret:icp,ltvV:ltvIcpV},startM:sM,endM:eM};
-        // Active churn mode
+        var allR=calcRet(allS,allE), icpR=calcRet(icpS,icpE);
+        var allLV=calcLTVv(allR), icpLV=calcLTVv(icpR);
         var cm=window._ltvChurnMode||'rev';
-        var modeLabel=cm==='rev'?'Revenue churn':cm==='logo'?'Logo churn':'Customer churn';
-        function ltvForMode(v){ return cm==='rev'?v.rev:cm==='logo'?v.logo:v.cust; }
-        var lAll=ltvForMode(ltvAllV);
-        var lIcp=ltvForMode(ltvIcpV);
-        // Render
-        var tl='border-top:2px solid var(--teal)';
-        var ti='font-size:10px;opacity:.55';
+        var allL=cm==='rev'?allLV.rev:cm==='logo'?allLV.logo:allLV.cust;
+        var icpL=cm==='rev'?icpLV.rev:cm==='logo'?icpLV.logo:icpLV.cust;
+        // Store for modals
+        window._retData={snapStart:allS,snapEnd:allE,months:months,calcEntities:_activeEntity==='ALL'?['NO','SE','US']:[_activeEntity]};
+        window._icpRetData={snapStart:icpS,snapEnd:icpE,months:months};
+        window._ltvData={all:{ret:allR,ltv:allL,ltvV:allLV},icp:{ret:icpR,ltv:icpL,ltvV:icpLV},startM:sM,endM:eM};
         var tb='font-size:10px;padding:1px 7px;border-radius:10px;border:1px solid var(--teal);background:var(--teal-lighter);color:var(--dark-teal);cursor:pointer;font-weight:600;margin-left:4px';
+        var nextCm=cm==='rev'?'logo':cm==='logo'?'cust':'rev';
+        var cmLabel=cm==='rev'?'Rev churn':cm==='logo'?'Logo churn':'Cust churn';
+        // ARR values
+        var allARR=allR.eT*12, icpARR=icpR.eT*12;
+        var allARRs=allR.sT*12, icpARRs=icpR.sT*12;
         var h='';
-        var iAe=icp.eT*12,iAs=icp.sT*12;
-        var iGw=iAs>0?Math.round((iAe-iAs)/iAs*1000)/10:0;
-        // ICP ARR
-        h+='<div class="metric-card" style="'+tl+'">';
-        h+='<div class="metric-label">ICP ARR <span style="'+ti+'">'+eM+'</span></div>';
-        h+='<div class="metric-value" style="color:var(--dark-teal)">'+usdFmt(iAe)+'</div>';
-        h+='<div class="metric-sub">ICP customers only · excl. PLG</div></div>';
-        // ICP ARR Growth
-        h+='<div class="metric-card" style="'+tl+'">';
-        h+='<div class="metric-label">ICP ARR Growth <span style="'+ti+'">YoY</span></div>';
-        h+='<div class="metric-value '+(iGw>=0?'metric-pos':'metric-warn')+'">'+(iGw>=0?'+':'')+iGw.toFixed(1)+'%</div>';
-        h+='<div class="metric-sub">'+usdFmt(iAs)+' → '+usdFmt(iAe)+'</div></div>';
-        // ICP NRR
-        h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._icpModal(\'nrr\')" title="Click to see calculation">';
-        h+='<div class="metric-label">ICP NRR <span style="'+ti+'">L12M</span><span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>';
-        h+='<div class="metric-value '+(icp.nrr>=100?'metric-pos':icp.nrr>=95?'':'metric-warn')+'">'+icp.nrr.toFixed(1)+'%</div>';
-        h+='<div class="metric-sub">Net revenue retention · ICP only</div></div>';
-        // ICP GRR
-        h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._icpModal(\'grr\')" title="Click to see calculation">';
-        h+='<div class="metric-label">ICP GRR <span style="'+ti+'">L12M</span><span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>';
-        h+='<div class="metric-value '+(icp.grr>=95?'':'metric-warn')+'">'+icp.grr.toFixed(1)+'%</div>';
-        h+='<div class="metric-sub">Gross revenue retention · ICP only</div></div>';
-        // LTV All — with three-way toggle
-        var nextAll=cm==='rev'?'logo':cm==='logo'?'cust':'rev';
-        h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._ltvAllModal()" title="Click for formula">';
-        h+='<div class="metric-label">LTV <span style="'+ti+'">All customers</span>';
-        h+='<button onclick="event.stopPropagation();window._ltvChurnMode=\''+nextAll+'\';renderMRR()" style="'+tb+'">'+modeLabel+'</button>';
-        h+='<span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>';
-        h+='<div class="metric-value" style="color:var(--dark-teal)">'+usdFmt(Math.round(lAll.ltv))+'</div>';
-        h+='<div class="metric-sub">ARPU '+usdFmt(Math.round(ltvAllV.arpu))+'/mo · churn '+lAll.ann.toFixed(1)+'%/yr</div>';
+        // Header row
+        h+='<div class="cgrow cghead">';
+        h+='<div class="cgcol-head"></div>';
+        h+='<div class="cgcol-head">ARR</div>';
+        h+='<div class="cgcol-head">GRR</div>';
+        h+='<div class="cgcol-head">NRR</div>';
+        h+='<div class="cgcol-head">YoY Growth</div>';
+        h+='<div class="cgcol-head">LTV <button onclick="event.stopPropagation();window._ltvChurnMode=\''+nextCm+'\';renderMRR()" style="'+tb+'">'+cmLabel+'</button></div>';
         h+='</div>';
-        // LTV ICP — same toggle
-        h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._ltvIcpModal()" title="Click for formula">';
-        h+='<div class="metric-label">LTV <span style="'+ti+'">ICP only</span>';
-        h+='<button onclick="event.stopPropagation();window._ltvChurnMode=\''+nextAll+'\';renderMRR()" style="'+tb+'">'+modeLabel+'</button>';
-        h+='<span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>';
-        h+='<div class="metric-value" style="color:var(--dark-teal)">'+usdFmt(Math.round(lIcp.ltv))+'</div>';
-        h+='<div class="metric-sub">ARPU '+usdFmt(Math.round(ltvIcpV.arpu))+'/mo · churn '+lIcp.ann.toFixed(1)+'%/yr</div>';
+        // ALL row
+        h+='<div class="cgrow">';
+        h+='<div class="cgrow-label">All<span class="sub">excl. PLG</span></div>';
+        h+='<div class="cgcell clickable" onclick="openRetModal(\'yoy\',allS,allE,months,window._retData.calcEntities)" title="Customer detail"><span class="carr">↗</span>';
+        h+='<div class="cgval neu">'+usdFmt(allARR)+'</div><div class="cgsub">'+eM+'</div></div>';
+        h+='<div class="cgcell clickable" onclick="openRetModal(\'grr\',allS,allE,months,window._retData.calcEntities)" title="Retained customers"><span class="carr">↗</span>';
+        h+='<div class="cgval '+(allR.grr>=90?'pos':allR.grr>=80?'neu':'warn')+'">'+allR.grr.toFixed(1)+'%</div><div class="cgsub">Gross retention</div></div>';
+        h+='<div class="cgcell clickable" onclick="openRetModal(\'nrr\',allS,allE,months,window._retData.calcEntities)" title="Retained+expansion"><span class="carr">↗</span>';
+        h+='<div class="cgval '+(allR.nrr>=100?'pos':allR.nrr>=90?'neu':'warn')+'">'+allR.nrr.toFixed(1)+'%</div><div class="cgsub">Net retention</div></div>';
+        h+='<div class="cgcell clickable" onclick="openRetModal(\'yoy\',allS,allE,months,window._retData.calcEntities)" title="ARR growth"><span class="carr">↗</span>';
+        h+='<div class="cgval '+(allR.yoy>=0?'pos':'warn')+'">'+(allR.yoy>=0?'+':'')+allR.yoy.toFixed(1)+'%</div><div class="cgsub">'+usdFmt(allARRs)+' → '+usdFmt(allARR)+'</div></div>';
+        h+='<div class="cgcell clickable" onclick="window._ltvAllModal()" title="LTV formula"><span class="carr">↗</span>';
+        h+='<div class="cgval neu">'+usdFmt(Math.round(allL.ltv))+'</div><div class="cgsub">ARPU '+usdFmt(Math.round(allLV.arpu))+'/mo</div></div>';
+        h+='</div>';
+        // ICP row
+        h+='<div class="cgrow cgicp">';
+        h+='<div class="cgrow-label" style="color:var(--teal)">ICP<span class="sub">excl. PLG</span></div>';
+        h+='<div class="cgcell clickable" onclick="openRetModal(\'yoy\',icpS,icpE,months,[\'ICP\'])" title="ICP customer detail"><span class="carr">↗</span>';
+        h+='<div class="cgval neu">'+usdFmt(icpARR)+'</div><div class="cgsub">'+eM+'</div></div>';
+        h+='<div class="cgcell clickable" onclick="openRetModal(\'grr\',icpS,icpE,months,[\'ICP\'])" title="ICP retained customers"><span class="carr">↗</span>';
+        h+='<div class="cgval '+(icpR.grr>=90?'pos':icpR.grr>=80?'neu':'warn')+'">'+icpR.grr.toFixed(1)+'%</div><div class="cgsub">Gross retention</div></div>';
+        h+='<div class="cgcell clickable" onclick="openRetModal(\'nrr\',icpS,icpE,months,[\'ICP\'])" title="ICP retained+expansion"><span class="carr">↗</span>';
+        h+='<div class="cgval '+(icpR.nrr>=100?'pos':icpR.nrr>=90?'neu':'warn')+'">'+icpR.nrr.toFixed(1)+'%</div><div class="cgsub">Net retention</div></div>';
+        h+='<div class="cgcell clickable" onclick="openRetModal(\'yoy\',icpS,icpE,months,[\'ICP\'])" title="ICP ARR growth"><span class="carr">↗</span>';
+        h+='<div class="cgval '+(icpR.yoy>=0?'pos':'warn')+'">'+(icpR.yoy>=0?'+':'')+icpR.yoy.toFixed(1)+'%</div><div class="cgsub">'+usdFmt(icpARRs)+' → '+usdFmt(icpARR)+'</div></div>';
+        h+='<div class="cgcell clickable" onclick="window._ltvIcpModal()" title="ICP LTV formula"><span class="carr">↗</span>';
+        h+='<div class="cgval neu">'+usdFmt(Math.round(icpL.ltv))+'</div><div class="cgsub">ARPU '+usdFmt(Math.round(icpLV.arpu))+'/mo</div></div>';
         h+='</div>';
         return h;
       })()} 
     </div>
-
-
-    <div class="chart-section">
-      <div class="chart-section-title">Monthly MRR — USD${_showSR ? '<span class="sr-warning">incl. SalesRabbit</span>' : ''}${_showPLG ? '<span class="sr-warning">incl. PLG</span>' : ''}</div>
-      <div class="chart-wrap"><canvas id="mrrChart" role="img" aria-label="Monthly MRR line chart"></canvas></div>
-    </div>
-
+    <div class="sect-head"><span class="sect-title">Trends</span><span class="sect-rule"></span></div>
     <div class="chart-section">
       <div class="chart-section-title">ARR — USD${_showSR ? '<span class="sr-warning">incl. SalesRabbit</span>' : ''}${_showPLG ? '<span class="sr-warning">incl. PLG</span>' : ''}</div>
       <div class="chart-wrap"><canvas id="arrChart" role="img" aria-label="ARR line chart"></canvas></div>
     </div>
 
-    <div class="chart-section" id="plg-chart-section">
-      <div class="chart-section-title" style="display:flex;align-items:center;gap:8px">
-        PLG — USD
-        <span style="font-size:11px;font-weight:400;color:var(--text-muted)">(not included in MRR/ARR metrics)</span>
-      </div>
-      <div class="chart-wrap"><canvas id="plgChart" role="img" aria-label="PLG MRR line chart"></canvas></div>
+    <div class="charts-row">
+    <div class="chart-section">
+      <div class="chart-section-title">Monthly MRR — USD${_showSR ? '<span class="sr-warning">incl. SalesRabbit</span>' : ''}${_showPLG ? '<span class="sr-warning">incl. PLG</span>' : ''}</div>
+      <div class="chart-wrap"><canvas id="mrrChart" role="img" aria-label="Monthly MRR line chart"></canvas></div>
     </div>
-
-    ${issuesHtml}
-
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
-      <span class="section-title" style="margin-bottom:0">Movements · ${periodLabel}</span>
-      <div class="period-selector">
-        <span class="period-label">From</span>
-        <select id="movStartSel" class="period-select" onchange="setPeriod(this.value, document.getElementById('movEndSel').value)">${periodOpts(movPeriodStart)}</select>
-        <span class="period-label">to</span>
-        <select id="movEndSel" class="period-select" onchange="setPeriod(document.getElementById('movStartSel').value, this.value)">${periodOpts(movPeriodEnd, true)}</select>
-      </div>
-    </div>
-
-    <div class="movement-grid">
-      <div class="movement-card">
-        <div class="movement-card-header">
-          <span class="movement-card-title new-title">New</span>
-          <span class="movement-total pos">+${usdFmt(mov.new_total)} MRR</span>
-        </div>
-        ${movRows(movNew, 'pos', 'new_' + movPeriodEnd)}
-      </div>
-      <div class="movement-card">
-        <div class="movement-card-header">
-          <span class="movement-card-title churned-title">Churned</span>
-          <span class="movement-total neg">−${usdFmt(Math.abs(mov.churned_total))} MRR</span>
-        </div>
-        ${movRows(movChurned, 'neg', 'churned_' + movPeriodEnd)}
-      </div>
-      <div class="movement-card">
-        <div class="movement-card-header">
-          <span class="movement-card-title expansion-title">Expansions</span>
-          <span class="movement-total pos">+${usdFmt(mov.expansion_total)} MRR</span>
-        </div>
-        ${movRows(movExp, 'pos', 'exp_' + movPeriodEnd)}
-      </div>
-      <div class="movement-card">
-        <div class="movement-card-header">
-          <span class="movement-card-title contraction-title">Contractions</span>
-          <span class="movement-total amber">−${usdFmt(Math.abs(mov.contraction_total))}</span>
-        </div>
-        ${movRows(movCon, 'amber', 'con_' + movPeriodEnd)}
-      </div>
-    </div>
-
     <div class="chart-section" style="margin-bottom:1.25rem">
       <div class="chart-section-title">MRR waterfall · ${periodLabel}${_ownerFilter !== "ALL" ? " · " + _ownerFilter : ""}</div>
       <div id="waterfallViz"></div>
+    </div>
     </div>`;
 
   window._icpModal = function(type) {
