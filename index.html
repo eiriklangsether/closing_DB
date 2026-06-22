@@ -2661,10 +2661,10 @@ function renderChangelog() {
     const dcls = d >= 0 ? 'pos' : 'neg';
     return '<div class="cl-row fin">' +
       '<div><div class="cl-period">' + e.period + '</div><div class="cl-entity">' + e.entity + '</div></div>' +
-      '<div class="cl-gl">GL ' + e.gl + '<br>' + (e.gl_name||'') + '</div>' +
-      '<div><div class="cl-note">' + (e.note||'') + '</div>' +
+      '<div><div class="cl-gl" style="margin-bottom:3px">GL ' + e.gl + ' &middot; ' + (e.gl_name||'') + '</div>' +
+        '<div class="cl-note">' + (e.note||'') + '</div>' +
         '<div class="cl-upload">' + e.upload + ' &middot; ' + e.date + '</div></div>' +
-      '<div><span class="cl-delta ' + dcls + '">' + sign + fmt(d) + '</span>' +
+      '<div style="text-align:right"><span class="cl-delta ' + dcls + '">' + sign + fmt(d) + '</span>' +
         '<div class="cl-before-after">' + fmt(e.before) + ' &rarr; ' + fmt(e.after) + '</div></div>' +
       '</div>';
   }
