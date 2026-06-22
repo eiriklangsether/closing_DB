@@ -305,6 +305,39 @@
         .fin-coming-soon{position:absolute;top:12px;right:12px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--dark-teal);color:#fff;letter-spacing:.05em;opacity:.7}
     .fin-section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
     .fin-section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+    /* ── Business KPIs redesign ── */
+    .bkpi-headline{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:1.75rem}
+    .hcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px}
+    .hcard-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:8px}
+    .hcard-value{font-size:32px;font-weight:700;color:var(--dark-teal);line-height:1;letter-spacing:-.02em}
+    .hcard-foot{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+    .hcard-sub{font-size:11px;color:var(--text-muted)}
+    .dchip{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+    .dchip.up{background:var(--green-bg);color:var(--green-text)}
+    .dchip.dn{background:var(--red-bg);color:var(--red-text)}
+    .dchip.fl{background:#f2f6f6;color:var(--text-muted)}
+    .sect-head{display:flex;align-items:center;gap:10px;margin:24px 0 12px}
+    .sect-title{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);white-space:nowrap}
+    .sect-rule{flex:1;height:1px;background:var(--border)}
+    .cohort-grid{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1.5rem}
+    .cgrow{display:grid;grid-template-columns:110px repeat(5,1fr)}
+    .cgrow.cghead{background:#f7fafa;border-bottom:1px solid var(--border)}
+    .cgrow.cgicp{background:linear-gradient(180deg,rgba(218,237,236,.4),rgba(218,237,236,.1))}
+    .cgcol-head{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);padding:9px 12px;display:flex;align-items:center;gap:5px;border-right:1px solid var(--border)}
+    .cgcol-head:last-child{border-right:none}
+    .cgrow-label{font-size:11px;font-weight:700;color:var(--dark-teal);padding:14px 12px;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--border)}
+    .cgrow-label .sub{font-size:10px;font-weight:400;color:var(--text-muted);margin-top:2px}
+    .cgcell{padding:12px;border-right:1px solid var(--border);cursor:pointer;transition:background .12s;position:relative}
+    .cgcell:last-child{border-right:none}
+    .cgcell:hover{background:rgba(30,175,170,.05)}
+    .cgcell .carr{position:absolute;top:10px;right:10px;font-size:10px;opacity:.3}
+    .cgval{font-size:20px;font-weight:700;line-height:1}
+    .cgval.pos{color:var(--green-text)}
+    .cgval.warn{color:var(--red-text)}
+    .cgval.neu{color:var(--dark-teal)}
+    .cgsub{font-size:10px;color:var(--text-muted);margin-top:4px}
+    .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  
   </style>
 </head>
 <body>
