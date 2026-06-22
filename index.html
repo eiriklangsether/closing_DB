@@ -980,31 +980,31 @@ function renderMRR(data, selectedMonth) {
         // ── All row ──
         h += '<div class="cgrow">';
         h += '<div class="cgrow-label">All<span class="sub">excl. PLG</span></div>';
-        h += '<div class="cgcell" data-cg-type="yoy" data-cg-seg="all" onclick="window._cgOpen(this)" title="ARR detail"><span class="carr">\u2197</span>';
+        h += '<div class="cgcell" data-cg-type="yoy" data-cg-seg="all" onclick="window._cgOpen(this)" title="ARR detail"><span class="carr">&#x2197;</span>';
         h += '<div class="cgval neu">' + usdFmt(allARR) + '</div><div class="cgsub">' + eM + '</div></div>';
-        h += '<div class="cgcell" data-cg-type="grr" data-cg-seg="all" onclick="window._cgOpen(this)" title="Retained customers"><span class="carr">\u2197</span>';
+        h += '<div class="cgcell" data-cg-type="grr" data-cg-seg="all" onclick="window._cgOpen(this)" title="Retained customers"><span class="carr">&#x2197;</span>';
         h += '<div class="cgval ' + (allR.grr>=90?'pos':allR.grr>=80?'neu':'warn') + '">' + allR.grr.toFixed(1) + '%</div><div class="cgsub">Gross retention</div></div>';
-        h += '<div class="cgcell" data-cg-type="nrr" data-cg-seg="all" onclick="window._cgOpen(this)" title="Net retention detail"><span class="carr">\u2197</span>';
+        h += '<div class="cgcell" data-cg-type="nrr" data-cg-seg="all" onclick="window._cgOpen(this)" title="Net retention detail"><span class="carr">&#x2197;</span>';
         h += '<div class="cgval ' + (allR.nrr>=100?'pos':allR.nrr>=90?'neu':'warn') + '">' + allR.nrr.toFixed(1) + '%</div><div class="cgsub">Net retention</div></div>';
-        h += '<div class="cgcell" data-cg-type="yoy" data-cg-seg="all" onclick="window._cgOpen(this)" title="ARR growth detail"><span class="carr">\u2197</span>';
+        h += '<div class="cgcell" data-cg-type="yoy" data-cg-seg="all" onclick="window._cgOpen(this)" title="ARR growth detail"><span class="carr">&#x2197;</span>';
         h += '<div class="cgval ' + (allR.yoy>=0?'pos':'warn') + '">' + (allR.yoy>=0?'+':'') + allR.yoy.toFixed(1) + '%</div>';
         h += '<div class="cgsub">' + usdFmt(allARRs) + ' \u2192 ' + usdFmt(allARR) + '</div></div>';
-        h += '<div class="cgcell" onclick="window._ltvAllModal()" title="LTV formula"><span class="carr">\u2197</span>';
+        h += '<div class="cgcell" onclick="window._ltvAllModal()" title="LTV formula"><span class="carr">&#x2197;</span>';
         h += '<div class="cgval neu">' + usdFmt(Math.round(allL.ltv)) + '</div><div class="cgsub">ARPU ' + usdFmt(Math.round(allLV.arpu)) + '/mo</div></div>';
         h += '</div>';
         // ── ICP row ──
         h += '<div class="cgrow cgicp">';
         h += '<div class="cgrow-label" style="color:var(--teal)">ICP<span class="sub">excl. PLG</span></div>';
-        h += '<div class="cgcell" data-cg-type="yoy" data-cg-seg="icp" onclick="window._cgOpen(this)" title="ICP ARR detail"><span class="carr">\u2197</span>';
+        h += '<div class="cgcell" data-cg-type="yoy" data-cg-seg="icp" onclick="window._cgOpen(this)" title="ICP ARR detail"><span class="carr">&#x2197;</span>';
         h += '<div class="cgval neu">' + usdFmt(icpARR) + '</div><div class="cgsub">' + eM + '</div></div>';
-        h += '<div class="cgcell" data-cg-type="grr" data-cg-seg="icp" onclick="window._cgOpen(this)" title="ICP retained"><span class="carr">\u2197</span>';
+        h += '<div class="cgcell" data-cg-type="grr" data-cg-seg="icp" onclick="window._cgOpen(this)" title="ICP retained"><span class="carr">&#x2197;</span>';
         h += '<div class="cgval ' + (icpR.grr>=90?'pos':icpR.grr>=80?'neu':'warn') + '">' + icpR.grr.toFixed(1) + '%</div><div class="cgsub">Gross retention</div></div>';
-        h += '<div class="cgcell" data-cg-type="nrr" data-cg-seg="icp" onclick="window._cgOpen(this)" title="ICP net retention"><span class="carr">\u2197</span>';
+        h += '<div class="cgcell" data-cg-type="nrr" data-cg-seg="icp" onclick="window._cgOpen(this)" title="ICP net retention"><span class="carr">&#x2197;</span>';
         h += '<div class="cgval ' + (icpR.nrr>=100?'pos':icpR.nrr>=90?'neu':'warn') + '">' + icpR.nrr.toFixed(1) + '%</div><div class="cgsub">Net retention</div></div>';
-        h += '<div class="cgcell" data-cg-type="yoy" data-cg-seg="icp" onclick="window._cgOpen(this)" title="ICP ARR growth"><span class="carr">\u2197</span>';
+        h += '<div class="cgcell" data-cg-type="yoy" data-cg-seg="icp" onclick="window._cgOpen(this)" title="ICP ARR growth"><span class="carr">&#x2197;</span>';
         h += '<div class="cgval ' + (icpR.yoy>=0?'pos':'warn') + '">' + (icpR.yoy>=0?'+':'') + icpR.yoy.toFixed(1) + '%</div>';
         h += '<div class="cgsub">' + usdFmt(icpARRs) + ' \u2192 ' + usdFmt(icpARR) + '</div></div>';
-        h += '<div class="cgcell" onclick="window._ltvIcpModal()" title="ICP LTV formula"><span class="carr">\u2197</span>';
+        h += '<div class="cgcell" onclick="window._ltvIcpModal()" title="ICP LTV formula"><span class="carr">&#x2197;</span>';
         h += '<div class="cgval neu">' + usdFmt(Math.round(icpL.ltv)) + '</div><div class="cgsub">ARPU ' + usdFmt(Math.round(icpLV.arpu)) + '/mo</div></div>';
         h += '</div>';
         return h;
@@ -1067,13 +1067,13 @@ function renderMRR(data, selectedMonth) {
       <div class="chart-wrap"><canvas id="arrChart" role="img" aria-label="ARR line chart"></canvas></div>
     </div>
 
-    <div class="charts-row">
+    <div class="charts-row" style="margin-top:14px">
     <div class="chart-section">
       <div class="chart-section-title">Monthly MRR — USD${_showSR ? '<span class="sr-warning">incl. SalesRabbit</span>' : ''}${_showPLG ? '<span class="sr-warning">incl. PLG</span>' : ''}</div>
       <div class="chart-wrap"><canvas id="mrrChart" role="img" aria-label="Monthly MRR line chart"></canvas></div>
     </div>
 
-    <div class="chart-section" style="margin-bottom:1.25rem">
+    <div class="chart-section">
       <div class="chart-section-title">MRR waterfall · ${periodLabel}${_ownerFilter !== "ALL" ? " · " + _ownerFilter : ""}</div>
       <div id="waterfallViz"></div>
     </div>
