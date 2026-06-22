@@ -794,7 +794,13 @@ function renderMRR(data, selectedMonth) {
   const movPeriodEnd   = _movPeriodEnd;
 
   // Build combined movements across selected period
-  const periodMonths = movMonths.slice(movMonths.indexOf(movPeriodStart), movMonths.indexOf(movPeriodEnd) + 1);
+  // Movements that move the period-start value to the period-end value:
+  // the changes occurring AFTER the start month, up to and including the end month.
+  const _psIdx = movMonths.indexOf(movPeriodStart);
+  const _peIdx = movMonths.indexOf(movPeriodEnd);
+  const periodMonths = movPeriodStart === movPeriodEnd
+    ? movMonths.slice(_psIdx, _peIdx + 1)
+    : movMonths.slice(_psIdx + 1, _peIdx + 1);
   const periodLabel  = movPeriodStart === movPeriodEnd ? movPeriodStart : movPeriodStart + ' – ' + movPeriodEnd;
 
   function ownerMovFilter(arr) {
@@ -948,22 +954,24 @@ function renderMRR(data, selectedMonth) {
         }
         function calcLTVv(r){
           var arpu=r.sN>0?r.sT/r.sN:0;
+          // Revenue churn: MRR lost to churn+contraction / starting MRR (from GRR)
           var revAnn=1-r.grr/100; var revMo=revAnn/12;
+          // Logo churn: customers fully lost / starting customers (point-to-point over window)
           var logoAnn=r.sN>0?(r.sN-r.ret)/r.sN:0; var logoMo=logoAnn/12;
-          return {arpu:arpu,rev:{ann:revAnn*100,mo:revMo*100,ltv:revMo>0?arpu/revMo:0},
-                  logo:{ann:logoAnn*100,mo:logoMo*100,ltv:logoMo>0?arpu/logoMo:0},
-                  cust:{ann:logoAnn*100,mo:logoMo*100,ltv:logoMo>0?arpu/logoMo:0}};
+          return {arpu:arpu,
+                  rev:{ann:revAnn*100,mo:revMo*100,ltv:revMo>0?arpu/revMo:0,desc:'MRR lost \u00f7 starting MRR (GRR basis)'},
+                  logo:{ann:logoAnn*100,mo:logoMo*100,ltv:logoMo>0?arpu/logoMo:0,desc:'Customers fully lost \u00f7 starting customers'}};
         }
         var allR=calcRet(allS,allE), icpR=calcRet(icpS,icpE);
         var allLV=calcLTVv(allR), icpLV=calcLTVv(icpR);
         var cm=window._ltvChurnMode||'rev';
-        var allL=cm==='rev'?allLV.rev:cm==='logo'?allLV.logo:allLV.cust;
-        var icpL=cm==='rev'?icpLV.rev:cm==='logo'?icpLV.logo:icpLV.cust;
+        var allL=cm==='logo'?allLV.logo:allLV.rev;
+        var icpL=cm==='logo'?icpLV.logo:icpLV.rev;
         window._retData    ={snapStart:allS,snapEnd:allE,months:months,calcEntities:ents};
         window._icpRetData ={snapStart:icpS,snapEnd:icpE,months:months};
         window._ltvData    ={all:{ret:allR,ltv:allL,ltvV:allLV},icp:{ret:icpR,ltv:icpL,ltvV:icpLV},startM:sM,endM:eM};
         var cmNext  = cm==='rev'?'logo':cm==='logo'?'cust':'rev';
-        var cmLabel = cm==='rev'?'Rev churn':cm==='logo'?'Logo churn':'Cust churn';
+        var cmLabel = cm==='logo'?'Logo churn':'Rev churn';
         var tb = 'font-size:10px;padding:1px 7px;border-radius:10px;border:1px solid var(--teal);background:var(--teal-lighter);color:var(--dark-teal);cursor:pointer;font-weight:600';
         var allARR=allR.eT*12, icpARR=icpR.eT*12;
         var allARRs=allR.sT*12, icpARRs=icpR.sT*12;
@@ -1094,7 +1102,7 @@ function renderMRR(data, selectedMonth) {
   };
   window._ltvCmToggle = function() {
     var cm = window._ltvChurnMode || 'rev';
-    window._ltvChurnMode = cm === 'rev' ? 'logo' : cm === 'logo' ? 'cust' : 'rev';
+    window._ltvChurnMode = cm === 'rev' ? 'logo' : 'rev';
     renderMRR();
   };
   drawCharts(months, totals, selectedMonth);
@@ -1726,7 +1734,7 @@ function drawWaterfall(mov, totals, months, periodStart, periodEnd) {
 
   const allMonths = months;
   const startIdx  = allMonths.indexOf(periodStart);
-  const startMRR  = startIdx > 0 ? totals[allMonths[startIdx - 1]] : totals[allMonths[startIdx]];
+  const startMRR  = totals[periodStart] || 0;
   const newMRR    = mov.new_total;
   const expMRR    = mov.expansion_total;
   const conMRR    = mov.contraction_total;
@@ -2120,15 +2128,15 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
     var cm = window._ltvChurnMode || 'rev';
     var seg = (type === 'ltv' && snapStart === null) ? (window._ltvSeg || 'all') : 'all';
     var r = seg === 'icp' ? d.icp : d.all;
-    var lv = cm === 'rev' ? r.ltvV.rev : cm === 'logo' ? r.ltvV.logo : r.ltvV.cust;
+    var lv = cm === 'rev' ? r.ltvV.rev : cm === 'logo' ? r.ltvV.logo : r.ltvV.rev;
     var segLabel = seg === 'icp' ? 'ICP only' : 'All customers';
     var modeLabel = cm === 'rev' ? 'Revenue churn (GRR basis)' : cm === 'logo' ? 'Logo churn' : 'Customer churn';
     var fmtPct = function(v) { return v.toFixed(2) + '%'; };
     title   = 'LTV \u2014 ' + segLabel + ' \u00b7 ' + modeLabel;
     subLine = d.startM + ' \u2192 ' + d.endM + ' \u00b7 Gross margin excluded';
     var allV = d.all.ltvV; var icpV = d.icp.ltvV;
-    var allL = cm==='rev'?allV.rev:cm==='logo'?allV.logo:allV.cust;
-    var icpL = cm==='rev'?icpV.rev:cm==='logo'?icpV.logo:icpV.cust;
+    var allL = cm==='logo'?allV.logo:allV.rev;
+    var icpL = cm==='logo'?icpV.logo:icpV.rev;
     formulaHtml = '<div class="ret-formula">' +
       '<div class="ret-formula-row"><span class="ret-formula-label">Formula</span>' +
       '<span style="color:var(--text-secondary);font-size:13px">ARPU \u00f7 Monthly churn rate (' + modeLabel + ')</span></div>' +
@@ -2172,10 +2180,161 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
     ov.scrollTop = 0;
     return;
   }
- else {
+
+  if (!snapStart || !snapEnd || !months) return;
+  const startM  = months[0];
+  const endM    = months[months.length - 1];
+
+  // Classify every company that appeared in either window
+  const allCompanies = new Set([...Object.keys(snapStart), ...Object.keys(snapEnd)]);
+  const rows = [];
+  allCompanies.forEach(function(name) {
+    const s = snapStart[name] || 0;
+    const e = snapEnd[name]   || 0;
+    let status;
+    if      (s > 0 && e > 0) status = 'retained';
+    else if (s > 0 && e === 0) status = 'churned';
+    else                       status = 'new';
+    rows.push({ name, startMRR: s, endMRR: e, status });
+  });
+
+  const retained       = rows.filter(r => r.status === 'retained');
+  const churned        = rows.filter(r => r.status === 'churned');
+  const newRows        = rows.filter(r => r.status === 'new');
+  const startTotal     = rows.filter(r => r.startMRR > 0).reduce((s,r) => s + r.startMRR, 0);
+  const endTotal       = rows.filter(r => r.endMRR > 0).reduce((s,r) => s + r.endMRR, 0);
+  const retainedStart   = retained.reduce((s,r) => s + r.startMRR, 0);
+  const retainedEnd     = retained.reduce((s,r) => s + r.endMRR,   0);
+  const retainedCapped  = retained.reduce((s,r) => s + Math.min(r.startMRR, r.endMRR), 0);
+  const churnedMRR      = churned.reduce((s,r) => s + r.startMRR, 0);
+  const contractionMRR  = retained.filter(r => r.endMRR < r.startMRR).reduce((s,r) => s + (r.startMRR - r.endMRR), 0);
+
+  const grr    = startTotal > 0 ? Math.min(100, retainedCapped / startTotal * 100) : 0;
+  const nrr    = startTotal > 0 ? (retainedEnd   / startTotal * 100) : 0;
+  const yoyArr = startTotal > 0 ? ((endTotal - startTotal) / startTotal * 100) : 0;
+
+  const fmt  = v => v >= 1000 ? '$' + (v/1000).toFixed(1) + 'K' : '$' + Math.round(v);
+  const pct  = v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+  const tag  = s => `<span class="ret-tag ret-tag-${s}">${s}</span>`;
+
+  function tableRows(arr, showEnd) {
+    if (!arr.length) return '<tr><td colspan="4" style="color:var(--text-muted);padding:12px 10px">None in this window</td></tr>';
+    return arr.sort((a,b) => b.startMRR - a.startMRR).map(function(r) {
+      const delta = r.endMRR - r.startMRR;
+      return `<tr>
+        <td>${r.name}</td>
+        <td class="num">${r.startMRR > 0 ? fmt(r.startMRR) : '—'}</td>
+        ${showEnd ? `<td class="num">${r.endMRR > 0 ? fmt(r.endMRR) : '—'}</td>
+        <td class="num" style="color:${delta >= 0 ? '#1a6e17' : '#a01f3c'}">${r.startMRR > 0 && r.endMRR > 0 ? pct(delta/r.startMRR*100) : '—'}</td>` : ''}
+      </tr>`;
+    }).join('');
+  }
+
+  let title, subLine, formulaHtml, bodyHtml;
+
+  const filterNote = _ownerFilter !== 'ALL'
+    ? ` · ${_ownerFilter}` : (calcEntities.length < 3 ? ` · ${calcEntities.join('+')}` : '');
+
+  if (type === 'grr') {
+    title   = 'L12M GRR — Gross Revenue Retention';
+    subLine = `${startM} → ${endM}${filterNote} · ${retained.length} retained of ${rows.filter(r=>r.startMRR>0).length} starting customers`;
+    formulaHtml = `
+      <div class="ret-formula">
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Formula</span>
+          <span style="color:var(--text-secondary);font-size:13px">Retained start MRR ÷ Total start MRR</span>
+        </div>
+        <hr class="ret-formula-divider">
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Total start MRR (${startM})</span>
+          <span class="ret-formula-val">${fmt(startTotal)}</span>
+          <span class="ret-formula-note">${rows.filter(r=>r.startMRR>0).length} customers</span>
+        </div>
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Churned MRR</span>
+          <span class="ret-formula-val" style="color:var(--cranberry)">−${fmt(churnedMRR)}</span>
+          <span class="ret-formula-note">${churned.length} customers lost entirely</span>
+        </div>
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Contraction MRR</span>
+          <span class="ret-formula-val" style="color:var(--cranberry)">−${fmt(contractionMRR)}</span>
+          <span class="ret-formula-note">${retained.filter(r=>r.endMRR<r.startMRR).length} retained customers who downsized</span>
+        </div>
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Retained MRR (capped)</span>
+          <span class="ret-formula-val">${fmt(retainedCapped)}</span>
+          <span class="ret-formula-note">min(start, end) per retained customer — contractions reduce this, expansions are excluded</span>
+        </div>
+        <hr class="ret-formula-divider">
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">GRR</span>
+          <span class="ret-formula-result">${fmt(retainedCapped)} ÷ ${fmt(startTotal)} = ${grr.toFixed(1)}%</span>
+        </div>
+      </div>`;
+    bodyHtml = `
+      <div class="ret-section-label">Retained customers (${retained.length})</div>
+      <div class="ret-table-wrap">
+        <table class="ret-table">
+          <thead><tr><th>Customer</th><th class="num">Start MRR (${startM})</th><th class="num">End MRR (${endM})</th><th class="num">Change</th></tr></thead>
+          <tbody>${tableRows(retained, true)}</tbody>
+        </table>
+      </div>
+      <div class="ret-section-label" style="margin-top:1rem">Churned customers (${churned.length}) — excluded from numerator</div>
+      <div class="ret-table-wrap">
+        <table class="ret-table">
+          <thead><tr><th>Customer</th><th class="num">Start MRR (${startM})</th></tr></thead>
+          <tbody>${tableRows(churned, false)}</tbody>
+        </table>
+      </div>`;
+
+  } else if (type === 'nrr') {
+    title   = 'L12M NRR — Net Revenue Retention';
+    subLine = `${startM} → ${endM}${filterNote} · includes expansions & contractions on retained cohort`;
+    const expMRR = retainedEnd - retainedStart;
+    formulaHtml = `
+      <div class="ret-formula">
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Formula</span>
+          <span style="color:var(--text-secondary);font-size:13px">Retained end MRR ÷ Total start MRR</span>
+        </div>
+        <hr class="ret-formula-divider">
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Total start MRR (${startM})</span>
+          <span class="ret-formula-val">${fmt(startTotal)}</span>
+        </div>
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Retained start MRR</span>
+          <span class="ret-formula-val">${fmt(retainedStart)}</span>
+          <span class="ret-formula-note">${churned.length} churned excluded</span>
+        </div>
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Net expansion (retained cohort)</span>
+          <span class="ret-formula-val" style="color:${expMRR >= 0 ? '#1a6e17' : 'var(--cranberry)'}">
+            ${expMRR >= 0 ? '+' : ''}${fmt(expMRR)}</span>
+          <span class="ret-formula-note">End MRR ${fmt(retainedEnd)} vs start ${fmt(retainedStart)}</span>
+        </div>
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">Retained end MRR</span>
+          <span class="ret-formula-val">${fmt(retainedEnd)}</span>
+        </div>
+        <hr class="ret-formula-divider">
+        <div class="ret-formula-row">
+          <span class="ret-formula-label">NRR</span>
+          <span class="ret-formula-result">${fmt(retainedEnd)} ÷ ${fmt(startTotal)} = ${nrr.toFixed(1)}%</span>
+        </div>
+      </div>`;
+    bodyHtml = `
+      <div class="ret-section-label">Retained customers — ranked by MRR change (${retained.length})</div>
+      <div class="ret-table-wrap">
+        <table class="ret-table">
+          <thead><tr><th>Customer</th><th class="num">Start MRR (${startM})</th><th class="num">End MRR (${endM})</th><th class="num">Change</th></tr></thead>
+          <tbody>${tableRows(retained, true)}</tbody>
+        </table>
+      </div>`;
+
+  } else {
     // yoy
     title   = 'YoY ARR Growth';
-
     subLine = `${startM} → ${endM}${filterNote}`;
     formulaHtml = `
       <div class="ret-formula">
