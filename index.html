@@ -839,6 +839,10 @@ function renderMRR(data, selectedMonth) {
     churned_total:     movChurned.reduce(function(s,r) { return s + r.mrr; }, 0),
     expansion_total:   movExp.reduce(function(s,r) { return s + r.mrr; }, 0),
     contraction_total: movCon.reduce(function(s,r) { return s + r.mrr; }, 0),
+    new_arr:           movNew,
+    churned_arr:       movChurned,
+    expansion_arr:     movExp,
+    contraction_arr:   movCon,
   };
 
   function periodOpts(selVal, isEnd) {
@@ -869,6 +873,40 @@ function renderMRR(data, selectedMonth) {
   document.getElementById('mrr-banner').style.display = 'flex';
   document.getElementById('mrr-banner-text').textContent =
     entityLabel + ' · Transaction currency · NOK 0.0990 · SEK 0.1056 · EUR 1.1658 · GBP 1.3390 · Manual upload · ' + uploadDate;
+
+    // Movement detail HTML (shown in modal when waterfall card is clicked)
+  window._movDetailHtml = `
+    <div class="movement-grid">
+      <div class="movement-card">
+        <div class="movement-card-header">
+          <span class="movement-card-title new-title">New</span>
+          <span class="movement-total pos">+${usdFmt(mov.new_total)} MRR</span>
+        </div>
+        ${movRows(movNew, 'pos', 'mdnew_' + movPeriodEnd)}
+      </div>
+      <div class="movement-card">
+        <div class="movement-card-header">
+          <span class="movement-card-title churned-title">Churned</span>
+          <span class="movement-total neg">\u2212${usdFmt(Math.abs(mov.churned_total))} MRR</span>
+        </div>
+        ${movRows(movChurned, 'neg', 'mdchurned_' + movPeriodEnd)}
+      </div>
+      <div class="movement-card">
+        <div class="movement-card-header">
+          <span class="movement-card-title expansion-title">Expansions</span>
+          <span class="movement-total pos">+${usdFmt(mov.expansion_total)} MRR</span>
+        </div>
+        ${movRows(movExp, 'pos', 'mdexp_' + movPeriodEnd)}
+      </div>
+      <div class="movement-card">
+        <div class="movement-card-header">
+          <span class="movement-card-title contraction-title">Contractions</span>
+          <span class="movement-total amber">\u2212${usdFmt(Math.abs(mov.contraction_total))}</span>
+        </div>
+        ${movRows(movCon, 'amber', 'mdcon_' + movPeriodEnd)}
+      </div>
+    </div>`;
+  window._movPeriodLabel = periodLabel;
 
   document.getElementById('mrr-content').innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:10px">
@@ -1018,56 +1056,6 @@ function renderMRR(data, selectedMonth) {
         return h;
       })()} 
     </div>
-    <div class="chart-section" id="plg-chart-section">
-      <div class="chart-section-title" style="display:flex;align-items:center;gap:8px">
-        PLG — USD
-        <span style="font-size:11px;font-weight:400;color:var(--text-muted)">(not included in MRR/ARR metrics)</span>
-      </div>
-      <div class="chart-wrap"><canvas id="plgChart" role="img" aria-label="PLG MRR line chart"></canvas></div>
-    </div>
-
-    ${issuesHtml}
-
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
-      <span class="section-title" style="margin-bottom:0">Movements · ${periodLabel}</span>
-      <div class="period-selector">
-        <span class="period-label">From</span>
-        <select id="movStartSel" class="period-select" onchange="setPeriod(this.value, document.getElementById('movEndSel').value)">${periodOpts(movPeriodStart)}</select>
-        <span class="period-label">to</span>
-        <select id="movEndSel" class="period-select" onchange="setPeriod(document.getElementById('movStartSel').value, this.value)">${periodOpts(movPeriodEnd, true)}</select>
-      </div>
-    </div>
-
-    <div class="movement-grid">
-      <div class="movement-card">
-        <div class="movement-card-header">
-          <span class="movement-card-title new-title">New</span>
-          <span class="movement-total pos">+${usdFmt(mov.new_total)} MRR</span>
-        </div>
-        ${movRows(movNew, 'pos', 'new_' + movPeriodEnd)}
-      </div>
-      <div class="movement-card">
-        <div class="movement-card-header">
-          <span class="movement-card-title churned-title">Churned</span>
-          <span class="movement-total neg">−${usdFmt(Math.abs(mov.churned_total))} MRR</span>
-        </div>
-        ${movRows(movChurned, 'neg', 'churned_' + movPeriodEnd)}
-      </div>
-      <div class="movement-card">
-        <div class="movement-card-header">
-          <span class="movement-card-title expansion-title">Expansions</span>
-          <span class="movement-total pos">+${usdFmt(mov.expansion_total)} MRR</span>
-        </div>
-        ${movRows(movExp, 'pos', 'exp_' + movPeriodEnd)}
-      </div>
-      <div class="movement-card">
-        <div class="movement-card-header">
-          <span class="movement-card-title contraction-title">Contractions</span>
-          <span class="movement-total amber">−${usdFmt(Math.abs(mov.contraction_total))}</span>
-        </div>
-        ${movRows(movCon, 'amber', 'con_' + movPeriodEnd)}
-      </div>
-    </div>
 
     <div class="sect-head"><span class="sect-title">Trends</span><span class="sect-rule"></span></div>
     <div class="chart-section">
@@ -1081,11 +1069,26 @@ function renderMRR(data, selectedMonth) {
       <div class="chart-wrap"><canvas id="mrrChart" role="img" aria-label="Monthly MRR line chart"></canvas></div>
     </div>
 
-    <div class="chart-section">
-      <div class="chart-section-title">MRR waterfall · ${periodLabel}${_ownerFilter !== "ALL" ? " · " + _ownerFilter : ""}</div>
+    <div class="chart-section wf-card" onclick="window._openWaterfallDetail()" style="cursor:pointer" title="Click for movement detail">
+      <div class="chart-section-title" style="display:flex;align-items:center;gap:8px">
+        <span>MRR waterfall · ${periodLabel}${_ownerFilter !== "ALL" ? " · " + _ownerFilter : ""}</span>
+        <div class="period-selector" style="margin-left:auto" onclick="event.stopPropagation()"><span class="period-label">From</span><select id="movStartSel" class="period-select" onchange="setPeriod(this.value, document.getElementById('movEndSel').value)">${periodOpts(movPeriodStart)}</select><span class="period-label">to</span><select id="movEndSel" class="period-select" onchange="setPeriod(document.getElementById('movStartSel').value, this.value)">${periodOpts(movPeriodEnd, true)}</select></div>
+      </div>
       <div id="waterfallViz"></div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:8px;text-align:right">Click for movement detail ↗</div>
     </div>
-    </div>`;
+    </div>
+
+    <div class="chart-section" id="plg-chart-section">
+      <div class="chart-section-title" style="display:flex;align-items:center;gap:8px">
+        PLG — USD
+        <span style="font-size:11px;font-weight:400;color:var(--text-muted)">(not included in MRR/ARR metrics)</span>
+      </div>
+      <div class="chart-wrap"><canvas id="plgChart" role="img" aria-label="PLG MRR line chart"></canvas></div>
+    </div>
+
+    ${issuesHtml}
+`;
 
   window._icpModal = function(type) {
     openRetModal(type, window._icpRetData.snapStart, window._icpRetData.snapEnd,
@@ -1099,6 +1102,15 @@ function renderMRR(data, selectedMonth) {
     var d = seg === 'icp' ? window._icpRetData : window._retData;
     if (!d) return;
     openRetModal(type, d.snapStart, d.snapEnd, d.months, d.calcEntities || ['ICP']);
+  };
+  window._openWaterfallDetail = function() {
+    if (!window._movDetailHtml) return;
+    document.getElementById('retModalTitle').textContent = 'MRR Movements \u00b7 ' + (window._movPeriodLabel || '');
+    document.getElementById('retModalSub').textContent   = 'New, churned, expansion and contraction for the selected period';
+    document.getElementById('retModalBody').innerHTML    = window._movDetailHtml;
+    var ov = document.getElementById('retModal');
+    ov.style.display = 'flex';
+    ov.scrollTop = 0;
   };
   window._ltvCmToggle = function() {
     var cm = window._ltvChurnMode || 'rev';
@@ -1749,13 +1761,20 @@ function drawWaterfall(mov, totals, months, periodStart, periodEnd) {
     return (v < 0 ? '-' : '') + '$' + Math.round(a);
   }
 
+  function _topMovers(arr) {
+    if (!arr || !arr.length) return 'No movements';
+    var top = arr.slice().sort(function(a,b){return Math.abs(b.mrr)-Math.abs(a.mrr);}).slice(0,6);
+    var lines = top.map(function(r){ return r.Company + ': ' + (r.mrr>=0?'+':'') + Math.round(r.mrr).toLocaleString(); });
+    var more = arr.length > 6 ? '\n+ ' + (arr.length-6) + ' more' : '';
+    return arr.length + ' customer' + (arr.length>1?'s':'') + '\n' + lines.join('\n') + more;
+  }
   const steps = [
-    { label: 'Start MRR',  value: startMRR, type: 'base',     sign: ''  },
-    { label: 'New',        value: newMRR,   type: 'positive', sign: '+' },
-    { label: 'Expansion',  value: expMRR,   type: 'positive', sign: '+' },
-    { label: 'Churn',      value: churnMRR, type: 'negative', sign: '−' },
-    { label: 'Contraction',value: conMRR,   type: 'negative', sign: '−' },
-    { label: 'End MRR',    value: endMRR,   type: 'base',     sign: ''  },
+    { label: 'Start MRR',  value: startMRR, type: 'base',     sign: '',  tip: 'MRR at ' + periodStart },
+    { label: 'New',        value: newMRR,   type: 'positive', sign: '+', tip: _topMovers(mov.new_arr) },
+    { label: 'Expansion',  value: expMRR,   type: 'positive', sign: '+', tip: _topMovers(mov.expansion_arr) },
+    { label: 'Churn',      value: churnMRR, type: 'negative', sign: '−', tip: _topMovers(mov.churned_arr) },
+    { label: 'Contraction',value: conMRR,   type: 'negative', sign: '−', tip: _topMovers(mov.contraction_arr) },
+    { label: 'End MRR',    value: endMRR,   type: 'base',     sign: '',  tip: 'MRR at ' + periodEnd },
   ];
 
   // Bar widths as % of endMRR for visual proportion, capped so deltas stay visible
@@ -1774,7 +1793,7 @@ function drawWaterfall(mov, totals, months, periodStart, periodEnd) {
     const displayVal = s.type === 'base'
       ? fmt(s.value)
       : (s.sign ? s.sign + ' ' : '') + fmt(Math.abs(s.value));
-    return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid rgba(17,75,92,.06)">
+    return `<div title="${s.tip}" style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid rgba(17,75,92,.06);cursor:help">
       <div style="width:96px;font-size:11px;color:#7a9ba3;text-align:right;flex-shrink:0">${s.label}</div>
       <div style="flex:1;display:flex;align-items:center;gap:8px">
         <div style="width:${pct}%;background:${c.bar};height:20px;border-radius:3px;min-width:4px;transition:width .3s"></div>
