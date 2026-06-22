@@ -1001,12 +1001,12 @@ function renderMRR(data, selectedMonth) {
         h+='<div class="metric-value '+(iGw>=0?'metric-pos':'metric-warn')+'">'+(iGw>=0?'+':'')+iGw.toFixed(1)+'%</div>';
         h+='<div class="metric-sub">'+usdFmt(iAs)+' → '+usdFmt(iAe)+'</div></div>';
         // ICP NRR
-        h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._icpModal('nrr')" title="Click to see calculation">';
+        h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._icpModal(\'nrr\')" title="Click to see calculation">';
         h+='<div class="metric-label">ICP NRR <span style="'+ti+'">L12M</span><span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>';
         h+='<div class="metric-value '+(icp.nrr>=100?'metric-pos':icp.nrr>=95?'':'metric-warn')+'">'+icp.nrr.toFixed(1)+'%</div>';
         h+='<div class="metric-sub">Net revenue retention · ICP only</div></div>';
         // ICP GRR
-        h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._icpModal('grr')" title="Click to see calculation">';
+        h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._icpModal(\'grr\')" title="Click to see calculation">';
         h+='<div class="metric-label">ICP GRR <span style="'+ti+'">L12M</span><span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>';
         h+='<div class="metric-value '+(icp.grr>=95?'':'metric-warn')+'">'+icp.grr.toFixed(1)+'%</div>';
         h+='<div class="metric-sub">Gross revenue retention · ICP only</div></div>';
@@ -1014,7 +1014,7 @@ function renderMRR(data, selectedMonth) {
         var nextAll=cm==='rev'?'logo':cm==='logo'?'cust':'rev';
         h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._ltvAllModal()" title="Click for formula">';
         h+='<div class="metric-label">LTV <span style="'+ti+'">All customers</span>';
-        h+='<button onclick="event.stopPropagation();window._ltvChurnMode=''+nextAll+'';renderMRR()" style="'+tb+'">'+modeLabel+'</button>';
+        h+='<button onclick="event.stopPropagation();window._ltvChurnMode=\''+nextAll+'\';renderMRR()" style="'+tb+'">'+modeLabel+'</button>';
         h+='<span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>';
         h+='<div class="metric-value" style="color:var(--dark-teal)">'+usdFmt(Math.round(lAll.ltv))+'</div>';
         h+='<div class="metric-sub">ARPU '+usdFmt(Math.round(ltvAllV.arpu))+'/mo · churn '+lAll.ann.toFixed(1)+'%/yr</div>';
@@ -1022,7 +1022,7 @@ function renderMRR(data, selectedMonth) {
         // LTV ICP — same toggle
         h+='<div class="metric-card" style="'+tl+';cursor:pointer" onclick="window._ltvIcpModal()" title="Click for formula">';
         h+='<div class="metric-label">LTV <span style="'+ti+'">ICP only</span>';
-        h+='<button onclick="event.stopPropagation();window._ltvChurnMode=''+nextAll+'';renderMRR()" style="'+tb+'">'+modeLabel+'</button>';
+        h+='<button onclick="event.stopPropagation();window._ltvChurnMode=\''+nextAll+'\';renderMRR()" style="'+tb+'">'+modeLabel+'</button>';
         h+='<span style="font-size:10px;margin-left:4px;opacity:.5">↗</span></div>';
         h+='<div class="metric-value" style="color:var(--dark-teal)">'+usdFmt(Math.round(lIcp.ltv))+'</div>';
         h+='<div class="metric-sub">ARPU '+usdFmt(Math.round(ltvIcpV.arpu))+'/mo · churn '+lIcp.ann.toFixed(1)+'%/yr</div>';
