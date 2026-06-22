@@ -2576,7 +2576,7 @@ function renderChangelog() {
       if (!groups[k]) { groups[k] = []; order.push(k); }
       groups[k].push(e);
     });
-    return order.map(function(k) { return {key:k, rows:groups[k]}; });
+    return order.reverse().map(function(k) { return {key:k, rows:groups[k]}; });
   }
 
   function renderPanel(side, entries) {
