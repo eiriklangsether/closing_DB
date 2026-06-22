@@ -963,6 +963,7 @@ function renderMRR(data, selectedMonth) {
         var icpL=cm==='rev'?icpLV.rev:cm==='logo'?icpLV.logo:icpLV.cust;
         // Store for modals
         window._retData={snapStart:allS,snapEnd:allE,months:months,calcEntities:_activeEntity==='ALL'?['NO','SE','US']:[_activeEntity]};
+        window._cgMonths=months;
         window._icpRetData={snapStart:icpS,snapEnd:icpE,months:months};
         window._ltvData={all:{ret:allR,ltv:allL,ltvV:allLV},icp:{ret:icpR,ltv:icpL,ltvV:icpLV},startM:sM,endM:eM};
         var tb='font-size:10px;padding:1px 7px;border-radius:10px;border:1px solid var(--teal);background:var(--teal-lighter);color:var(--dark-teal);cursor:pointer;font-weight:600;margin-left:4px';
@@ -984,13 +985,13 @@ function renderMRR(data, selectedMonth) {
         // ALL row
         h+='<div class="cgrow">';
         h+='<div class="cgrow-label">All<span class="sub">excl. PLG</span></div>';
-        h+='<div class="cgcell clickable" onclick="openRetModal(\'yoy\',allS,allE,months,window._retData.calcEntities)" title="Customer detail"><span class="carr">↗</span>';
+        h+='<div class="cgcell clickable" onclick="openRetModal(\'yoy\',window._retData.snapStart,window._retData.snapEnd,window._cgMonths,window._retData.calcEntities)" title="Customer detail"><span class="carr">↗</span>';
         h+='<div class="cgval neu">'+usdFmt(allARR)+'</div><div class="cgsub">'+eM+'</div></div>';
-        h+='<div class="cgcell clickable" onclick="openRetModal(\'grr\',allS,allE,months,window._retData.calcEntities)" title="Retained customers"><span class="carr">↗</span>';
+        h+='<div class="cgcell clickable" onclick="openRetModal(\'grr\',window._retData.snapStart,window._retData.snapEnd,window._cgMonths,window._retData.calcEntities)" title="Retained customers"><span class="carr">↗</span>';
         h+='<div class="cgval '+(allR.grr>=90?'pos':allR.grr>=80?'neu':'warn')+'">'+allR.grr.toFixed(1)+'%</div><div class="cgsub">Gross retention</div></div>';
-        h+='<div class="cgcell clickable" onclick="openRetModal(\'nrr\',allS,allE,months,window._retData.calcEntities)" title="Retained+expansion"><span class="carr">↗</span>';
+        h+='<div class="cgcell clickable" onclick="openRetModal(\'nrr\',window._retData.snapStart,window._retData.snapEnd,window._cgMonths,window._retData.calcEntities)" title="Retained+expansion"><span class="carr">↗</span>';
         h+='<div class="cgval '+(allR.nrr>=100?'pos':allR.nrr>=90?'neu':'warn')+'">'+allR.nrr.toFixed(1)+'%</div><div class="cgsub">Net retention</div></div>';
-        h+='<div class="cgcell clickable" onclick="openRetModal(\'yoy\',allS,allE,months,window._retData.calcEntities)" title="ARR growth"><span class="carr">↗</span>';
+        h+='<div class="cgcell clickable" onclick="openRetModal(\'yoy\',window._retData.snapStart,window._retData.snapEnd,window._cgMonths,window._retData.calcEntities)" title="ARR growth"><span class="carr">↗</span>';
         h+='<div class="cgval '+(allR.yoy>=0?'pos':'warn')+'">'+(allR.yoy>=0?'+':'')+allR.yoy.toFixed(1)+'%</div><div class="cgsub">'+usdFmt(allARRs)+' → '+usdFmt(allARR)+'</div></div>';
         h+='<div class="cgcell clickable" onclick="window._ltvAllModal()" title="LTV formula"><span class="carr">↗</span>';
         h+='<div class="cgval neu">'+usdFmt(Math.round(allL.ltv))+'</div><div class="cgsub">ARPU '+usdFmt(Math.round(allLV.arpu))+'/mo</div></div>';
@@ -998,13 +999,13 @@ function renderMRR(data, selectedMonth) {
         // ICP row
         h+='<div class="cgrow cgicp">';
         h+='<div class="cgrow-label" style="color:var(--teal)">ICP<span class="sub">excl. PLG</span></div>';
-        h+='<div class="cgcell clickable" onclick="openRetModal(\'yoy\',icpS,icpE,months,[\'ICP\'])" title="ICP customer detail"><span class="carr">↗</span>';
+        h+='<div class="cgcell clickable" onclick="openRetModal(\'yoy\',window._icpRetData.snapStart,window._icpRetData.snapEnd,window._cgMonths,[\'ICP\'])" title="ICP customer detail"><span class="carr">↗</span>';
         h+='<div class="cgval neu">'+usdFmt(icpARR)+'</div><div class="cgsub">'+eM+'</div></div>';
-        h+='<div class="cgcell clickable" onclick="openRetModal(\'grr\',icpS,icpE,months,[\'ICP\'])" title="ICP retained customers"><span class="carr">↗</span>';
+        h+='<div class="cgcell clickable" onclick="openRetModal(\'grr\',window._icpRetData.snapStart,window._icpRetData.snapEnd,window._cgMonths,[\'ICP\'])" title="ICP retained customers"><span class="carr">↗</span>';
         h+='<div class="cgval '+(icpR.grr>=90?'pos':icpR.grr>=80?'neu':'warn')+'">'+icpR.grr.toFixed(1)+'%</div><div class="cgsub">Gross retention</div></div>';
-        h+='<div class="cgcell clickable" onclick="openRetModal(\'nrr\',icpS,icpE,months,[\'ICP\'])" title="ICP retained+expansion"><span class="carr">↗</span>';
+        h+='<div class="cgcell clickable" onclick="openRetModal(\'nrr\',window._icpRetData.snapStart,window._icpRetData.snapEnd,window._cgMonths,[\'ICP\'])" title="ICP retained+expansion"><span class="carr">↗</span>';
         h+='<div class="cgval '+(icpR.nrr>=100?'pos':icpR.nrr>=90?'neu':'warn')+'">'+icpR.nrr.toFixed(1)+'%</div><div class="cgsub">Net retention</div></div>';
-        h+='<div class="cgcell clickable" onclick="openRetModal(\'yoy\',icpS,icpE,months,[\'ICP\'])" title="ICP ARR growth"><span class="carr">↗</span>';
+        h+='<div class="cgcell clickable" onclick="openRetModal(\'yoy\',window._icpRetData.snapStart,window._icpRetData.snapEnd,window._cgMonths,[\'ICP\'])" title="ICP ARR growth"><span class="carr">↗</span>';
         h+='<div class="cgval '+(icpR.yoy>=0?'pos':'warn')+'">'+(icpR.yoy>=0?'+':'')+icpR.yoy.toFixed(1)+'%</div><div class="cgsub">'+usdFmt(icpARRs)+' → '+usdFmt(icpARR)+'</div></div>';
         h+='<div class="cgcell clickable" onclick="window._ltvIcpModal()" title="ICP LTV formula"><span class="carr">↗</span>';
         h+='<div class="cgval neu">'+usdFmt(Math.round(icpL.ltv))+'</div><div class="cgsub">ARPU '+usdFmt(Math.round(icpLV.arpu))+'/mo</div></div>';
