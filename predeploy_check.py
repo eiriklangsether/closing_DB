@@ -86,7 +86,13 @@ def main() -> int:
                     f"(will ReferenceError at runtime)."
                 )
 
-    # 5. Sanity: tab router and the five page switchers must be present.
+    # 5. Required CSS classes (catches silent injection failures)
+    required_css = ['.bkpi-headline', '.hcard', '.cohort-grid', '.cgrow', '.cgcell', '.dchip', '.sect-head']
+    for cls in required_css:
+        if cls not in html:
+            problems.append(f"CSS class '{cls}' missing from stylesheet — injection likely failed.")
+
+    # 7. Sanity: tab router and the five page switchers must be present.
     if "function switchPage" not in html:
         problems.append("switchPage function missing.")
     for page in ["'closing'", "'mrr'", "'fin'", "'meta'", "'export'"]:
