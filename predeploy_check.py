@@ -95,7 +95,7 @@ def main() -> int:
     # 7. Sanity: tab router and the five page switchers must be present.
     if "function switchPage" not in html:
         problems.append("switchPage function missing.")
-    for page in ["'closing'", "'mrr'", "'fin'", "'meta'", "'export'"]:
+    for page in ["'closing'", "'mrr'", "'fin'", "'meta'", "'export'", "'changelog'"]:
         if f"switchPage({page}" not in html:
             problems.append(f"switchPage call for {page} missing.")
 
