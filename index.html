@@ -1872,7 +1872,7 @@ function drawWaterfall(mov, totals, months, periodStart, periodEnd) {
   const expMRR    = mov.expansion_total;
   const conMRR    = mov.contraction_total;
   const churnMRR  = mov.churned_total;
-  const endMRR    = startMRR + newMRR + expMRR - churnMRR - conMRR;
+  const endMRR    = startMRR + newMRR + expMRR + churnMRR + conMRR;  // churned/con already negative
   const netChange = endMRR - startMRR;
 
   function fmt(v) {
