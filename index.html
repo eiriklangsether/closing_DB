@@ -1022,7 +1022,7 @@ function renderMRR(data, selectedMonth) {
           var grr=sT>0?Math.min(100,Math.round(rC/sT*1000)/10):0;
           var nrr=sT>0?Math.round(rE/sT*1000)/10:0;
           var yoy=sT>0?Math.round((eT-sT)/sT*1000)/10:0;
-          return {sT:sT,eT:eT,grr:grr,nrr:nrr,yoy:yoy,ret:ret.length,sN:sN.size,S:S,E:E,S:S,E:E};
+          return {sT:sT,eT:eT,grr:grr,nrr:nrr,yoy:yoy,ret:ret.length,sN:sN.size,S:S,E:E};
         }
         function calcLTVv(r){
           var arpu=r.sN>0?r.sT/r.sN:0;
@@ -1489,7 +1489,7 @@ function renderMeta() {
           return btns.join('');
         })()}
       </div>
-      <button class="mapping-issues-btn${_metaMappingOnly ? ' active' : ''}" onclick="toggleMappingIssues()">⚠ Mapping issues</button>
+      <button class="mapping-issues-btn${_metaMappingOnly ? ' active' : ''}" onclick="toggleMappingIssues()">⚠ Mapping issues (${Object.values(CUSTOMER_META).filter(function(c){return !c.livescreen&&(c.icp===null||c.icp===undefined||!c.logo||!c.owner_name);}).length})</button>
       <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-secondary);white-space:nowrap;cursor:pointer">
         <input type="checkbox" id="icpOnlyMeta" onchange="filterMeta()"> ICP only
       </label>
@@ -1563,10 +1563,11 @@ function refreshMetaTable() {
     if (activeOnly && r.latest_mrr_usd === 0) return false;
     if (_metaMappingOnly) {
       if (r.livescreen) return false;
-      const icpOk  = r.icp === true || r.icp === false;
-      const logoOk = !!r.logo;
-      const sfOk   = r.in_sf || (icpOk && logoOk); // SF not required if ICP+logo manually set
-      const hasIssue = !icpOk || !logoOk || !sfOk;
+      const icpOk   = r.icp === true || r.icp === false;
+      const logoOk  = !!r.logo;
+      const ownerOk = !!r.owner_name;
+      const sfOk    = r.in_sf || (icpOk && logoOk);
+      const hasIssue = !icpOk || !logoOk || !sfOk || !ownerOk;
       if (!hasIssue) return false;
     }
     if (_metaSearch) {
