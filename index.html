@@ -1572,8 +1572,9 @@ function renderMRR(data, selectedMonth) {
 }
 
 window._openLtvCard = function() {
-  if ((window._ltvSeg||'all') === 'icp') { window._ltvIcpModal(); }
-  else { window._ltvAllModal(); }
+  var seg = window._ltvSeg || 'all';
+  window._ltvSeg = seg;
+  openRetModal('ltv', null, null, null, null);
 };
 
 function drawCharts(months, totals, selectedMonth) {
