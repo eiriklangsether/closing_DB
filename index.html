@@ -1262,7 +1262,6 @@ function renderMRR(data, selectedMonth) {
                  window._icpRetData.months, ['ICP']);
   };
   window._ltvAllModal = function() { window._ltvSeg = 'all'; openRetModal('ltv', null, null, null, null); };
-  window._openLtvCard = function() { if ((window._ltvSeg||'all')==='icp') { window._ltvIcpModal(); } else { window._ltvAllModal(); } };
   window._ltvIcpModal = function() { window._ltvSeg = 'icp'; openRetModal('ltv', null, null, null, null); };
   window._cgOpen = function(el) {
     var type = el.dataset.cgType;
@@ -1571,6 +1570,11 @@ function renderMRR(data, selectedMonth) {
   drawCharts(months, totals, selectedMonth);
   drawWaterfall(mov, totals, months, movPeriodStart, movPeriodEnd);
 }
+
+window._openLtvCard = function() {
+  if ((window._ltvSeg||'all') === 'icp') { window._ltvIcpModal(); }
+  else { window._ltvAllModal(); }
+};
 
 function drawCharts(months, totals, selectedMonth) {
   const labels = months.map(m => { const p = m.split(' '); return p[0].slice(0,3) + ' ' + p[1].slice(2); });
