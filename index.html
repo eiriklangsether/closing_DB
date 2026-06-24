@@ -936,7 +936,7 @@ function renderMRR(data, selectedMonth) {
   const movNew     = aggregateMov(mergedNew);
   const movChurned = aggregateMov(mergedChurned);
   const movExp     = aggregateMov(mergedExp);
-  const movCon     = aggregateMov(mergedCon).map(r => ({ ...r, mrr: Math.abs(r.mrr) }));
+  const movCon     = aggregateMov(mergedCon);  // keep negative — drawWaterfall adds them (sign already negative)
 
   // Rebuild mov totals
   const mov = {
