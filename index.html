@@ -1082,6 +1082,39 @@ function renderMRR(data, selectedMonth) {
           if(sv>0) icpS[c.name]=(icpS[c.name]||0)+sv;
           if(ev>0) icpE[c.name]=(icpE[c.name]||0)+ev;
         });
+
+        // --- Logo churn (true logo-grouped, excl. PLG + LiveScreen) ---
+        // Build logo→[customer] maps for All and ICP slices.
+        // Null-logo customers get a 1:1 fallback key (own customer_id).
+        // Each logo is "active" in a month if any of its customers has MRR > 0.
+        function buildLogoMRR(icpOnly) {
+          var logoS={}, logoE={};
+          Object.entries(CUSTOMER_META).forEach(function(kv){
+            var cid=kv[0], c=kv[1];
+            if(c.entity==='PLG' || c.livescreen===true) return;
+            if(_activeEntity!=='ALL' && c.entity!==_activeEntity) return;
+            if(icpOnly && c.icp!==true) return;
+            var key = c.logo || cid;
+            var sv=(c.mrr||{})[sM]||0, ev=(c.mrr||{})[eM]||0;
+            logoS[key]=(logoS[key]||0)+sv;
+            logoE[key]=(logoE[key]||0)+ev;
+          });
+          return {S:logoS, E:logoE};
+        }
+        function calcLogoChurn(logoMaps) {
+          var S=logoMaps.S, E=logoMaps.E;
+          var allKeys=new Set(Object.keys(S).concat(Object.keys(E)));
+          var start=0, lost=0;
+          allKeys.forEach(function(k){
+            if((S[k]||0)>0){ start++; if((E[k]||0)===0) lost++; }
+          });
+          var ann=start>0?lost/start:0;
+          return {start:start, lost:lost, ann:ann, mo:ann/12};
+        }
+        var allLogoMaps=buildLogoMRR(false),  icpLogoMaps=buildLogoMRR(true);
+        var allLC=calcLogoChurn(allLogoMaps),  icpLC=calcLogoChurn(icpLogoMaps);
+        // --- end logo churn ---
+
         function calcRet(S,E){
           var sN=new Set(Object.keys(S).filter(function(n){return S[n]>0;}));
           var eN=new Set(Object.keys(E).filter(function(n){return E[n]>0;}));
@@ -1095,18 +1128,18 @@ function renderMRR(data, selectedMonth) {
           var yoy=sT>0?Math.round((eT-sT)/sT*1000)/10:0;
           return {sT:sT,eT:eT,grr:grr,nrr:nrr,yoy:yoy,ret:ret.length,sN:sN.size,S:S,E:E};
         }
-        function calcLTVv(r){
+        function calcLTVv(r, lc){
           var arpu=r.sN>0?r.sT/r.sN:0;
           // Revenue churn: MRR lost to churn+contraction / starting MRR (from GRR)
           var revAnn=1-r.grr/100; var revMo=revAnn/12;
-          // Logo churn: customers fully lost / starting customers (point-to-point over window)
-          var logoAnn=r.sN>0?(r.sN-r.ret)/r.sN:0; var logoMo=logoAnn/12;
-          return {arpu:arpu,
+          // Logo churn: true logo-grouped (excl. PLG + LiveScreen), combined across entities
+          var logoMo=lc.mo;
+          return {arpu:arpu, logoChurn:lc,
                   rev:{ann:revAnn*100,mo:revMo*100,ltv:revMo>0?arpu/revMo:0,desc:'MRR lost \u00f7 starting MRR (GRR basis)'},
-                  logo:{ann:logoAnn*100,mo:logoMo*100,ltv:logoMo>0?arpu/logoMo:0,desc:'Customers fully lost \u00f7 starting customers'}};
+                  logo:{ann:lc.ann*100,mo:logoMo*100,ltv:logoMo>0?arpu/logoMo:0,desc:'Logo churn: logos fully lost \u00f7 logos at start (excl. PLG & LiveScreen, combined entities)'}};
         }
         var allR=calcRet(allS,allE), icpR=calcRet(icpS,icpE);
-        var allLV=calcLTVv(allR), icpLV=calcLTVv(icpR);
+        var allLV=calcLTVv(allR,allLC), icpLV=calcLTVv(icpR,icpLC);
         var cm=window._ltvChurnMode||'rev';
         var allL=cm==='logo'?allLV.logo:allLV.rev;
         var icpL=cm==='logo'?icpLV.logo:icpLV.rev;
@@ -1376,7 +1409,7 @@ function renderMRR(data, selectedMonth) {
       var ld2 = window._ltvData;
       var cm2 = window._ltvChurnMode || 'rev';
       var seg2 = window._ltvSeg || 'all';
-      var cmDesc2 = cm2==='logo' ? 'Logo churn (no customers active under a logo)' : 'Revenue churn (MRR lost ÷ starting MRR, GRR basis)';
+      var cmDesc2 = cm2==='logo' ? 'Logo churn: logos with zero MRR across all subscriptions ÷ logos at start (excl. PLG & LiveScreen, all entities combined)' : 'Revenue churn (MRR lost ÷ starting MRR, GRR basis)';
       var segDesc2 = seg2==='icp' ? 'ICP customers only' : 'All customers excl. PLG';
       var ltvDisp = seg2==='icp'
         ? (ld2 ? Math.round((cm2==='logo'?ld2.icp.ltvV.logo:ld2.icp.ltvV.rev).ltv) : null)
@@ -1388,9 +1421,8 @@ function renderMRR(data, selectedMonth) {
       body += '<div class="cac-formula-row"><span class="cac-formula-label">Value</span><span class="cac-formula-result">'+(ltvVal ? usdFmtCac(ltvVal) : '—')+'</span></div>';
       body += '<div style="margin-top:8px;padding:8px 10px;background:var(--bg);border-radius:6px;font-size:11px;color:var(--text-muted);line-height:1.6">';
       body += '<strong>Note on churn definitions:</strong> ';
-      body += '<strong>Logo churn</strong> — a logo is churned when zero customers under that company name remain active. ';
-      body += '<strong>Customer churn</strong> — a single subscription ends, but other subscriptions under the same logo may remain. ';
-      body += 'At current data granularity (one row per company) these two measures are numerically identical — distinguishing them requires sub-logo account tracking.';
+      body += '<strong>Logo churn</strong> — a logo is churned only when <em>all</em> subscriptions under that logo reach zero MRR. Multi-subscription accounts (e.g. Sparebank 1 Gruppen with 8 customers) stay active as long as any one subscription remains. PLG and LiveScreen subscriptions excluded. Logos without a mapping fall back to customer-level. ';
+      body += '<strong>Revenue churn</strong> — MRR lost to churn and contraction ÷ starting MRR (GRR basis), unaffected by the logo grouping.';
       body += '</div>';
     } else if (view==='ratio') {
       var cm3 = window._ltvChurnMode || 'rev';
@@ -2866,7 +2898,7 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
       '<div style="margin-top:12px;padding:10px;background:var(--teal-lighter);border-radius:8px;font-size:12px;color:var(--dark-teal);line-height:1.6">' +
       '<strong>Caveats:</strong> Gross margin excluded. ' +
       '<strong>Revenue churn</strong> (industry standard): uses GRR — weights by MRR, captures expansion. ' +
-      '<strong>Logo churn</strong>: a logo is churned when zero customers under that company remain active. ' +
+      '<strong>Logo churn</strong>: a logo is churned only when <em>all</em> its subscriptions reach zero MRR (PLG & LiveScreen excluded; null-logo customers treated 1:1). ' +
       'Toggle between modes and segments using the buttons in the CAC & LTV section.' +
       '</div></div>';
     bodyHtml = '<div class="ret-section-label">All customers vs ICP comparison \u00b7 ' + modeLabel + '</div>' +
