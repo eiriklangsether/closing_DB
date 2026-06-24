@@ -1262,7 +1262,6 @@ function renderMRR(data, selectedMonth) {
                  window._icpRetData.months, ['ICP']);
   };
   window._ltvAllModal = function() { window._ltvSeg = 'all'; openRetModal('ltv', null, null, null, null); };
-  window._openLtvCard = function() { if ((window._ltvSeg||'all')==='icp') { window._ltvIcpModal(); } else { window._ltvAllModal(); } };
   window._ltvIcpModal = function() { window._ltvSeg = 'icp'; openRetModal('ltv', null, null, null, null); };
   window._cgOpen = function(el) {
     var type = el.dataset.cgType;
