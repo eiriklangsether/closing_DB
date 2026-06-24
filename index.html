@@ -2827,6 +2827,9 @@ function closeRetModal() {
 
 function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
   var title, subLine, formulaHtml, bodyHtml;
+  var fmt = function(v){ return v >= 1000 ? '$' + (v/1000).toFixed(1) + 'K' : '$' + Math.round(v); };
+  var pct = function(v){ return (v >= 0 ? '+' : '') + v.toFixed(2) + '%'; };
+  var tag = function(s){ return '<span class="ret-tag ret-tag-'+s+'">'+s+'</span>'; };
   // LTV: handled before any snapStart/months dereference
   if (type === 'ltv') {
     var d = window._ltvData;
@@ -2948,9 +2951,7 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
   var nrr    = startTotal > 0 ? (retainedEnd   / startTotal * 100) : 0;
   var yoyArr = startTotal > 0 ? ((endTotal - startTotal) / startTotal * 100) : 0;
 
-  var fmt  = function(v){ return v >= 1000 ? '$' + (v/1000).toFixed(1) + 'K' : '$' + Math.round(v); };
-  var pct  = function(v){ return (v >= 0 ? '+' : '') + v.toFixed(2) + '%'; };
-  var tag  = function(s){ return '<span class="ret-tag ret-tag-'+s+'">'+s+'</span>'; };
+
 
   function tableRows(arr, showEnd) {
     if (!arr.length) return '<tr><td colspan="4" style="color:var(--text-muted);padding:12px 10px">None in this window</td></tr>';
