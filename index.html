@@ -409,6 +409,7 @@
     .cac-cust-month{font-size:10px;color:var(--text-muted);min-width:56px}
     .cac-cust-name{flex:1;font-size:13px;color:var(--text-primary)}
     .cac-cust-badge{font-size:9px;padding:2px 6px;border-radius:8px;background:var(--amber-bg);color:var(--amber-text);border:1px solid var(--amber-dot)}
+    .cac-cust-badge.icp{background:var(--teal-lighter);color:var(--dark-teal);border-color:var(--teal-light)}
     .cac-cust-remove{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:15px;padding:0 2px;border-radius:3px}
     .cac-cust-remove:hover{color:var(--cranberry);background:var(--red-bg)}
     .cac-add-row{display:flex;gap:8px;margin-top:8px}
@@ -1466,13 +1467,17 @@ function renderMRR(data, selectedMonth) {
       body += '<div class="cac-manual-note">&#9888; This list has manual edits. Removed deals are hidden; manually added deals are marked.</div>';
     }
     body += '<div class="cac-cust-list" id="cacCustList">';
+    var _icpNames = new Set();
+    Object.values(CUSTOMER_META).forEach(function(m){ if(m.icp===true) _icpNames.add((m.name||'').trim().toLowerCase()); });
     stats.rows.forEach(function(row){
       var all = cacMonthCustomers(row.d, row.mKey);
       all.forEach(function(c){
         if (c.removed) return;
+        var isIcp = _icpNames.has(c.name.trim().toLowerCase());
         body += '<div class="cac-cust-row" id="cacCust_'+row.mKey+'_'+c.idx+'">';
         body += '<span class="cac-cust-month">'+row.month+'</span>';
         body += '<span class="cac-cust-name">'+c.name+'</span>';
+        if (isIcp) body += '<span class="cac-cust-badge icp">ICP</span>';
         if (c.manual) body += '<span class="cac-cust-badge">manual</span>';
         body += "<button class=\"cac-cust-remove\" onclick=\"_cacRemoveDeal('"+row.mKey+"','"+c.idx+"')\" title=\"Remove from calculation\">&#x2715;</button>";
         body += '</div>';
