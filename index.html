@@ -1165,10 +1165,7 @@ function renderMRR(data, selectedMonth) {
     <div class="cac-grid" id="cacGridSection">
       ${(function(){
         var overrides = window._cacOverrides || {};
-        // Build 12-month window from CAC_DATA directly (independent of MRR months array)
-        var _cacMonthOrder = CAC_DATA.map(function(r){return r.month;});
-        var _cacLast = _cacMonthOrder[_cacMonthOrder.length-1];
-        var months12 = _cacMonthOrder.slice(-12);
+        var months12 = months.slice(-12);
         var totalCost = 0, totalDeals = 0;
         months12.forEach(function(m){
           var d = CAC_DATA.find(function(r){return r.month===m;});
@@ -2875,16 +2872,34 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
       '<td class="num"><strong>' + fmt(icpL.ltv) + '</strong></td></tr>' +
       '</tbody></table></div>';
     var custData = seg === 'icp' ? d.icp : d.all;
+    var snapS = (custData.ret && custData.ret.S) ? custData.ret.S : {};
     var snapE = (custData.ret && custData.ret.E) ? custData.ret.E : {};
-    var cnames = Object.keys(snapE).filter(function(n){return (snapE[n]||0)>0;});
-    cnames.sort(function(a,b){return (snapE[b]||0)-(snapE[a]||0);});
-    var crows = cnames.map(function(n){
-      return '<tr><td>'+n+'</td><td class="num">'+fmt(snapE[n])+'/mo</td></tr>';
+    // Retained: present at start AND end
+    var ltvChurned = Object.keys(snapS).filter(function(n){ return (snapS[n]||0)>0 && !(snapE[n]>0); });
+    ltvChurned.sort(function(a,b){ return (snapS[b]||0)-(snapS[a]||0); });
+    var ltvRetained = Object.keys(snapS).filter(function(n){ return (snapS[n]||0)>0 && (snapE[n]||0)>0; });
+    ltvRetained.sort(function(a,b){ return (snapE[b]||0)-(snapE[a]||0); });
+    var ltvChurnedRows = ltvChurned.map(function(n){
+      return '<tr><td>'+n+'</td><td class="num" style="color:var(--cranberry)">'+fmt(snapS[n])+'/mo</td><td style="color:var(--cranberry);font-size:11px">churned</td></tr>';
     }).join('');
-    var custHtml = '<div class="ret-section-label" style="margin-top:16px">Customers included · '+cnames.length+'</div>'
+    var ltvRetainedRows = ltvRetained.map(function(n){
+      return '<tr><td>'+n+'</td><td class="num">'+fmt(snapE[n])+'/mo</td><td style="color:var(--green-text);font-size:11px">retained</td></tr>';
+    }).join('');
+    var custHtml = '<div class="ret-section-label" style="margin-top:16px">'
+      +'Churned · '+ltvChurned.length+' customers'
+      +(ltvChurned.length>0?' <span style="font-size:11px;color:var(--cranberry)">(−'+fmt(ltvChurned.reduce(function(s,n){return s+(snapS[n]||0);},0))+'/mo MRR)</span>':'')
+      +'</div>'
       +'<div class="ret-table-wrap"><table class="ret-table"><thead><tr>'
-      +'<th>Customer</th><th class="num">MRR</th></tr></thead><tbody>'
-      +crows+'</tbody></table></div>';
+      +'<th>Customer</th><th class="num">MRR at start</th><th></th></tr></thead><tbody>'
+      +(ltvChurnedRows||'<tr><td colspan="3" style="color:var(--text-muted);font-style:italic">No churned customers in this window</td></tr>')
+      +'</tbody></table></div>'
+      +'<div class="ret-section-label" style="margin-top:16px">'
+      +'Retained · '+ltvRetained.length+' customers'
+      +'</div>'
+      +'<div class="ret-table-wrap"><table class="ret-table"><thead><tr>'
+      +'<th>Customer</th><th class="num">MRR at end</th><th></th></tr></thead><tbody>'
+      +ltvRetainedRows
+      +'</tbody></table></div>';
     document.getElementById('retModalTitle').textContent = title;
     document.getElementById('retModalSub').textContent   = subLine;
     document.getElementById('retModalBody').innerHTML    = formulaHtml + bodyHtml + custHtml;
