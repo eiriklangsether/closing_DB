@@ -1202,7 +1202,7 @@ function renderMRR(data, selectedMonth) {
         h += '<button style="'+tb+'" onclick="window._ltvSegToggle()">'+segLabel+'</button>';
         h += '<span style="font-size:11px;color:var(--text-muted);margin-left:8px">CAC basis: L12M · all customers</span>';
         h += '</div>';
-        h += "<div class=\"cac-card\" onclick=\"window._openCacModal('ltv')\" title=\"LTV detail\">";
+        h += "<div class=\"cac-card\" onclick=\"window._ltvSeg===\'icp\'?window._ltvIcpModal():window._ltvAllModal()\" title=\"LTV detail\">";
         h += '<span class="carr">&#x2197;</span>';
         h += '<div class="cac-card-label">LTV · '+segLabel+' · '+cmLabel+'</div>';
         h += '<div class="cac-card-value'+(ltvShow?'':' cac-na')+'">'+(ltvShow?usd(ltvShow):'—')+'</div>';
@@ -1358,7 +1358,7 @@ function renderMRR(data, selectedMonth) {
     var ov = window._cacOverrides || {};
 
     var title = view==='ltv' ? 'LTV — All Customers · L12M' : view==='ratio' ? 'LTV / CAC · L12M' : 'CAC — Customer Acquisition Cost · L12M';
-    var sub   = view==='ltv' ? 'From retention analysis · click LTV card above for churn detail'
+    var sub   = view==='ltv' ? 'From retention analysis'
               : view==='ratio' ? 'LTV ÷ CAC  ·  Target > 3x for healthy SaaS unit economics'
               : 'Total S&M cost ÷ new deals closed  ·  L12M rolling window';
     document.getElementById('cacModalTitle').textContent = title;
