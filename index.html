@@ -2826,7 +2826,7 @@ function closeRetModal() {
 }
 
 function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
-  let title, subLine, formulaHtml, bodyHtml;
+  var title, subLine, formulaHtml, bodyHtml;
   // LTV: handled before any snapStart/months dereference
   if (type === 'ltv') {
     var d = window._ltvData;
@@ -2917,45 +2917,45 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
   }
 
   if (!snapStart || !snapEnd || !months) return;
-  const startM  = months[0];
-  const endM    = months[months.length - 1];
+  var startM  = months[0];
+  var endM    = months[months.length - 1];
 
   // Classify every company that appeared in either window
-  const allCompanies = new Set([...Object.keys(snapStart), ...Object.keys(snapEnd)]);
-  const rows = [];
+  var allCompanies = new Set([...Object.keys(snapStart), ...Object.keys(snapEnd)]);
+  var rows = [];
   allCompanies.forEach(function(name) {
-    const s = snapStart[name] || 0;
-    const e = snapEnd[name]   || 0;
-    let status;
+    var s = snapStart[name] || 0;
+    var e = snapEnd[name]   || 0;
+    var status;
     if      (s > 0 && e > 0) status = 'retained';
     else if (s > 0 && e === 0) status = 'churned';
     else                       status = 'new';
     rows.push({ name, startMRR: s, endMRR: e, status });
   });
 
-  const retained       = rows.filter(r => r.status === 'retained');
-  const churned        = rows.filter(r => r.status === 'churned');
-  const newRows        = rows.filter(r => r.status === 'new');
-  const startTotal     = rows.filter(r => r.startMRR > 0).reduce((s,r) => s + r.startMRR, 0);
-  const endTotal       = rows.filter(r => r.endMRR > 0).reduce((s,r) => s + r.endMRR, 0);
-  const retainedStart   = retained.reduce((s,r) => s + r.startMRR, 0);
-  const retainedEnd     = retained.reduce((s,r) => s + r.endMRR,   0);
-  const retainedCapped  = retained.reduce((s,r) => s + Math.min(r.startMRR, r.endMRR), 0);
-  const churnedMRR      = churned.reduce((s,r) => s + r.startMRR, 0);
-  const contractionMRR  = retained.filter(r => r.endMRR < r.startMRR).reduce((s,r) => s + (r.startMRR - r.endMRR), 0);
+  var retained       = rows.filter(r => r.status === 'retained');
+  var churned        = rows.filter(r => r.status === 'churned');
+  var newRows        = rows.filter(r => r.status === 'new');
+  var startTotal     = rows.filter(r => r.startMRR > 0).reduce((s,r) => s + r.startMRR, 0);
+  var endTotal       = rows.filter(r => r.endMRR > 0).reduce((s,r) => s + r.endMRR, 0);
+  var retainedStart   = retained.reduce((s,r) => s + r.startMRR, 0);
+  var retainedEnd     = retained.reduce((s,r) => s + r.endMRR,   0);
+  var retainedCapped  = retained.reduce((s,r) => s + Math.min(r.startMRR, r.endMRR), 0);
+  var churnedMRR      = churned.reduce((s,r) => s + r.startMRR, 0);
+  var contractionMRR  = retained.filter(r => r.endMRR < r.startMRR).reduce((s,r) => s + (r.startMRR - r.endMRR), 0);
 
-  const grr    = startTotal > 0 ? Math.min(100, retainedCapped / startTotal * 100) : 0;
-  const nrr    = startTotal > 0 ? (retainedEnd   / startTotal * 100) : 0;
-  const yoyArr = startTotal > 0 ? ((endTotal - startTotal) / startTotal * 100) : 0;
+  var grr    = startTotal > 0 ? Math.min(100, retainedCapped / startTotal * 100) : 0;
+  var nrr    = startTotal > 0 ? (retainedEnd   / startTotal * 100) : 0;
+  var yoyArr = startTotal > 0 ? ((endTotal - startTotal) / startTotal * 100) : 0;
 
-  const fmt  = v => v >= 1000 ? '$' + (v/1000).toFixed(1) + 'K' : '$' + Math.round(v);
-  const pct  = v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
-  const tag  = s => `<span class="ret-tag ret-tag-${s}">${s}</span>`;
+  var fmt  = function(v){ return v >= 1000 ? '$' + (v/1000).toFixed(1) + 'K' : '$' + Math.round(v); };
+  var pct  = function(v){ return (v >= 0 ? '+' : '') + v.toFixed(2) + '%'; };
+  var tag  = function(s){ return '<span class="ret-tag ret-tag-'+s+'">'+s+'</span>'; };
 
   function tableRows(arr, showEnd) {
     if (!arr.length) return '<tr><td colspan="4" style="color:var(--text-muted);padding:12px 10px">None in this window</td></tr>';
     return arr.sort((a,b) => b.startMRR - a.startMRR).map(function(r) {
-      const delta = r.endMRR - r.startMRR;
+      var delta = r.endMRR - r.startMRR;
       return `<tr>
         <td>${r.name}</td>
         <td class="num">${r.startMRR > 0 ? fmt(r.startMRR) : '—'}</td>
@@ -2966,7 +2966,7 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
   }
 
 
-  const filterNote = _ownerFilter !== 'ALL'
+  var filterNote = _ownerFilter !== 'ALL'
     ? ` · ${_ownerFilter}` : (calcEntities.length < 3 ? ` · ${calcEntities.join('+')}` : '');
 
   if (type === 'grr') {
@@ -3024,7 +3024,7 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
   } else if (type === 'nrr') {
     title   = 'L12M NRR — Net Revenue Retention';
     subLine = `${startM} → ${endM}${filterNote} · includes expansions & contractions on retained cohort`;
-    const expMRR = retainedEnd - retainedStart;
+    var expMRR = retainedEnd - retainedStart;
     formulaHtml = `
       <div class="ret-formula">
         <div class="ret-formula-row">
@@ -3123,7 +3123,7 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
   document.getElementById('retModalTitle').textContent = title;
   document.getElementById('retModalSub').textContent   = subLine;
   document.getElementById('retModalBody').innerHTML    = formulaHtml + bodyHtml;
-  const overlay = document.getElementById('retModal');
+  var overlay = document.getElementById('retModal');
   overlay.style.display = 'flex';
   overlay.scrollTop = 0;
 }
