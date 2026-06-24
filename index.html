@@ -2826,6 +2826,7 @@ function closeRetModal() {
 }
 
 function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
+  let title, subLine, formulaHtml, bodyHtml;
   // LTV: handled before any snapStart/months dereference
   if (type === 'ltv') {
     var d = window._ltvData;
@@ -2964,7 +2965,6 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
     }).join('');
   }
 
-  let title, subLine, formulaHtml, bodyHtml;
 
   const filterNote = _ownerFilter !== 'ALL'
     ? ` · ${_ownerFilter}` : (calcEntities.length < 3 ? ` · ${calcEntities.join('+')}` : '');
