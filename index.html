@@ -1376,9 +1376,9 @@ function renderMRR(data, selectedMonth) {
     }
 
     body += '<div class="cac-modal-tabs">';
-    body += '<button class="cac-tab-btn active" onclick="_cacTab(this,'summary')">Monthly summary</button>';
-    body += '<button class="cac-tab-btn" onclick="_cacTab(this,'deals')">New deals</button>';
-    body += '<button class="cac-tab-btn" onclick="_cacTab(this,'costs')">Cost breakdown</button>';
+    body += "<button class=\"cac-tab-btn active\" onclick=\"_cacTab(this,'summary')\">Monthly summary</button>";
+    body += "<button class=\"cac-tab-btn\" onclick=\"_cacTab(this,'deals')\">New deals</button>";
+    body += "<button class=\"cac-tab-btn\" onclick=\"_cacTab(this,'costs')\">Cost breakdown</button>";
     body += '</div>';
 
     // ── Tab 1: Monthly summary ──
@@ -1432,7 +1432,7 @@ function renderMRR(data, selectedMonth) {
         body += '<span class="cac-cust-month">'+row.month+'</span>';
         body += '<span class="cac-cust-name">'+c.name+'</span>';
         if (c.manual) body += '<span class="cac-cust-badge">manual</span>';
-        body += '<button class="cac-cust-remove" onclick="_cacRemoveDeal(''+row.mKey+'',''+c.idx+'')" title="Remove from calculation">&#x2715;</button>';
+        body += "<button class=\"cac-cust-remove\" onclick=\"_cacRemoveDeal('"+row.mKey+"','"+c.idx+"')\" title=\"Remove from calculation\">&#x2715;</button>";
         body += '</div>';
       });
     });
