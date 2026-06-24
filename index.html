@@ -320,7 +320,7 @@
     .sect-title{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);white-space:nowrap}
     .sect-rule{flex:1;height:1px;background:var(--border)}
     .cohort-grid{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1.5rem}
-    .cgrow{display:grid;grid-template-columns:110px repeat(5,1fr)}
+    .cgrow{display:grid;grid-template-columns:110px repeat(4,1fr)}
     .cgrow.cghead{background:#f7fafa;border-bottom:1px solid var(--border)}
     .cgrow.cgicp{background:linear-gradient(180deg,rgba(218,237,236,.4),rgba(218,237,236,.1))}
     .cgcol-head{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);padding:9px 12px;display:flex;align-items:center;gap:5px;border-right:1px solid var(--border)}
@@ -1125,7 +1125,7 @@ function renderMRR(data, selectedMonth) {
         h += '<div class="cgcol-head">GRR</div>';
         h += '<div class="cgcol-head">NRR</div>';
         h += '<div class="cgcol-head">YoY Growth</div>';
-        h += '<div class="cgcol-head">LTV <button onclick="window._ltvCmToggle()" style="' + tb + '">' + cmLabel + '</button></div>';
+
         h += '</div>';
         // ── All row ──
         h += '<div class="cgrow">';
@@ -1139,8 +1139,7 @@ function renderMRR(data, selectedMonth) {
         h += '<div class="cgcell" data-cg-type="yoy" data-cg-seg="all" onclick="window._cgOpen(this)" title="ARR growth detail"><span class="carr">&#x2197;</span>';
         h += '<div class="cgval ' + (allR.yoy>=0?'pos':'warn') + '">' + (allR.yoy>=0?'+':'') + allR.yoy.toFixed(1) + '%</div>';
         h += '<div class="cgsub">' + usdFmt(allARRs) + ' \u2192 ' + usdFmt(allARR) + '</div></div>';
-        h += '<div class="cgcell" onclick="window._ltvAllModal()" title="LTV formula"><span class="carr">&#x2197;</span>';
-        h += '<div class="cgval neu">' + usdFmt(Math.round(allL.ltv)) + '</div><div class="cgsub">ARPU ' + usdFmt(Math.round(allLV.arpu)) + '/mo</div></div>';
+
         h += '</div>';
         // ── ICP row ──
         h += '<div class="cgrow cgicp">';
@@ -1154,15 +1153,14 @@ function renderMRR(data, selectedMonth) {
         h += '<div class="cgcell" data-cg-type="yoy" data-cg-seg="icp" onclick="window._cgOpen(this)" title="ICP ARR growth"><span class="carr">&#x2197;</span>';
         h += '<div class="cgval ' + (icpR.yoy>=0?'pos':'warn') + '">' + (icpR.yoy>=0?'+':'') + icpR.yoy.toFixed(1) + '%</div>';
         h += '<div class="cgsub">' + usdFmt(icpARRs) + ' \u2192 ' + usdFmt(icpARR) + '</div></div>';
-        h += '<div class="cgcell" onclick="window._ltvIcpModal()" title="ICP LTV formula"><span class="carr">&#x2197;</span>';
-        h += '<div class="cgval neu">' + usdFmt(Math.round(icpL.ltv)) + '</div><div class="cgsub">ARPU ' + usdFmt(Math.round(icpLV.arpu)) + '/mo</div></div>';
+
         h += '</div>';
         return h;
       })()} 
     </div>
 
 
-    <div class="sect-head"><span class="sect-title">Customer Acquisition Cost &middot; L12M</span><span class="sect-rule"></span></div>
+    <div class="sect-head"><span class="sect-title">CAC &amp; LTV &middot; L12M</span><span class="sect-rule"></span></div>
     <div class="cac-grid" id="cacGridSection">
       ${(function(){
         var overrides = window._cacOverrides || {};
@@ -1182,29 +1180,44 @@ function renderMRR(data, selectedMonth) {
           totalDeals += activeCust.length;
         });
         var cacL12 = totalDeals > 0 ? Math.round(totalCost/totalDeals) : null;
-        // LTV — use All segment from existing _ltvData if available
-        var ltvAll = (window._ltvData && window._ltvData.all) ? Math.round(window._ltvData.all.ltv.ltv) : null;
-        var ratio  = (cacL12 && ltvAll && cacL12>0) ? (ltvAll/cacL12).toFixed(1) : null;
-        window._cacL12Computed = {totalCost:totalCost, totalDeals:totalDeals, cac:cacL12, ltv:ltvAll, ratio:ratio, months12:months12};
+        var ld = window._ltvData;
+        var cm = window._ltvChurnMode || 'rev';
+        var ltvSeg = window._ltvSeg || 'all';
+        var ltvAll = ld ? Math.round((cm==='logo'?ld.all.ltvV.logo:ld.all.ltvV.rev).ltv) : null;
+        var ltvIcp = ld ? Math.round((cm==='logo'?ld.icp.ltvV.logo:ld.icp.ltvV.rev).ltv) : null;
+        var ltvShow = ltvSeg==='icp' ? ltvIcp : ltvAll;
+        var ratioAll = (cacL12 && ltvAll && cacL12>0) ? (ltvAll/cacL12).toFixed(1) : null;
+        var ratioIcp = (cacL12 && ltvIcp && cacL12>0) ? (ltvIcp/cacL12).toFixed(1) : null;
+        var ratioShow = ltvSeg==='icp' ? ratioIcp : ratioAll;
+        window._cacL12Computed = {totalCost:totalCost, totalDeals:totalDeals, cac:cacL12, ltvAll:ltvAll, ltvIcp:ltvIcp, ratioAll:ratioAll, ratioIcp:ratioIcp, months12:months12};
         var usd = function(v){ if(!v && v!==0) return '—'; return '$'+(v>=1000000?(v/1000000).toFixed(2)+'M':v>=1000?Math.round(v/1000)+'K':v); };
+        var cmLabel = cm==='logo' ? 'Logo churn' : 'Rev churn';
+        var segLabel = ltvSeg==='icp' ? 'ICP' : 'All';
+        var tb = 'font-size:10px;padding:1px 6px;border-radius:10px;border:1px solid var(--teal);background:var(--teal-lighter);color:var(--dark-teal);cursor:pointer;font-family:inherit;margin-left:4px';
         var h = '';
-        h += "<div class=\"cac-card\" onclick=\"window._openCacModal('cac')\" title=\"CAC detail\">";
-        h += '<span class="carr">&#x2197;</span>';
-        h += '<div class="cac-card-label">CAC &middot; L12M</div>';
-        h += '<div class="cac-card-value'+(cacL12?'':' cac-na')+'">'+(cacL12?usd(cacL12):'No data')+'</div>';
-        h += '<div class="cac-card-sub">'+totalDeals+' deals &middot; '+usd(Math.round(totalCost))+' total cost</div>';
+        h += '<div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:2px 0 10px">';
+        h += '<span style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em">LTV basis:</span>';
+        h += '<button style="'+tb+'" onclick="window._ltvCmToggle()">'+cmLabel+'</button>';
+        h += '<button style="'+tb+'" onclick="window._ltvSegToggle()">'+segLabel+'</button>';
+        h += '<span style="font-size:11px;color:var(--text-muted);margin-left:8px">CAC basis: L12M · all customers</span>';
         h += '</div>';
         h += "<div class=\"cac-card\" onclick=\"window._openCacModal('ltv')\" title=\"LTV detail\">";
         h += '<span class="carr">&#x2197;</span>';
-        h += '<div class="cac-card-label">LTV &middot; L12M (All)</div>';
-        h += '<div class="cac-card-value'+(ltvAll?'':' cac-na')+'">'+(ltvAll?usd(ltvAll):'—')+'</div>';
-        h += '<div class="cac-card-sub">From retention analysis above</div>';
+        h += '<div class="cac-card-label">LTV · '+segLabel+' · '+cmLabel+'</div>';
+        h += '<div class="cac-card-value'+(ltvShow?'':' cac-na')+'">'+(ltvShow?usd(ltvShow):'—')+'</div>';
+        h += '<div class="cac-card-sub">'+(ltvSeg==='icp'?'ICP customers only':'All customers excl. PLG')+'</div>';
+        h += '</div>';
+        h += "<div class=\"cac-card\" onclick=\"window._openCacModal('cac')\" title=\"CAC detail\">";
+        h += '<span class="carr">&#x2197;</span>';
+        h += '<div class="cac-card-label">CAC · L12M</div>';
+        h += '<div class="cac-card-value'+(cacL12?'':' cac-na')+'">'+(cacL12?usd(cacL12):'No data')+'</div>';
+        h += '<div class="cac-card-sub">'+totalDeals+' deals · '+usd(Math.round(totalCost))+' cost</div>';
         h += '</div>';
         h += "<div class=\"cac-card ratio\" onclick=\"window._openCacModal('ratio')\" title=\"LTV/CAC ratio\">";
         h += '<span class="carr">&#x2197;</span>';
-        h += '<div class="cac-card-label">LTV / CAC</div>';
-        h += '<div class="cac-card-value'+(ratio?'':' cac-na')+'">'+(ratio?ratio+'x':'—')+'</div>';
-        h += '<div class="cac-card-sub">Target &gt; 3x</div>';
+        h += '<div class="cac-card-label">LTV / CAC · '+segLabel+'</div>';
+        h += '<div class="cac-card-value'+(ratioShow?'':' cac-na')+'">'+(ratioShow?ratioShow+'x':'—')+'</div>';
+        h += '<div class="cac-card-sub">Target &gt; 3x · '+cmLabel+'</div>';
         h += '</div>';
         return h;
       })()}
@@ -1264,6 +1277,10 @@ function renderMRR(data, selectedMonth) {
     var ov = document.getElementById('retModal');
     ov.style.display = 'flex';
     ov.scrollTop = 0;
+  };
+  window._ltvSegToggle = function() {
+    window._ltvSeg = (window._ltvSeg || 'all') === 'all' ? 'icp' : 'all';
+    renderMRR();
   };
   window._ltvCmToggle = function() {
     var cm = window._ltvChurnMode || 'rev';
@@ -1355,11 +1372,36 @@ function renderMRR(data, selectedMonth) {
     // ── Formula box ──
     body += '<div class="cac-formula-box">';
     if (view==='ltv') {
-      body += '<div class="cac-formula-row"><span class="cac-formula-label">LTV (All)</span><span class="cac-formula-val">ARPU ÷ Monthly revenue churn rate</span></div>';
+      var ld2 = window._ltvData;
+      var cm2 = window._ltvChurnMode || 'rev';
+      var seg2 = window._ltvSeg || 'all';
+      var cmDesc2 = cm2==='logo' ? 'Logo churn (no customers active under a logo)' : 'Revenue churn (MRR lost ÷ starting MRR, GRR basis)';
+      var segDesc2 = seg2==='icp' ? 'ICP customers only' : 'All customers excl. PLG';
+      var ltvDisp = seg2==='icp'
+        ? (ld2 ? Math.round((cm2==='logo'?ld2.icp.ltvV.logo:ld2.icp.ltvV.rev).ltv) : null)
+        : (ld2 ? Math.round((cm2==='logo'?ld2.all.ltvV.logo:ld2.all.ltvV.rev).ltv) : null);
+      ltvVal = ltvDisp;
+      body += '<div class="cac-formula-row"><span class="cac-formula-label">LTV</span><span class="cac-formula-val">ARPU ÷ Monthly churn rate</span></div>';
+      body += '<div class="cac-formula-row"><span class="cac-formula-label">Segment</span><span class="cac-formula-val">'+segDesc2+'</span></div>';
+      body += '<div class="cac-formula-row"><span class="cac-formula-label">Churn mode</span><span class="cac-formula-val">'+cmDesc2+'</span></div>';
       body += '<div class="cac-formula-row"><span class="cac-formula-label">Value</span><span class="cac-formula-result">'+(ltvVal ? usdFmtCac(ltvVal) : '—')+'</span></div>';
-      body += '<div class="cac-formula-row" style="margin-top:4px"><span class="cac-formula-val" style="color:var(--text-muted);font-size:11px">Source: retention calculation in grid above. Click the LTV cell in the grid for full churn detail.</span></div>';
+      body += '<div style="margin-top:8px;padding:8px 10px;background:var(--bg);border-radius:6px;font-size:11px;color:var(--text-muted);line-height:1.6">';
+      body += '<strong>Note on churn definitions:</strong> ';
+      body += '<strong>Logo churn</strong> — a logo is churned when zero customers under that company name remain active. ';
+      body += '<strong>Customer churn</strong> — a single subscription ends, but other subscriptions under the same logo may remain. ';
+      body += 'At current data granularity (one row per company) these two measures are numerically identical — distinguishing them requires sub-logo account tracking.';
+      body += '</div>';
     } else if (view==='ratio') {
-      body += '<div class="cac-formula-row"><span class="cac-formula-label">LTV / CAC</span><span class="cac-formula-val">'+usdFmtCac(ltvVal)+' ÷ '+usdFmtCac(cacVal)+'</span><span class="cac-formula-result">'+(ratio?ratio+'x':'—')+'</span></div>';
+      var cm3 = window._ltvChurnMode || 'rev';
+      var seg3 = window._ltvSeg || 'all';
+      var ld3 = window._ltvData;
+      var ltvForRatio = seg3==='icp'
+        ? (ld3 ? Math.round((cm3==='logo'?ld3.icp.ltvV.logo:ld3.icp.ltvV.rev).ltv) : null)
+        : (ld3 ? Math.round((cm3==='logo'?ld3.all.ltvV.logo:ld3.all.ltvV.rev).ltv) : null);
+      var ratioCalc = (cacVal && ltvForRatio && cacVal>0) ? (ltvForRatio/cacVal).toFixed(1) : null;
+      var cmDesc3 = cm3==='logo' ? 'Logo churn' : 'Revenue churn';
+      var segDesc3 = seg3==='icp' ? 'ICP' : 'All';
+      body += '<div class="cac-formula-row"><span class="cac-formula-label">LTV / CAC</span><span class="cac-formula-val">'+usdFmtCac(ltvForRatio)+' ('+segDesc3+', '+cmDesc3+') ÷ '+usdFmtCac(cacVal)+'</span><span class="cac-formula-result">'+(ratioCalc?ratioCalc+'x':'—')+'</span></div>';
       body += '<div class="cac-formula-row"><span class="cac-formula-val" style="color:var(--text-muted);font-size:11px">A ratio &gt;3x indicates healthy unit economics. &gt;5x may indicate under-investment in growth.</span></div>';
     } else {
       body += '<div class="cac-formula-row"><span class="cac-formula-label">CAC</span><span class="cac-formula-val">Total S&M cost ÷ New deals (L12M)</span></div>';
@@ -2795,7 +2837,7 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
       '<hr class="ret-formula-divider">' +
       '<div class="ret-formula-row"><span class="ret-formula-label">Active mode</span>' +
       '<span class="ret-formula-val">' + modeLabel + '</span>' +
-      '<span class="ret-formula-note">Toggle on the card to switch between Revenue / Logo / Customer churn</span></div>' +
+      '<span class="ret-formula-note">Use the churn and segment toggles in the section header to switch</span></div>' +
       '<div class="ret-formula-row"><span class="ret-formula-label">ARPU (' + d.startM + ')</span>' +
       '<span class="ret-formula-val">' + fmt(r.ltvV.arpu) + '/mo</span>' +
       '<span class="ret-formula-note">Start MRR ' + fmt(r.ret.sT) + ' \u00f7 ' + r.ret.sN + ' customers</span></div>' +
@@ -2809,8 +2851,8 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
       '<div style="margin-top:12px;padding:10px;background:var(--teal-lighter);border-radius:8px;font-size:12px;color:var(--dark-teal);line-height:1.6">' +
       '<strong>Caveats:</strong> Gross margin excluded. ' +
       '<strong>Revenue churn</strong> (industry standard): uses GRR — weights by MRR, captures expansion. ' +
-      '<strong>Logo/Customer churn</strong>: counts lost accounts regardless of size — matches the PowerBI definition. ' +
-      'Logo and customer churn are numerically identical at this granularity.' +
+      '<strong>Logo churn</strong>: a logo is churned when zero customers under that company remain active. ' +
+      'Toggle between modes and segments using the buttons in the CAC & LTV section.' +
       '</div></div>';
     bodyHtml = '<div class="ret-section-label">All customers vs ICP comparison \u00b7 ' + modeLabel + '</div>' +
       '<div class="ret-table-wrap"><table class="ret-table"><thead><tr>' +
