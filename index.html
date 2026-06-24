@@ -364,7 +364,67 @@
   
     .owner-select{font-size:11px;padding:2px 6px;border-radius:5px;border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);cursor:pointer;vertical-align:middle}
     .owner-select:hover{border-color:var(--teal)}
-  </style>
+  
+    /* ── CAC / LTV section ── */
+    .cac-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.5rem}
+    .cac-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;cursor:pointer;transition:box-shadow .15s,border-color .15s;position:relative;overflow:hidden}
+    .cac-card:hover{box-shadow:0 4px 16px rgba(17,75,92,.10);border-color:var(--teal-light)}
+    .cac-card .carr{position:absolute;top:12px;right:12px;font-size:11px;opacity:.3}
+    .cac-card-label{font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px}
+    .cac-card-value{font-size:26px;font-weight:700;color:var(--dark-teal);line-height:1}
+    .cac-card-sub{font-size:11px;color:var(--text-muted);margin-top:5px}
+    .cac-card.ratio .cac-card-value{color:var(--teal)}
+    .cac-na{color:var(--text-muted)!important;font-size:16px!important}
+    /* CAC modal */
+    .cac-modal-overlay{position:fixed;inset:0;background:rgba(17,75,92,.35);z-index:200;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+    .cac-modal{background:var(--surface);border-radius:var(--radius);width:100%;max-width:820px;box-shadow:0 8px 40px rgba(17,75,92,.18);margin:auto}
+    .cac-modal-header{display:flex;align-items:flex-start;justify-content:space-between;padding:22px 24px 16px;border-bottom:1px solid var(--border)}
+    .cac-modal-title{font-size:16px;font-weight:700;color:var(--dark-teal)}
+    .cac-modal-sub{font-size:12px;color:var(--text-muted);margin-top:3px}
+    .cac-modal-close{background:none;border:none;font-size:18px;color:var(--text-muted);cursor:pointer;padding:2px 6px;border-radius:4px}
+    .cac-modal-close:hover{background:var(--bg);color:var(--dark-teal)}
+    .cac-modal-body{padding:20px 24px}
+    .cac-modal-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px}
+    .cac-tab-btn{padding:8px 16px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;color:var(--text-muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+    .cac-tab-btn.active{color:var(--dark-teal);border-bottom-color:var(--teal)}
+    .cac-tab-panel{display:none}.cac-tab-panel.active{display:block}
+    /* formula box */
+    .cac-formula-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:16px;font-size:12px}
+    .cac-formula-row{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+    .cac-formula-row:last-child{margin-bottom:0}
+    .cac-formula-label{font-weight:700;color:var(--dark-teal);min-width:110px}
+    .cac-formula-val{color:var(--text-secondary)}
+    .cac-formula-result{font-weight:700;color:var(--teal);margin-left:auto}
+    /* months summary table */
+    .cac-month-table{width:100%;border-collapse:collapse;font-size:12px}
+    .cac-month-table th{text-align:left;padding:6px 10px;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);border-bottom:1px solid var(--border);font-weight:700}
+    .cac-month-table td{padding:8px 10px;border-bottom:1px solid var(--border)}
+    .cac-month-table tr:last-child td{border-bottom:none}
+    .cac-month-table td.num{text-align:right;font-variant-numeric:tabular-nums}
+    .cac-month-table tr.cac-total td{font-weight:700;background:var(--bg)}
+    .cac-month-table td.no-deals{color:var(--text-muted);font-style:italic}
+    /* customers panel */
+    .cac-cust-list{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+    .cac-cust-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--border)}
+    .cac-cust-month{font-size:10px;color:var(--text-muted);min-width:56px}
+    .cac-cust-name{flex:1;font-size:13px;color:var(--text-primary)}
+    .cac-cust-badge{font-size:9px;padding:2px 6px;border-radius:8px;background:var(--amber-bg);color:var(--amber-text);border:1px solid var(--amber-dot)}
+    .cac-cust-remove{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:15px;padding:0 2px;border-radius:3px}
+    .cac-cust-remove:hover{color:var(--cranberry);background:var(--red-bg)}
+    .cac-add-row{display:flex;gap:8px;margin-top:8px}
+    .cac-add-input{flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;background:var(--surface)}
+    .cac-add-input:focus{outline:none;border-color:var(--teal)}
+    .cac-add-select{padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;background:var(--surface)}
+    .cac-add-btn{padding:7px 14px;background:var(--teal);color:#fff;border:none;border-radius:var(--radius-sm);font-size:12px;font-weight:600;cursor:pointer}
+    .cac-add-btn:hover{background:var(--dark-teal)}
+    /* cost breakdown */
+    .cac-cost-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+    .cac-cost-cell{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px}
+    .cac-cost-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:4px}
+    .cac-cost-value{font-size:16px;font-weight:700;color:var(--dark-teal)}
+    .cac-cost-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
+    .cac-manual-note{font-size:11px;color:var(--amber-text);background:var(--amber-bg);border:1px solid var(--amber-dot);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:12px}
+</style>
 </head>
 <body>
 <header>
@@ -449,6 +509,8 @@ async function load() {
         if (ovJson.ok && ovJson.data) _metaOverrides = ovJson.data;
       }
     } catch(e) { /* overrides unavailable — use defaults */ }
+    // Load CAC deal overrides
+    try { await loadCacOverrides(); } catch(e) {}
 
     const res = await fetch('/api/data', { credentials: 'include' });
     if (res.status === 401) { window.location.href = '/login.html'; return; }
@@ -1099,6 +1161,55 @@ function renderMRR(data, selectedMonth) {
       })()} 
     </div>
 
+
+    <div class="sect-head"><span class="sect-title">Customer Acquisition Cost &middot; L12M</span><span class="sect-rule"></span></div>
+    <div class="cac-grid" id="cacGridSection">
+      ${(function(){
+        var overrides = window._cacOverrides || {};
+        var months12 = months.slice(-12);
+        var totalCost = 0, totalDeals = 0;
+        months12.forEach(function(m){
+          var d = CAC_DATA.find(function(r){return r.month===m;});
+          if(!d) return;
+          var mKey = m.replace(/ /g,'_');
+          var mOv = overrides[mKey] || {};
+          var custList = (d.customers||[]).map(function(c,i){
+            return {idx:i, name:c.name, added:c.added, manual:c.manual, removed: mOv['rm_'+i]||false};
+          });
+          (mOv.added||[]).forEach(function(a){ custList.push({idx:'a_'+a.ts, name:a.name, added:a.ts, manual:true, removed:false}); });
+          var activeCust = custList.filter(function(c){return !c.removed;});
+          totalCost += d.total_usd||0;
+          totalDeals += activeCust.length;
+        });
+        var cacL12 = totalDeals > 0 ? Math.round(totalCost/totalDeals) : null;
+        // LTV — use All segment from existing _ltvData if available
+        var ltvAll = (window._ltvData && window._ltvData.all) ? Math.round(window._ltvData.all.ltv.ltv) : null;
+        var ratio  = (cacL12 && ltvAll && cacL12>0) ? (ltvAll/cacL12).toFixed(1) : null;
+        window._cacL12Computed = {totalCost:totalCost, totalDeals:totalDeals, cac:cacL12, ltv:ltvAll, ratio:ratio, months12:months12};
+        var usd = function(v){ if(!v && v!==0) return '—'; return '$'+(v>=1000000?(v/1000000).toFixed(2)+'M':v>=1000?Math.round(v/1000)+'K':v); };
+        var h = '';
+        h += '<div class="cac-card" onclick="window._openCacModal('cac')" title="CAC detail">';
+        h += '<span class="carr">&#x2197;</span>';
+        h += '<div class="cac-card-label">CAC &middot; L12M</div>';
+        h += '<div class="cac-card-value'+(cacL12?'':' cac-na')+'">'+(cacL12?usd(cacL12):'No data')+'</div>';
+        h += '<div class="cac-card-sub">'+totalDeals+' deals &middot; '+usd(Math.round(totalCost))+' total cost</div>';
+        h += '</div>';
+        h += '<div class="cac-card" onclick="window._openCacModal('ltv')" title="LTV detail">';
+        h += '<span class="carr">&#x2197;</span>';
+        h += '<div class="cac-card-label">LTV &middot; L12M (All)</div>';
+        h += '<div class="cac-card-value'+(ltvAll?'':' cac-na')+'">'+(ltvAll?usd(ltvAll):'—')+'</div>';
+        h += '<div class="cac-card-sub">From retention analysis above</div>';
+        h += '</div>';
+        h += '<div class="cac-card ratio" onclick="window._openCacModal('ratio')" title="LTV/CAC ratio">';
+        h += '<span class="carr">&#x2197;</span>';
+        h += '<div class="cac-card-label">LTV / CAC</div>';
+        h += '<div class="cac-card-value'+(ratio?'':' cac-na')+'">'+(ratio?ratio+'x':'—')+'</div>';
+        h += '<div class="cac-card-sub">Target &gt; 3x</div>';
+        h += '</div>';
+        return h;
+      })()}
+    </div>
+
     <div class="sect-head"><span class="sect-title">Trends</span><span class="sect-rule"></span></div>
     <div class="chart-section">
       <div class="chart-section-title">ARR — USD${_showSR ? '<span class="sr-warning">incl. SalesRabbit</span>' : ''}${_showPLG ? '<span class="sr-warning">incl. PLG</span>' : ''}</div>
@@ -1159,6 +1270,256 @@ function renderMRR(data, selectedMonth) {
     window._ltvChurnMode = cm === 'rev' ? 'logo' : 'rev';
     renderMRR();
   };
+
+  // ══════════════════════════════════════════
+  //  CAC MODULE
+  // ══════════════════════════════════════════
+  window._cacOverrides = window._cacOverrides || {};
+
+  // Load CAC overrides from KV on startup (called from load())
+  async function loadCacOverrides() {
+    try {
+      const r = await fetch('/api/overrides-cac', {credentials:'include'});
+      if (r.ok) { const j = await r.json(); if (j.ok && j.data) window._cacOverrides = j.data; }
+    } catch(e) {}
+  }
+
+  async function saveCacOverrides() {
+    try {
+      await fetch('/api/overrides-cac', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        credentials:'include',
+        body:JSON.stringify(window._cacOverrides)
+      });
+    } catch(e) {}
+  }
+
+  function usdFmtCac(v) {
+    if (!v && v !== 0) return '—';
+    return '$' + (v >= 1000000 ? (v/1000000).toFixed(2)+'M' : v >= 1000 ? Math.round(v/1000)+'K' : v);
+  }
+
+  // Build the resolved customer list for a month (applies overrides)
+  function cacMonthCustomers(d, mKey) {
+    var ov = (window._cacOverrides || {})[mKey] || {};
+    var list = (d.customers||[]).map(function(c,i){
+      return {idx:i, name:c.name, added:c.added, manual:c.manual||false, removed:ov['rm_'+i]||false};
+    });
+    (ov.added||[]).forEach(function(a){
+      list.push({idx:'a_'+a.ts, name:a.name, added:a.ts, manual:true, removed:false});
+    });
+    return list;
+  }
+
+  function cacActiveDeals(d, mKey) {
+    return cacMonthCustomers(d, mKey).filter(function(c){return !c.removed;});
+  }
+
+  // Compute L12M stats
+  function calcCacL12(months12) {
+    var ov = window._cacOverrides || {};
+    var totalCost = 0, totalDeals = 0, rows = [];
+    months12.forEach(function(m){
+      var d = CAC_DATA.find(function(r){return r.month===m;});
+      if (!d) return;
+      var mKey = m.replace(/ /g,'_');
+      var active = cacActiveDeals(d, mKey);
+      totalCost  += d.total_usd || 0;
+      totalDeals += active.length;
+      rows.push({month:m, d:d, active:active, mKey:mKey});
+    });
+    return {totalCost:totalCost, totalDeals:totalDeals, cac:totalDeals>0?Math.round(totalCost/totalDeals):null, rows:rows};
+  }
+
+  window._openCacModal = function(view) {
+    var computed = window._cacL12Computed || {};
+    var months12 = computed.months12 || [];
+    var stats    = calcCacL12(months12);
+
+    var ov = window._cacOverrides || {};
+
+    var title = view==='ltv' ? 'LTV — All Customers · L12M' : view==='ratio' ? 'LTV / CAC · L12M' : 'CAC — Customer Acquisition Cost · L12M';
+    var sub   = view==='ltv' ? 'From retention analysis · click LTV card above for churn detail'
+              : view==='ratio' ? 'LTV ÷ CAC  ·  Target > 3x for healthy SaaS unit economics'
+              : 'Total S&M cost ÷ new deals closed  ·  L12M rolling window';
+    document.getElementById('cacModalTitle').textContent = title;
+    document.getElementById('cacModalSub').textContent   = sub;
+
+    var ltvVal  = computed.ltv;
+    var cacVal  = stats.cac;
+    var ratio   = (cacVal && ltvVal && cacVal>0) ? (ltvVal/cacVal).toFixed(1) : null;
+
+    var body = '';
+
+    // ── Formula box ──
+    body += '<div class="cac-formula-box">';
+    if (view==='ltv') {
+      body += '<div class="cac-formula-row"><span class="cac-formula-label">LTV (All)</span><span class="cac-formula-val">ARPU ÷ Monthly revenue churn rate</span></div>';
+      body += '<div class="cac-formula-row"><span class="cac-formula-label">Value</span><span class="cac-formula-result">'+(ltvVal ? usdFmtCac(ltvVal) : '—')+'</span></div>';
+      body += '<div class="cac-formula-row" style="margin-top:4px"><span class="cac-formula-val" style="color:var(--text-muted);font-size:11px">Source: retention calculation in grid above. Click the LTV cell in the grid for full churn detail.</span></div>';
+    } else if (view==='ratio') {
+      body += '<div class="cac-formula-row"><span class="cac-formula-label">LTV / CAC</span><span class="cac-formula-val">'+usdFmtCac(ltvVal)+' ÷ '+usdFmtCac(cacVal)+'</span><span class="cac-formula-result">'+(ratio?ratio+'x':'—')+'</span></div>';
+      body += '<div class="cac-formula-row"><span class="cac-formula-val" style="color:var(--text-muted);font-size:11px">A ratio &gt;3x indicates healthy unit economics. &gt;5x may indicate under-investment in growth.</span></div>';
+    } else {
+      body += '<div class="cac-formula-row"><span class="cac-formula-label">CAC</span><span class="cac-formula-val">Total S&M cost ÷ New deals (L12M)</span></div>';
+      body += '<div class="cac-formula-row"><span class="cac-formula-label">Calculation</span><span class="cac-formula-val">'+usdFmtCac(Math.round(stats.totalCost))+' ÷ '+stats.totalDeals+' deals</span><span class="cac-formula-result">'+usdFmtCac(cacVal)+'</span></div>';
+      body += '<div class="cac-formula-row"><span class="cac-formula-label">Cost window</span><span class="cac-formula-val">'+(months12[0]||'')+'  →  '+(months12[months12.length-1]||'')+'</span></div>';
+    }
+    body += '</div>';
+
+    // ── Tabs ── (CAC and ratio get full tabs; LTV just shows formula + link)
+    if (view === 'ltv') {
+      document.getElementById('cacModalBody').innerHTML = body;
+      document.getElementById('cacModal').style.display = 'flex';
+      return;
+    }
+
+    body += '<div class="cac-modal-tabs">';
+    body += '<button class="cac-tab-btn active" onclick="_cacTab(this,'summary')">Monthly summary</button>';
+    body += '<button class="cac-tab-btn" onclick="_cacTab(this,'deals')">New deals</button>';
+    body += '<button class="cac-tab-btn" onclick="_cacTab(this,'costs')">Cost breakdown</button>';
+    body += '</div>';
+
+    // ── Tab 1: Monthly summary ──
+    body += '<div class="cac-tab-panel active" id="cacTab_summary">';
+    body += '<table class="cac-month-table">';
+    body += '<thead><tr><th>Month</th><th class="num">Total cost</th><th class="num">Deals</th><th class="num">CAC / deal</th><th class="num">New ARR</th></tr></thead><tbody>';
+    var totalCostTbl=0, totalDealsTbl=0, totalArrTbl=0;
+    stats.rows.forEach(function(row){
+      var c = row.active.length;
+      var cac_m = c > 0 ? Math.round(row.d.total_usd/c) : null;
+      totalCostTbl += row.d.total_usd||0;
+      totalDealsTbl += c;
+      totalArrTbl += row.active.reduce(function(s,x){ return s; },0); // ARR not per-customer; use d.new_arr weighted
+    });
+    stats.rows.forEach(function(row){
+      var c = row.active.length;
+      var cac_m = c > 0 ? Math.round(row.d.total_usd/c) : null;
+      var hasManual = (window._cacOverrides[row.mKey] && (
+        Object.keys(window._cacOverrides[row.mKey]).some(function(k){return k.startsWith('rm_');}) ||
+        ((window._cacOverrides[row.mKey].added||[]).length>0)
+      ));
+      body += '<tr>';
+      body += '<td>'+row.month+(hasManual?' <span class="cac-cust-badge">edited</span>':'')+'</td>';
+      body += '<td class="num">'+usdFmtCac(Math.round(row.d.total_usd))+'</td>';
+      body += '<td class="num">'+c+'</td>';
+      body += '<td class="num'+(c===0?' no-deals':'')+'">'+( cac_m ? usdFmtCac(cac_m) : 'n/a — no deals')+'</td>';
+      body += '<td class="num">'+usdFmtCac(Math.round(row.d.new_arr||0))+'</td>';
+      body += '</tr>';
+    });
+    var totalCacTbl = totalDealsTbl>0?Math.round(totalCostTbl/totalDealsTbl):null;
+    body += '<tr class="cac-total"><td>L12M Total</td><td class="num">'+usdFmtCac(Math.round(totalCostTbl))+'</td><td class="num">'+totalDealsTbl+'</td><td class="num">'+usdFmtCac(totalCacTbl)+'</td><td class="num"></td></tr>';
+    body += '</tbody></table>';
+    body += '</div>';
+
+    // ── Tab 2: Deals / customers ──
+    body += '<div class="cac-tab-panel" id="cacTab_deals">';
+    var hasAnyManual = false;
+    stats.rows.forEach(function(row){
+      var ov_m = window._cacOverrides[row.mKey]||{};
+      if (Object.keys(ov_m).length) hasAnyManual = true;
+    });
+    if (hasAnyManual) {
+      body += '<div class="cac-manual-note">&#9888; This list has manual edits. Removed deals are hidden; manually added deals are marked.</div>';
+    }
+    body += '<div class="cac-cust-list" id="cacCustList">';
+    stats.rows.forEach(function(row){
+      var all = cacMonthCustomers(row.d, row.mKey);
+      all.forEach(function(c){
+        if (c.removed) return;
+        body += '<div class="cac-cust-row" id="cacCust_'+row.mKey+'_'+c.idx+'">';
+        body += '<span class="cac-cust-month">'+row.month+'</span>';
+        body += '<span class="cac-cust-name">'+c.name+'</span>';
+        if (c.manual) body += '<span class="cac-cust-badge">manual</span>';
+        body += '<button class="cac-cust-remove" onclick="_cacRemoveDeal(''+row.mKey+'',''+c.idx+'')" title="Remove from calculation">&#x2715;</button>';
+        body += '</div>';
+      });
+    });
+    body += '</div>';
+    // Add deal form
+    body += '<div class="cac-add-row">';
+    body += '<select class="cac-add-select" id="cacAddMonth">';
+    stats.rows.forEach(function(row){ body += '<option value="'+row.mKey+'">'+row.month+'</option>'; });
+    body += '</select>';
+    body += '<input class="cac-add-input" type="text" id="cacAddName" placeholder="Customer name…" />';
+    body += '<button class="cac-add-btn" onclick="_cacAddDeal()">+ Add</button>';
+    body += '</div>';
+    body += '</div>';
+
+    // ── Tab 3: Cost breakdown ──
+    body += '<div class="cac-tab-panel" id="cacTab_costs">';
+    body += '<table class="cac-month-table">';
+    body += '<thead><tr><th>Month</th><th class="num">Non-salary</th><th class="num">Sales sal.</th><th class="num">MKT sal.</th><th class="num">Sales comm.</th><th class="num">MKT comm.</th><th class="num">Total</th></tr></thead><tbody>';
+    var t_ns=0,t_ss=0,t_ms=0,t_sc=0,t_mc=0,t_tot=0;
+    stats.rows.forEach(function(row){
+      var d=row.d;
+      var ns=d.non_sal_usd||0, ss=d.sales_sal||0, ms=d.mkt_sal||0, sc=d.sales_comm||0, mc=d.mkt_comm||0;
+      var tot=d.total_usd||0;
+      t_ns+=ns;t_ss+=ss;t_ms+=ms;t_sc+=sc;t_mc+=mc;t_tot+=tot;
+      body += '<tr><td>'+row.month+'</td><td class="num">'+usdFmtCac(Math.round(ns))+'</td><td class="num">'+usdFmtCac(Math.round(ss))+'</td><td class="num">'+usdFmtCac(Math.round(ms))+'</td><td class="num">'+usdFmtCac(Math.round(sc))+'</td><td class="num">'+usdFmtCac(Math.round(mc))+'</td><td class="num"><strong>'+usdFmtCac(Math.round(tot))+'</strong></td></tr>';
+    });
+    body += '<tr class="cac-total"><td>Total</td><td class="num">'+usdFmtCac(Math.round(t_ns))+'</td><td class="num">'+usdFmtCac(Math.round(t_ss))+'</td><td class="num">'+usdFmtCac(Math.round(t_ms))+'</td><td class="num">'+usdFmtCac(Math.round(t_sc))+'</td><td class="num">'+usdFmtCac(Math.round(t_mc))+'</td><td class="num"><strong>'+usdFmtCac(Math.round(t_tot))+'</strong></td></tr>';
+    body += '</tbody></table>';
+    body += '<div style="font-size:11px;color:var(--text-muted);margin-top:10px">Non-salary: GL-based costs (advertising, software, consultants, events) · NOK→USD @ 0.0990. Salary & commissions in USD, all regions.</div>';
+    body += '</div>';
+
+    document.getElementById('cacModalBody').innerHTML = body;
+    document.getElementById('cacModal').style.display = 'flex';
+  };
+
+  window._closeCacModal = function() {
+    document.getElementById('cacModal').style.display = 'none';
+  };
+
+  window._cacTab = function(btn, id) {
+    document.querySelectorAll('.cac-tab-btn').forEach(function(b){b.classList.remove('active');});
+    document.querySelectorAll('.cac-tab-panel').forEach(function(p){p.classList.remove('active');});
+    btn.classList.add('active');
+    var el = document.getElementById('cacTab_'+id);
+    if (el) el.classList.add('active');
+  };
+
+  window._cacRemoveDeal = function(mKey, idx) {
+    window._cacOverrides = window._cacOverrides || {};
+    window._cacOverrides[mKey] = window._cacOverrides[mKey] || {};
+    if (String(idx).startsWith('a_')) {
+      // remove from added list
+      var ts = idx.replace('a_','');
+      window._cacOverrides[mKey].added = (window._cacOverrides[mKey].added||[]).filter(function(a){return String(a.ts)!==ts;});
+    } else {
+      window._cacOverrides[mKey]['rm_'+idx] = true;
+    }
+    saveCacOverrides();
+    // re-render section and reopen modal
+    renderMRR();
+    window._openCacModal('cac');
+    // switch back to deals tab
+    setTimeout(function(){
+      var btn = document.querySelector('.cac-tab-btn:nth-child(2)');
+      if (btn) window._cacTab(btn,'deals');
+    }, 50);
+  };
+
+  window._cacAddDeal = function() {
+    var mKey = document.getElementById('cacAddMonth').value;
+    var name = (document.getElementById('cacAddName').value||'').trim();
+    if (!name || !mKey) return;
+    window._cacOverrides = window._cacOverrides || {};
+    window._cacOverrides[mKey] = window._cacOverrides[mKey] || {};
+    window._cacOverrides[mKey].added = window._cacOverrides[mKey].added || [];
+    window._cacOverrides[mKey].added.push({name:name, ts:Date.now()});
+    document.getElementById('cacAddName').value = '';
+    saveCacOverrides();
+    renderMRR();
+    window._openCacModal('cac');
+    setTimeout(function(){
+      var btn = document.querySelector('.cac-tab-btn:nth-child(2)');
+      if (btn) window._cacTab(btn,'deals');
+    }, 50);
+  };
+
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') window._closeCacModal(); });
   drawCharts(months, totals, selectedMonth);
   drawWaterfall(mov, totals, months, movPeriodStart, movPeriodEnd);
 }
@@ -1867,6 +2228,108 @@ function renderFin() {
   window._finCharts = [];
 }
 
+
+const CAC_DATA = [
+  // ── 2025 ──
+  // Source A (non-salary): CAC_new_version_proposal.xlsx > CAC pivots > Grand Total row, cols I-T (NOK × 0.0990)
+  // Source B (salary+bonus): CAC_Costs_to_PBI.xlsx > CAC Costs, cols F+I+L+O summed all regions (USD)
+  // Source C (deals/ARR): reports_01-01-202512-31-2025.xlsx, Date column, Activity=Standard, SAP excluded
+  { month:"Jun 2025", non_sal_usd:59037,  sal_usd:135488, comm_usd:0,      total_usd:194525, deals:6,  new_arr:51332,
+    sales_sal:69724, mkt_sal:46463, sales_comm:19300, mkt_comm:0,
+    customers:[
+      {name:"Alv AS",added:"2025-06-01",manual:false},
+      {name:"Chaberton Energy",added:"2025-06-01",manual:false},
+      {name:"Storyboard AS",added:"2025-06-01",manual:false},
+      {name:"Manpower Norge",added:"2025-06-01",manual:false},
+      {name:"Nordic Choice Hotels",added:"2025-06-01",manual:false},
+      {name:"NLI AS",added:"2025-06-01",manual:false}
+    ]},
+  { month:"Jul 2025", non_sal_usd:40111,  sal_usd:151453, comm_usd:0,      total_usd:191564, deals:2,  new_arr:28061,
+    sales_sal:69724, mkt_sal:46463, sales_comm:23405, mkt_comm:0,
+    customers:[
+      {name:"Advokat Nilsen",added:"2025-07-01",manual:false},
+      {name:"Heimdal Sparebank",added:"2025-07-01",manual:false}
+    ]},
+  { month:"Aug 2025", non_sal_usd:53286,  sal_usd:109769, comm_usd:0,      total_usd:163055, deals:3,  new_arr:19829,
+    sales_sal:63306, mkt_sal:46463, sales_comm:0, mkt_comm:0,
+    customers:[
+      {name:"Caverion",added:"2025-08-01",manual:false},
+      {name:"Optimera AS",added:"2025-08-01",manual:false},
+      {name:"Nexans Norway AS",added:"2025-08-01",manual:false}
+    ]},
+  { month:"Sep 2025", non_sal_usd:70433,  sal_usd:111585, comm_usd:0,      total_usd:182018, deals:7,  new_arr:27788,
+    sales_sal:56223, mkt_sal:46463, sales_comm:8900, mkt_comm:0,
+    customers:[
+      {name:"Isachsen Anlegg",added:"2025-09-01",manual:false},
+      {name:"Bertel O. Steen",added:"2025-09-01",manual:false},
+      {name:"Umoe Restaurants",added:"2025-09-01",manual:false},
+      {name:"Infocare",added:"2025-09-01",manual:false},
+      {name:"Trondheim municipality",added:"2025-09-01",manual:false},
+      {name:"Falck Danmark",added:"2025-09-01",manual:false},
+      {name:"Thon Hotels",added:"2025-09-01",manual:false}
+    ]},
+  { month:"Oct 2025", non_sal_usd:90131,  sal_usd:134694, comm_usd:0,      total_usd:224826, deals:4,  new_arr:32336,
+    sales_sal:56223, mkt_sal:46463, sales_comm:19068, mkt_comm:12941,
+    customers:[
+      {name:"Lindorff",added:"2025-10-01",manual:false},
+      {name:"Sector Alarm",added:"2025-10-01",manual:false},
+      {name:"Jysk",added:"2025-10-01",manual:false},
+      {name:"Asker kommune",added:"2025-10-01",manual:false}
+    ]},
+  { month:"Nov 2025", non_sal_usd:83047,  sal_usd:160462, comm_usd:0,      total_usd:243509, deals:2,  new_arr:13914,
+    sales_sal:56223, mkt_sal:46463, sales_comm:57777, mkt_comm:0,
+    customers:[
+      {name:"Sopra Steria",added:"2025-11-01",manual:false},
+      {name:"Komplett Group",added:"2025-11-01",manual:false}
+    ]},
+  { month:"Dec 2025", non_sal_usd:69317,  sal_usd:115998, comm_usd:0,      total_usd:185315, deals:8,  new_arr:250766,
+    sales_sal:51889, mkt_sal:46463, sales_comm:17646, mkt_comm:0,
+    customers:[
+      {name:"Spotio Inc. (Stronghouse)",added:"2025-12-01",manual:false},
+      {name:"Cyera US Inc.",added:"2025-12-01",manual:false},
+      {name:"Sovos Compliance LLC",added:"2025-12-01",manual:false},
+      {name:"TeamUP Staffing",added:"2025-12-01",manual:false},
+      {name:"Homely AS",added:"2025-12-01",manual:false},
+      {name:"Fitch Group Inc.",added:"2025-12-01",manual:false},
+      {name:"Moxian Inc.",added:"2025-12-01",manual:false},
+      {name:"Green Mountain",added:"2025-12-01",manual:false}
+    ]},
+  // ── 2026 ──
+  // Source A (non-salary): CAC_calculation_2026.xlsx > CAC pivots > Grand Total row 35 (NOK × 0.0990)
+  // Source B (salary): CAC_calculation_2026.xlsx > Salary by market, row 7 (Field Sales total) + row 20 (Marketing total) (USD)
+  // Source C (commissions): CAC_calculation_2026.xlsx > Commissions, row 3 (Marketing) + row 10 (Sales) (USD)
+  // Source D (deals/ARR): reports_01-01-202612-31-2026.xlsx, Date column, SAP excluded
+  { month:"Jan 2026", non_sal_usd:65672,  sal_usd:85514,  comm_usd:27202,  total_usd:178388, deals:1,  new_arr:7913,
+    sales_sal:38017, mkt_sal:47497, sales_comm:10880, mkt_comm:16322,
+    customers:[
+      {name:"PK Properties",added:"2026-01-26",manual:false}
+    ]},
+  { month:"Feb 2026", non_sal_usd:87727,  sal_usd:85514,  comm_usd:993,    total_usd:174233, deals:1,  new_arr:2970,
+    sales_sal:38017, mkt_sal:47497, sales_comm:993, mkt_comm:0,
+    customers:[
+      {name:"InnkjøpsGRUPPEN AS",added:"2026-02-03",manual:false}
+    ]},
+  { month:"Mar 2026", non_sal_usd:111426, sal_usd:89497,  comm_usd:1658,   total_usd:202581, deals:4,  new_arr:43647,
+    sales_sal:39951, mkt_sal:49547, sales_comm:1658, mkt_comm:0,
+    customers:[
+      {name:"O.P.E.N. America dba OpenWorks",added:"2026-03-25",manual:false},
+      {name:"BridgeFund",added:"2026-03-23",manual:false},
+      {name:"Soolar Solenergi AB",added:"2026-03-18",manual:false},
+      {name:"Concept Communication AS",added:"2026-03-04",manual:false}
+    ]},
+  { month:"Apr 2026", non_sal_usd:88468,  sal_usd:89497,  comm_usd:32670,  total_usd:210635, deals:0,  new_arr:0,
+    sales_sal:39951, mkt_sal:49547, sales_comm:20620, mkt_comm:12049,
+    customers:[]},
+  { month:"May 2026", non_sal_usd:58451,  sal_usd:107661, comm_usd:9492,   total_usd:175604, deals:5,  new_arr:139334,
+    sales_sal:58115, mkt_sal:49547, sales_comm:9492, mkt_comm:0,
+    customers:[
+      {name:"Islands Insurance Group",added:"2026-05-20",manual:false},
+      {name:"Logistikkgruppen AS",added:"2026-05-15",manual:false},
+      {name:"Christal Communications Limited",added:"2026-05-15",manual:false},
+      {name:"BHG Financial",added:"2026-05-04",manual:false},
+      {name:"Silentium AB",added:"2026-05-04",manual:false}
+    ]}
+];
 const NAME_OWNER_MAP = {"52realestate": "Thomas Testard", "A1 Gruppen AS": "Hanne Herseth", "Aasen Sparebank": "Caroline Ingrud", "ABChus AS": "Marius Ekerholt", "ABMarketing AS": "Caroline Ingrud", "Accquis Group Limited": "Hanne Herseth", "Adresseavisens Telefontjenester AS": "Hanne Herseth", "Akershus Forsikringssenter AS": "Hanne Herseth", "Aktiv Arna & Åsane AS": "Emil Lindblom", "Allstar Business Solutions": "Ece Ella", "AnyVan Limited": "Ece Ella", "Arun Estate Agencies Ltd": "Ece Ella", "Askim & Spydeberg Sparebank": "Caroline Ingrud", "Aust-agder Forsikringssenter AS": "Hanne Herseth", "Axo AS": "Hanne Herseth", "Balder Forsikring AS": "Caroline Ingrud", "Bank Norwegian, En filial av NOVA Bank Group AB (publ)": "Marius Ekerholt", "Berg Sparebank": "Marius Ekerholt", "Biisoni Group Oy": "Hanne Herseth", "Bjugn Sparebank": "Marius Ekerholt", "Blink Payment": "Harry Hindess", "Børsan AS": "Hanne Herseth", "BridgeFund": "Ece Ella", "Buy it Direct": "Hanne Herseth", "BWC Real Estate LLC": "Hanne Herseth", "Carter & Sønn AS": "Hanne Herseth", "Ccom AS": "Hanne Herseth", "Chestertons International Real Estate Brokerage LLC": "Caroline Ingrud", "Cognism Limited": "Marie Conza", "Coitio Gruppen AS": "Hanne Herseth", "Concept Communication AS": "Hanne Herseth", "Contentful GmbH": "Ece Ella", "Convins Nederland": "Caroline Ingrud", "Cornmarket Health Insurance": "Ece Ella", "Dacha Real Estate": "Ece Ella", "Dataquest UK ltd": "Marius Ekerholt", "Det Norske Kaffehus AS": "Hanne Herseth", "Devola Group": "Hanne Herseth", "Digiflow AS": "Hanne Herseth", "Digi Publishing AS": "Hanne Herseth", "Digitale Medier 1881 AS": "Hanne Herseth", "Din Salgskonsulent AS": "Marius Ekerholt", "Ditio AS": "Hanne Herseth", "DNB Bank ASA": "Vidar Haaland", "Domestic & General Insurance Europe AG": "Ece Ella", "[Do not invoice] &Partners, team invoicing": "Marius Ekerholt", "(DONT INVOICE) I@D International": "Barbara Kiss", "[DONT INVOICE] Proaktiv Trøndelag": "Marius Ekerholt", "[DONT INVOICE] Proaktiv Vest": "Marius Ekerholt", "Douglasdale": "Hanne Herseth", "Drangedal Sparebank": "Caroline Ingrud", "Duett AS": "Vidar Haaland", "ECIT Autogear AS": "Hanne Herseth", "Eie Bergen / Mekleriet AS": "Marius Ekerholt", "Eie - Main Account": "Vidar Haaland", "EiendomsMegler 1 Lillehammer og Gudbrandsdal": "Marius Ekerholt", "Eiendomsmegler 1 Midt-norge AS": "Marius Ekerholt", "Eiendomsmegler 1 Sør-norge AS": "Marius Ekerholt", "Eiendomsmegler A": "Vidar Haaland", "Eiendomsmegler Norge AS": "Marius Ekerholt", "EK Concept": "Hanne Herseth", "Electi Business Partner AS": "Marius Ekerholt", "Elis Norge AS": "Hanne Herseth", "Elite Property Brokerage, L.L.C.": "Ece Ella", "Eneas Services AS": "Hanne Herseth", "Erga & Partnere AS": "Hanne Herseth", "Esacon AS": "Vidar Haaland", "Esentya Estate & Promotion S.L.": "Hanne Herseth", "Every Matrix": "Hanne Herseth", "Exito Assuranse AS": "Hanne Herseth", "Extracover Limited": "Ece Ella", "Fana Sparebank Eiendom AS": "Caroline Ingrud", "Finansco AS": "Hanne Herseth", "Fjordkraft AS (11284)": "Vidar Haaland", "Fjordkraft AS (Fjordkraft KS, 111949)": "Marius Ekerholt", "Fjordkraft AS (SMB, 111948)": "Vidar Haaland", "Flexebee Ltd": "Hanne Herseth", "Flyt AS": "Marius Ekerholt", "Foodora Norway AS": "Marius Ekerholt", "Forsikring1 AS": "Hanne Herseth", "Forward Role": "Marius Ekerholt", "Fremtind Forsikring AS /Avdeling 1": "Caroline Ingrud", "Fullhouse Recruitment": "Hanne Herseth", "Garanti Eiendomsmegling [Team Invoicing]": "Caroline Ingrud", "Genertel Biztosító Zrt.": "Ece Ella", "Gjensidige Business Services AB": "Marius Ekerholt", "GrabTaxi Holdings Pte. Ltd.": "Ece Ella", "Grønn Jobb AS": "Hanne Herseth", "Grue Sparebank": "Marius Ekerholt", "Gule Sider AS [Team Invoicing]": "Marius Ekerholt", "Hallingdal Brannkasse": "Caroline Ingrud", "Hamar Innredning AS": "Caroline Ingrud", "Haugaland Forsikringssenter AS": "Hanne Herseth", "Heimdal Eiendomsmegling AS": "Marius Ekerholt", "Hjem Eiendomsmegling AS": "Hanne Herseth", "Hjemmesidehuset AS": "Hanne Herseth", "HMS Partner Norge": "Hanne Herseth", "Holo": "Hanne Herseth", "Homely AS": "Hanne Herseth", "Ideagen Limited": "Caroline Ingrud", "If IT Services A/S": "Marius Ekerholt", "Ignite Procurement AS": "Hanne Herseth", "Infor (norge) AS": "Ece Ella", "Initial Force AS": "Hanne Herseth", "Innkjøpsgruppen AS": "Hanne Herseth", "Intrum AS": "Hanne Herseth", "In-vest Eiendomsmegling AS": "Marius Ekerholt", "Irish Life Health": "Ece Ella", "Islands Insurance Group": "Ece Ella", "ITS (Southampton) Ltd": "Hanne Herseth", "Jay-Bee Telecom Ltd": "Hanne Herseth", "JBF Sparebank": "Marius Ekerholt", "JTalk Ltd": "Hanne Herseth", "Julius Caesar AS": "Hanne Herseth", "Kjøkkenspesialisten AS": "Hanne Herseth", "Kreftforeningen": "Hanne Herseth", "Kristiansand Forsikringssenter AS": "Hanne Herseth", "Kvik Kanalveien AS (111967)": "Hanne Herseth", "Landkreditt Forsikring AS": "Hanne Herseth", "Lendo AS": "Hanne Herseth", "LifeSearch Limited": "Ece Ella", "Linx Business Communications Ltd": "Hanne Herseth", "Living Forsikring": "Hanne Herseth", "Logistikkgruppen AS": "Hanne Herseth", "LUXFolio Real Estate": "Ece Ella", "Luxury Property LLC": "Ece Ella", "Lyse Tele AS": "Marius Ekerholt", "Lysholm Bil AS": "Hanne Herseth", "Maritech AS": "Hanne Herseth", "Maskineriet Forsikring AS": "Hanne Herseth", "Max Equity Real Estates LLC": "Ece Ella", "Media Access AS": "Hanne Herseth", "Meglerhuset Nylander AS": "Marius Ekerholt", "Meglerhuset Rele Haugesund AS": "Hanne Herseth", "MetaCompliance Ltd.": "Ece Ella", "MHDK ApS": "Hanne Herseth", "Mobino Salg og Service AS": "Hanne Herseth", "Mollie B.V": "Thomas Testard", "MØRE EIENDOMSMEGLING AS": "Hanne Herseth", "Mystore.no AS": "Marius Ekerholt", "N3 Group AS": "Hanne Herseth", "Nettbil AS": "Marius Ekerholt", "New Zealand Fine Touring Group": "Hanne Herseth", "NGage Recruitment BV": "Hanne Herseth", "Nidaros Sparebank": "Caroline Ingrud", "Nobia Norway AS": "Caroline Ingrud", "Nordvest Forsikringssenter AS": "Hanne Herseth", "Northwood Edinburgh Ltd": "Vidar Haaland", "Notar AS": "Marius Ekerholt", "Nova ehf": "Caroline Ingrud", "Novvi Properties": "Caroline Ingrud", "N&SLB Ltd": "Hanne Herseth", "Obos Eiendomsmeglere AS": "Caroline Ingrud", "OfficeLink Mobil og IT AS": "Hanne Herseth", "Okida Finans AS": "Hanne Herseth", "Olaya AS": "Hanne Herseth", "Orkla Sparebank": "Marius Ekerholt", "Ørland Sparebank": "Caroline Ingrud", "Outlook Publishing": "Hanne Herseth", "Øvre Romerike Eiendomsmegling AS": "Marius Ekerholt", "Owlie Jobs": "Hanne Herseth", "Partner Assuranse AS": "Hanne Herseth", "Partnercall AS": "Hanne Herseth", "Partners Bergen AS": "Emil Lindblom", "Partners Eiendomsmegling AS": "Marius Ekerholt", "Pedan A/S": "Hanne Herseth", "Per Aaland AS": "Hanne Herseth", "Personal Group Benefits": "Ece Ella", "Pistachio AS": "Hanne Herseth", "PK Properties": "Hanne Herseth", "Plusoffice AS": "Hanne Herseth", "Polardrikk AS": "Hanne Herseth", "Primo Capital Real Estate L.L.C": "Ece Ella", "Prismatch AS": "Hanne Herseth", "Privatmegleren Main Account": "Marius Ekerholt", "Proaktiv Romerike [Do not invoice, team invoicing]": "Marius Ekerholt", "RAM Tracking, Remote Asset Management Ltd": "Hanne Herseth", "Red Bull GmbH": "Hanne Herseth", "Redgo Norway AS": "Marius Ekerholt", "Redress AS": "Vidar Haaland", "ROGALAND EIENDOMSMEGLING AS": "Vidar Haaland", "Rogaland Sparebank": "Marius Ekerholt", "Rune Enstad AS": "Hanne Herseth", "Safedrive AS": "Hanne Herseth", "Safenames Ltd": "Caroline Ingrud", "Samlerhuset Group B.V.": "Marius Ekerholt", "Sandegruppen Management AS": "Hanne Herseth", "SAP SE": "Marius Ekerholt", "Schala & Partners [Do not invoice - Team invoicing]": "Marius Ekerholt", "Schibsted Norge Smb AS": "Marius Ekerholt", "Scrap Car Comparison": "Ece Ella", "Selbu Sparebank": "Caroline Ingrud", "Sem & Johnsen Eiendomsmegling AS": "Caroline Ingrud", "Shilton Sharpe Quarry Limited": "Caroline Ingrud", "Simpson Judge ltd": "Ece Ella", "Simpson & Marwick": "Hanne Herseth", "Skandia Greenpower AS": "Hanne Herseth", "Slatlem Gruppen AS": "Hanne Herseth", "Sne Eiendomsmegling AS": "Hanne Herseth", "Sølvrev AS": "Hanne Herseth", "Sordal Supply AS": "Hanne Herseth", "Sørmegleren AS": "Vidar Haaland", "Sos-barnebyer Norge Stiftelsen": "Hanne Herseth", "Sparebank 1 Nord-norge (111945)": "Caroline Ingrud", "Sparebank 1 Nord-norge (11580)": "Caroline Ingrud", "Sparebank 1 SMN (Direktebank, 11110)": "Caroline Ingrud", "Sparebank 1 SMN (Næring/BM, 111955)": "Caroline Ingrud", "Sparebank 1 Sør-norge ASA": "Vidar Haaland", "Staq GmbH": "Hanne Herseth", "Steadman Brown Limited": "Hanne Herseth", "Sticos AS": "Marius Ekerholt", "Storebrand Forsikring AS": "Hanne Herseth", "Strada Real Estate Brokerage LLC": "Ece Ella", "Sunnmøre Kjøkken AS": "Caroline Ingrud", "Talkmore AS": "Marius Ekerholt", "T Ash International Realty Broker": "Ece Ella", "T Ash International Realty Ltd": "Ece Ella", "Telenor Norge AS Avd: Talkmore": "Marius Ekerholt", "Tema Landbruk AS": "Hanne Herseth", "Teya Services Ltd.": "Hanne Herseth", "The Luxury Real Estate Broker LLC": "Thomas Testard", "The Neon Company": "Hanne Herseth", "The Talent Boom Inc": "Hanne Herseth", "Thor Companies Ltd": "Emil Lindblom", "Ticketco AS": "Emil Lindblom", "Tolga-Os Sparebank": "Caroline Ingrud", "Toten Forsikring og Finans": "Hanne Herseth", "Toyota Material Handling Norway AS": "Marius Ekerholt", "Tripletex AS": "Emil Lindblom", "Trondheim Forsikringssenter AS": "Hanne Herseth", "TutorCare": "Hanne Herseth", "Uitblinqers": "Hanne Herseth", "United Gas & Power": "Ece Ella", "Utedesign AS": "Hanne Herseth", "Utleiemegleren Forvaltning AS": "Marius Ekerholt", "Vertice Group Ltd": "Ece Ella", "Vestby Forsikring DA": "Hanne Herseth", "Vestfold Forsikringssenter AS": "Hanne Herseth", "Viken Kjøkkensenter AS": "Caroline Ingrud", "Viken Media AS": "Hanne Herseth", "Visma Enterprise AS": "Marius Ekerholt", "Vitality Corporate Services Limited": "Ece Ella", "Vitec Fixit Systemer AS": "Hanne Herseth", "Vivid Living Real Estate": "Hanne Herseth", "Walter AG": "Ece Ella", "Watercircles Norge AS": "Marius Ekerholt", "WAYRA Deutschland GmbH": "Ece Ella", "We Finance Any Car Limited": "Ece Ella", "We Rock Sales AS": "Hanne Herseth", "White & Co Properties": "Ece Ella", "Wille & Sand Forsikringspartner AS": "Hanne Herseth", "W Norge AS": "Hanne Herseth", "WS - The WallSwiss Partner’s SA": "Hanne Herseth", "XO Property": "Caroline Ingrud", "Annonssäljarna i Gamla Stan AB": "Hanne Herseth", "Bisdata AB": "Hanne Herseth", "Blendow Group": "Hanne Herseth", "Bonnier News Inhouse Sales AB": "Marius Ekerholt", "Bravura Sverige AB": "Hanne Herseth", "Cinode AB": "Hanne Herseth", "Cloudgruppen Sverige AB": "Marius Ekerholt", "Foodora AB": "Emil Lindblom", "Göteborg Energi Aktiebolag": "Hanne Herseth", "Hailey HR": "Marius Ekerholt", "Home Call AB": "Harry Hindess", "Hunter & Tailor Sverige AB": "Hanne Herseth", "Impressive Relations Sweden AB": "Marius Ekerholt", "Kassacentralen i Skåne AB": "Hanne Herseth", "Länsförsäkringar Jämtland": "Hanne Herseth", "Länsförsäkringar Norrbotten": "Hanne Herseth", "Länsförsäkringar Skåne - ömsesidigt": "Hanne Herseth", "Lån & Spar Sverige, Bankfilial": "Hanne Herseth", "Lawlabs AB": "Hanne Herseth", "Lime Technologies": "Caroline Ingrud", "Nimblr AB": "Hanne Herseth", "Nordax Bank AB (publ)": "Marius Ekerholt", "Nordea Bank Abp, filial i Sverige": "Marius Ekerholt", "Nordea (BB Direct Savings)": "Marius Ekerholt", "PO Söderberg & Partners AB": "Marius Ekerholt", "Puzzel AB": "Hanne Herseth", "Reliable AB": "Hanne Herseth", "Silentium AB": "Hanne Herseth", "Soolar Solenergi AB": "Hanne Herseth", "S.P. FTL Malmö AB": "Emil Lindblom", "Telink PBX AB": "Hanne Herseth", "Trygg-Hansa Försäkring Filial": "Marius Ekerholt", "Watercircles Sverige AB": "Marius Ekerholt", "Acrisure, LLC": "Cailin Kless", "Adobe Inc.": "Marie Conza", "Ahlers Roofing and Construction": "Hanne Herseth", "Akkar Limited": "Hanne Herseth", "BigID": "Marie Conza", "BMC Helix Inc": "Marie Conza", "BMC Software Inc": "Marie Conza", "BOSS Magazine": "Hanne Herseth", "BURNS WEALTH ADVISORS, LLC": "Hanne Herseth", "Carl Ferraro III, State Farm Agent": "Marie Conza", "Censys": "Cailin Kless", "Clear Start Tax": "Marie Conza", "Cyera US Inc.": "Marie Conza", "Everly Plumbing": "Marie Conza", "Farmers Insurance Exchange": "Marie Conza", "Fuchs Financial": "Hanne Herseth", "GoodLeap, LLC.": "Marie Conza", "Goosehead Insurance Agency, LLC": "Marie Conza", "Heather Schaefer Insurance Agency Inc": "Cailin Kless", "HP Inc.": "Marie Conza", "Hyde Park Capital": "Hanne Herseth", "Inter Miami CF": "Marie Conza", "Johnson Brunetti": "Hanne Herseth", "Kandji": "Marie Conza", "K-Designers": "Cailin Kless", "Kelly Insurance Agency, LLC": "Remy Cholhan", "LMP Financial": "Marie Conza", "Marisa Schaefer Insurance Agency Inc": "Cailin Kless", "New Western Acquisitions": "Marie Conza", "NSP Marketing": "Marie Conza", "Olympia Entertainment, Inc.": "Marie Conza", "One Capital Solutions, LLC": "Marie Conza", "O.P.E.N. America dba OpenWorks": "Marie Conza", "Phil Klein Insurance Group": "Marie Conza", "SafetyCulture Pty Ltd": "Marie Conza", "SalesRabbit Inc": "Cailin Kless", "Sovos Compliance, LLC": "Marie Conza", "Spotio, Inc. (Stronghouse)": "Cailin Kless", "State Farm Insurance": "Marie Conza", "Stor Mor Portable Buildings": "Marie Conza", "Tax Resolution Plus": "Hanne Herseth", "Team Up Staffing LLC, DBA TeamUP": "Hanne Herseth", "Tines Security Services Limited": "Cailin Kless", "Trailstone Insurance Group": "Marie Conza", "Unite Health Share Ministries": "Marie Conza", "Universal Processing LLC": "Hanne Herseth", "UWDTBA": "Cailin Kless", "Vingcard-ASSA ABLOY": "Marie Conza", "Western Pioneer Financial, Inc.": "Hanne Herseth", "WFG National Title Insurance Company": "Cailin Kless", "Your Home Improvement Company": "Marie Conza"};
 
 function drawWaterfall(mov, totals, months, periodStart, periodEnd) {
@@ -2710,6 +3173,21 @@ window.addEventListener('load', () => renderMRR({ uploadDate: '16 Jun 2026' }, n
         <button class="ret-modal-close" onclick="closeRetModal()">✕</button>
       </div>
       <div class="ret-modal-body" id="retModalBody"></div>
+    </div>
+  </div>
+
+
+  <!-- ══ CAC DETAIL MODAL ══ -->
+  <div id="cacModal" class="cac-modal-overlay" onclick="if(event.target===this)window._closeCacModal()">
+    <div class="cac-modal">
+      <div class="cac-modal-header">
+        <div>
+          <div class="cac-modal-title" id="cacModalTitle">CAC Detail</div>
+          <div class="cac-modal-sub" id="cacModalSub"></div>
+        </div>
+        <button class="cac-modal-close" onclick="window._closeCacModal()">&#x2715;</button>
+      </div>
+      <div class="cac-modal-body" id="cacModalBody"></div>
     </div>
   </div>
 
