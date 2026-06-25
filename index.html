@@ -2851,7 +2851,7 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
     var modeLabel = cm === 'rev' ? 'Revenue churn (GRR basis)' : cm === 'logo' ? 'Logo churn' : 'Customer churn';
     var fmtPct = function(v) { return v.toFixed(2) + '%'; };
     title   = 'LTV \u2014 ' + segLabel + ' \u00b7 ' + modeLabel;
-    subLine = d.startM + ' \u2192 ' + d.endM + ' \u00b7 Gross margin excluded';
+    subLine = 'LTV retention window: ' + d.startM + ' \u2192 ' + d.endM + ' \u00b7 Gross margin excluded';
     var allV = d.all.ltvV; var icpV = d.icp.ltvV;
     var allL = cm==='logo'?allV.logo:allV.rev;
     var icpL = cm==='logo'?icpV.logo:icpV.rev;
