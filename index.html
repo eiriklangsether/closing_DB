@@ -440,7 +440,8 @@
     SalesScreen Finance
   </a>
   <div class="nav-tabs">
-    <button class="nav-tab active" onclick="switchPage('closing', this)">Monthly close</button>
+    <button class="nav-tab active" onclick="switchPage('home', this)">Home</button>
+    <button class="nav-tab" onclick="switchPage('closing', this)">Monthly close</button>
     <button class="nav-tab" onclick="switchPage('mrr', this)">Business KPIs</button>
     <button class="nav-tab" onclick="switchPage('fin', this)">Financial KPIs</button>
     <button class="nav-tab" onclick="switchPage('meta', this)">Customer metadata</button>
@@ -451,8 +452,13 @@
 </header>
 
 <main>
+  <!-- ══ HOME PAGE ══ -->
+  <div id="page-home" class="page active">
+    <div id="home-content"></div>
+  </div>
+
   <!-- ══ CLOSING PAGE ══ -->
-  <div id="page-closing" class="page active">
+  <div id="page-closing" class="page">
     <div class="page-title">Monthly close tracker</div>
     <div class="page-desc">Track how complete the monthly closing process is across all entities. Accounting checks are updated automatically by Claude — manual steps are marked by the finance team.</div>
     <div class="last-updated" id="lastUpdated">Loading…</div>
@@ -486,6 +492,7 @@
 ───────────────────────────────────────────── */
 function switchPage(p, btn) {
   if (p === 'changelog') { renderChangelog(); }
+  if (p === 'home') { renderHome(); }
   document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
   document.getElementById('page-' + p).classList.add('active');
@@ -501,6 +508,8 @@ function switchPage(p, btn) {
 // Auth handled server-side via middleware (cookie check)
 
 async function load() {
+  // Render home page immediately on startup
+  renderHome();
   try {
     // Load overrides from KV first so they're available when tabs render
     try {
@@ -1835,6 +1844,27 @@ function toggleKnownIssues(header) {
   chevron.classList.toggle('open', isOpen);
 }
 
+/* ─────────────────────────────────────────────
+   LANDING META — update these dates when pushing new data
+   Workflow: update whenever MRR, financial, or CAC data is refreshed
+───────────────────────────────────────────── */
+const LANDING_META = {
+  chargebee: {
+    no:  { date: "Jun 25 2026", period: "Jun 2026" },
+    se:  { date: "Jun 25 2026", period: "Jun 2026" },
+    us:  { date: "Jun 25 2026", period: "Jun 2026" },
+    plg: { date: "Jun 25 2026", period: "Jun 2026" }
+  },
+  financial: {
+    date: "Jun 14 2026",
+    period: "May 2026"
+  },
+  cac: {
+    date: "Jun 14 2026",
+    period: "Jun 2025 – May 2026"
+  }
+};
+
 const CHANGELOG = [
   {
     "date": "2026-06-22",
@@ -3140,8 +3170,235 @@ function openRetModal(type, snapStart, snapEnd, months, calcEntities) {
   overlay.scrollTop = 0;
 }
 
+/* ─────────────────────────────────────────────
+   HOME PAGE
+───────────────────────────────────────────── */
+function renderHome() {
+  const m = LANDING_META;
+  const el = document.getElementById('home-content');
+  if (el._rendered) return;
+  el._rendered = true;
+
+  const teal = 'var(--teal)';
+  const dteal = 'var(--dark-teal)';
+
+  el.innerHTML = `
+<div style="max-width:860px;margin:0 auto;padding:2.5rem 2rem 3rem">
+
+  <!-- Header -->
+  <div style="margin-bottom:2.5rem">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="8" fill="var(--dark-teal)"/>
+        <rect x="7" y="15" width="4" height="10" rx="1.5" fill="#1EAFAA"/>
+        <rect x="14" y="10" width="4" height="15" rx="1.5" fill="#A7D6D4"/>
+        <rect x="21" y="7" width="4" height="18" rx="1.5" fill="white" fill-opacity="0.85"/>
+      </svg>
+      <div>
+        <div style="font-size:22px;font-weight:600;color:var(--text-primary);letter-spacing:-.015em;line-height:1.2">SalesScreen Finance</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:1px">closing_DB · Internal · Finance team</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status section -->
+  <div style="margin-bottom:2.5rem">
+    <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px">Data status</div>
+
+    <!-- Chargebee card -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:10px;border-left:3px solid var(--teal)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--dark-teal);margin-bottom:2px">Chargebee MRR</div>
+          <div style="font-size:11px;color:var(--text-muted)">Subscription data · All four sites</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;min-width:360px">
+          ${['NO','SE','US','PLG'].map(site => {
+            const info = m.chargebee[site.toLowerCase()];
+            return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;text-align:center">
+              <div style="font-size:10px;font-weight:600;letter-spacing:.05em;color:var(--text-muted);margin-bottom:4px">${site}</div>
+              <div style="font-size:12px;font-weight:600;color:var(--dark-teal)">${info.period}</div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:2px">${info.date}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- Financial P&L card -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:10px;border-left:3px solid #185FA5">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--dark-teal);margin-bottom:2px">Financial P&amp;L</div>
+          <div style="font-size:11px;color:var(--text-muted)">Bright Analytics · Conso Reporting, Rolling</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 16px;text-align:center">
+            <div style="font-size:10px;font-weight:600;letter-spacing:.05em;color:var(--text-muted);margin-bottom:4px">PERIOD</div>
+            <div style="font-size:13px;font-weight:600;color:var(--dark-teal)">${m.financial.period}</div>
+          </div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 16px;text-align:center">
+            <div style="font-size:10px;font-weight:600;letter-spacing:.05em;color:var(--text-muted);margin-bottom:4px">UPDATED</div>
+            <div style="font-size:13px;font-weight:600;color:var(--dark-teal)">${m.financial.date}</div>
+          </div>
+          <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:5px 11px;border-radius:99px;background:#EAF3DE;color:#3B6D11">
+            <span style="width:6px;height:6px;border-radius:50%;background:#3B6D11;display:inline-block"></span>Current
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CAC & LTV card -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;border-left:3px solid #854F0B">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--dark-teal);margin-bottom:2px">CAC &amp; LTV</div>
+          <div style="font-size:11px;color:var(--text-muted)">Lags MRR by ~1 month · Cost data from Gabriella</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 16px;text-align:center">
+            <div style="font-size:10px;font-weight:600;letter-spacing:.05em;color:var(--text-muted);margin-bottom:4px">WINDOW</div>
+            <div style="font-size:13px;font-weight:600;color:var(--dark-teal)">${m.cac.period}</div>
+          </div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 16px;text-align:center">
+            <div style="font-size:10px;font-weight:600;letter-spacing:.05em;color:var(--text-muted);margin-bottom:4px">UPDATED</div>
+            <div style="font-size:13px;font-weight:600;color:var(--dark-teal)">${m.cac.date}</div>
+          </div>
+          <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:5px 11px;border-radius:99px;background:#FAEEDA;color:#854F0B">
+            <span style="width:6px;height:6px;border-radius:50%;background:#854F0B;display:inline-block"></span>1 month lag
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Methods section -->
+  <div>
+    <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);margin-bottom:14px">Methods &amp; sources</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+
+      <!-- CB -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <div style="width:28px;height:28px;border-radius:var(--radius-sm);background:var(--green-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><rect x="1" y="1" width="12" height="12" rx="2" stroke="var(--green-dot)" stroke-width="1.5"/><rect x="3.5" y="6" width="2" height="5" rx=".5" fill="var(--green-dot)"/><rect x="6.25" y="4" width="2" height="7" rx=".5" fill="var(--green-dot)"/><rect x="9" y="2.5" width="1.5" height="8.5" rx=".5" fill="var(--green-dot)"/></svg>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--dark-teal)">Chargebee MRR</div>
+            <div style="font-size:11px;color:var(--text-muted)">NO · SE · US · PLG</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <span style="width:18px;height:18px;border-radius:50%;background:var(--bg);border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</span>
+            <span style="font-size:12px;color:var(--text-secondary);line-height:1.5">Export from Chargebee using the saved report <em>"Claude DB MRR history [entity]"</em> for each site</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <span style="width:18px;height:18px;border-radius:50%;background:var(--bg);border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span>
+            <span style="font-size:12px;color:var(--text-secondary);line-height:1.5"><strong style="color:var(--text-primary)">Always include the last 6 months</strong> — captures retroactive changes; log any prior-period changes in Change Log</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <span style="width:18px;height:18px;border-radius:50%;background:var(--bg);border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</span>
+            <span style="font-size:12px;color:var(--text-secondary);line-height:1.5">Update <code style="font-size:11px;background:var(--bg);padding:1px 4px;border-radius:3px;border:1px solid var(--border)">LANDING_META.chargebee</code> dates when uploading</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <div style="width:28px;height:28px;border-radius:var(--radius-sm);background:#E6F1FB;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 11L5 8l2.5 2.5L12 3" stroke="#185FA5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--dark-teal)">Financial P&amp;L</div>
+            <div style="font-size:11px;color:var(--text-muted)">Bright Analytics · All entities</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <span style="width:18px;height:18px;border-radius:50%;background:var(--bg);border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</span>
+            <span style="font-size:12px;color:var(--text-secondary);line-height:1.5">Export from Bright Analytics — <em>Conso Reporting, Rolling – GL Account</em></span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <span style="width:18px;height:18px;border-radius:50%;background:var(--bg);border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span>
+            <span style="font-size:12px;color:var(--text-secondary);line-height:1.5"><strong style="color:var(--text-primary)">Always include the last 6 months</strong> — log any prior-period changes in Change Log</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <span style="width:18px;height:18px;border-radius:50%;background:var(--bg);border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</span>
+            <span style="font-size:12px;color:var(--text-secondary);line-height:1.5">Update <code style="font-size:11px;background:var(--bg);padding:1px 4px;border-radius:3px;border:1px solid var(--border)">LANDING_META.financial</code> dates when uploading</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CAC -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <div style="width:28px;height:28px;border-radius:var(--radius-sm);background:#FAEEDA;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="5.5" stroke="#854F0B" stroke-width="1.5"/><path d="M7 4.5v3l2 1" stroke="#854F0B" stroke-width="1.3" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--dark-teal)">CAC &amp; LTV</div>
+            <div style="font-size:11px;color:var(--text-muted)">Lags by ~1 month · Gabriella's cost file</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <span style="width:18px;height:18px;border-radius:50%;background:var(--bg);border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</span>
+            <span style="font-size:12px;color:var(--text-secondary);line-height:1.5">CAC costs from Gabriella's file · New deals from <a href="https://dogu.lightning.force.com/lightning/r/Report/00OSb00000BPa1zMAD/view?queryScope=userFolders" style="color:var(--teal);text-decoration:none" target="_blank">Salesforce report ↗</a> or SalesScreen (Conversion, Essentials, Standard)</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <span style="width:18px;height:18px;border-radius:50%;background:var(--bg);border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span>
+            <span style="font-size:12px;color:var(--text-secondary);line-height:1.5">Exclude SAP · All Quantity=1 rows included · LTV updates automatically when CAC is updated</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <span style="width:18px;height:18px;border-radius:50%;background:var(--bg);border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</span>
+            <span style="font-size:12px;color:var(--text-secondary);line-height:1.5">Update <code style="font-size:11px;background:var(--bg);padding:1px 4px;border-radius:3px;border:1px solid var(--border)">LANDING_META.cac</code> date and period when updating</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Customer metadata -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <div style="width:28px;height:28px;border-radius:var(--radius-sm);background:#EEEDFE;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><circle cx="7" cy="5" r="2.5" stroke="#534AB7" stroke-width="1.3"/><path d="M2.5 12c0-2.485 2.015-4.5 4.5-4.5s4.5 2.015 4.5 4.5" stroke="#534AB7" stroke-width="1.3" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--dark-teal)">Customer metadata</div>
+            <div style="font-size:11px;color:var(--text-muted)">Regenerated from CB exports each month</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <span style="width:18px;height:18px;border-radius:50%;background:var(--bg);border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</span>
+            <span style="font-size:12px;color:var(--text-secondary);line-height:1.5"><code style="font-size:11px;background:var(--bg);padding:1px 4px;border-radius:3px;border:1px solid var(--border)">CUSTOMER_META</code> is rebuilt from CB exports — advances automatically with each MRR update</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <span style="width:18px;height:18px;border-radius:50%;background:var(--bg);border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</span>
+            <span style="font-size:12px;color:var(--text-secondary);line-height:1.5">Owner overrides are persisted in the KV store — edit directly in the Customer Metadata tab</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <span style="width:18px;height:18px;border-radius:50%;background:var(--bg);border:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</span>
+            <span style="font-size:12px;color:var(--text-secondary);line-height:1.5">Editing <code style="font-size:11px;background:var(--bg);padding:1px 4px;border-radius:3px;border:1px solid var(--border)">logo</code>, <code style="font-size:11px;background:var(--bg);padding:1px 4px;border-radius:3px;border:1px solid var(--border)">icp</code>, or <code style="font-size:11px;background:var(--bg);padding:1px 4px;border-radius:3px;border:1px solid var(--border)">livescreen</code> fields affects retention, LTV, and CAC calculations — verify LTV after edits</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FX strip -->
+    <div style="margin-top:14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 16px;display:flex;align-items:center;gap:10px">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="5.5" stroke="var(--text-muted)" stroke-width="1.3"/><path d="M7 4v3.5l2 1" stroke="var(--text-muted)" stroke-width="1.2" stroke-linecap="round"/></svg>
+      <span style="font-size:12px;color:var(--text-secondary)"><strong style="color:var(--text-primary)">Fixed FX rates (never changed unless LG policy changes):</strong>&nbsp;&nbsp;NOK → USD 0.0990 &nbsp;·&nbsp; EUR → USD 1.1658 &nbsp;·&nbsp; SEK → USD 0.1056 &nbsp;·&nbsp; GBP → USD 1.3390</span>
+    </div>
+  </div>
+
+</div>`;
+}
+
+
 function renderChangelog() {
-  const el = document.getElementById('changelog-content');
   if (!el) return;
   const entries = CHANGELOG;
   const viewEl = el.querySelector ? el.querySelector('.cl-view-btn.active') : null;
