@@ -1198,7 +1198,8 @@ function renderMRR(data, selectedMonth) {
     <div class="cac-grid" id="cacGridSection">
       ${(function(){
         var overrides = window._cacOverrides || {};
-        var months12 = months.slice(-12);
+        // CAC window: last 12 entries of CAC_DATA (independent of MRR months array)
+        var months12 = CAC_DATA.slice(-12).map(function(r){return r.month;});
         var totalCost = 0, totalDeals = 0;
         months12.forEach(function(m){
           var d = CAC_DATA.find(function(r){return r.month===m;});
