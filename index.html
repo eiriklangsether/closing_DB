@@ -1145,7 +1145,9 @@ function renderMRR(data, selectedMonth) {
         var icpL=cm==='logo'?icpLV.logo:icpLV.rev;
         window._retData    ={snapStart:allS,snapEnd:allE,months:months,calcEntities:ents};
         window._icpRetData ={snapStart:icpS,snapEnd:icpE,months:months};
-        window._ltvData    ={all:{ret:allR,ltv:allL,ltvV:allLV},icp:{ret:icpR,ltv:icpL,ltvV:icpLV},startM:sM,endM:eM};
+        var _cacWinStart = CAC_DATA.length>=12 ? CAC_DATA[CAC_DATA.length-12].month : sM;
+        var _cacWinEnd   = CAC_DATA[CAC_DATA.length-1].month;
+        window._ltvData    ={all:{ret:allR,ltv:allL,ltvV:allLV},icp:{ret:icpR,ltv:icpL,ltvV:icpLV},startM:_cacWinStart,endM:_cacWinEnd};
         var cmNext  = cm==='rev'?'logo':cm==='logo'?'cust':'rev';
         var cmLabel = cm==='logo'?'Logo churn':'Rev churn';
         var tb = 'font-size:10px;padding:1px 7px;border-radius:10px;border:1px solid var(--teal);background:var(--teal-lighter);color:var(--dark-teal);cursor:pointer;font-weight:600';
@@ -1234,7 +1236,7 @@ function renderMRR(data, selectedMonth) {
         h += '<span style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em">LTV basis:</span>';
         h += '<button style="'+tb+'" onclick="window._ltvCmToggle()">'+cmLabel+'</button>';
         h += '<button style="'+tb+'" onclick="window._ltvSegToggle()">'+segLabel+'</button>';
-        h += '<span style="font-size:11px;color:var(--text-muted);margin-left:8px">CAC: '+months12[0]+' – '+months12[months12.length-1]+' · LTV: '+months[0]+' – '+months[months.length-1]+'</span>';
+        h += '<span style="font-size:11px;color:var(--text-muted);margin-left:8px">'+months12[0]+' – '+months12[months12.length-1]+'</span>';
         h += '</div>';
         h += '<div class="cac-card" onclick="window._openLtvCard()" title="LTV detail">';
         h += '<span class="carr">&#x2197;</span>';
