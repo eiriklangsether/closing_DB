@@ -1194,7 +1194,7 @@ function renderMRR(data, selectedMonth) {
     </div>
 
 
-    <div class="sect-head"><span class="sect-title">CAC &amp; LTV &middot; L12M</span><span class="sect-rule"></span></div>
+    <div class="sect-head"><span class="sect-title">CAC &amp; LTV &middot; ${CAC_DATA[CAC_DATA.length-12].month} &ndash; ${CAC_DATA[CAC_DATA.length-1].month}</span><span class="sect-rule"></span></div>
     <div class="cac-grid" id="cacGridSection">
       ${(function(){
         var overrides = window._cacOverrides || {};
@@ -1234,7 +1234,7 @@ function renderMRR(data, selectedMonth) {
         h += '<span style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em">LTV basis:</span>';
         h += '<button style="'+tb+'" onclick="window._ltvCmToggle()">'+cmLabel+'</button>';
         h += '<button style="'+tb+'" onclick="window._ltvSegToggle()">'+segLabel+'</button>';
-        h += '<span style="font-size:11px;color:var(--text-muted);margin-left:8px">CAC basis: L12M · all customers</span>';
+        h += '<span style="font-size:11px;color:var(--text-muted);margin-left:8px">CAC: '+months12[0]+' – '+months12[months12.length-1]+' · LTV: '+months[0]+' – '+months[months.length-1]+'</span>';
         h += '</div>';
         h += '<div class="cac-card" onclick="window._openLtvCard()" title="LTV detail">';
         h += '<span class="carr">&#x2197;</span>';
