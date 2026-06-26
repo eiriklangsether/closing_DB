@@ -11,6 +11,7 @@
 | Financial P&L (Conso_Reporting) | Claude manual entry → `renderFin` arrays | New closed month |
 | CAC costs (CAC_calculation file) | Claude manual entry → `CAC_DATA` | New cost month available |
 | Sales reports (SalesScreen export) | Claude manual entry → `CAC_DATA.customers` | New deals closed |
+| Renewal pipeline (Chargebee contract terms) | Claude live CB pull → `RENEWAL_SUBS` constant | New CB month / ad hoc |
 | Home page status dates | Claude manual entry → `LANDING_META` constant | After every data update |
 | Closing checks | Claude API call → KV `/api/data` | Monthly close run |
 | Owner overrides | User edits → KV `/api/overrides` | Ad hoc |
@@ -207,6 +208,37 @@ All data is derived from JS constants baked into `index.html`. Nothing is fetche
 
 ---
 
+## Tab 7 — Renewal pipeline
+
+**Data source:** `RENEWAL_SUBS` constant in `index.html` — a flat array of subscription-level rows pulled **live from Chargebee** (NO, SE, US), not derived from the MRR constants. Each row is one subscription.
+
+**How it is built:**
+1. Pull `list_subscriptions` for each site with `filters_json {"status":{"in":["active","non_renewing"]}}` and `include_fields_json` covering `mrr`, `current_term_end`, `next_billing_at`, `contract_term`, `subscription_items`. Paginate (NO is 3 pages; the MCP offset can stall at the 200-row boundary — if a page returns 0 new rows, fall back to the previously captured page).
+2. **Flag supporters** from `subscription_items[].item_price_id` (prefix `supporter` / `salesscreen-supporters`). Supporters are almost all $0, but a few are tiny non-zero (e.g. Nova ehf EUR 4.90, Meglerhuset Nylander NOK 75.58) — detect by plan id, **not** by `mrr==0`. Several customers hold both a paid sub and a supporter sub; only the supporter sub is dropped.
+3. **Exclude supporters entirely.**
+4. Convert MRR to USD at fixed FX. Compute `cend` (= `contract_term.contract_end`, fallback `current_term_end`), `nba` (= `next_billing_at`), day-offsets from the as-of date, and a `notice` flag (inside the cancellation-notice window now = `contract_end − cancellation_cutoff_period ≤ today < contract_end`).
+
+**Row fields:** `entity`, `company`, `ccy`, `mrr` (USD), `cend`, `cendDays`, `nba`, `nbaDays`, `action` (renew/cancel at term end), `status` (active/non_renewing), `notice`.
+
+**Also update:** `RENEWAL_ASOF` (the as-of date string shown in the tab) and `LANDING_META.renewals` `{date, period}`.
+
+**Two date bases (both shown):** contract end (cranberry) is the churn-decision point — when the customer can actually leave; next billing (teal) is cash timing. A multi-period contract billed more frequently sits on its renewal date, not its next invoice.
+
+### MRR reconciliation — RED FLAG rule
+
+The tab sums renewal-book MRR per entity (all active + non-renewing, supporters excluded) and compares it to **Business KPIs current-month MRR** (`MRR_{NO,SE,US}.totals_usd[latest month]`). This runs live in `rnRecon()` every render.
+
+- Tolerance is **±0.5%** (`RENEWAL_TOL = 0.005`).
+- Within tolerance → green "Reconciled" banner.
+- Beyond tolerance on any entity → **red banner + red status dot**. This is a genuine flag: a missing entity, a stale/incorrect MRR constant, a Chargebee pull gap, or supporters not excluded correctly.
+- Expected residual: SE and US reconcile to the dollar; NO carries a small (~0.05–0.10%) drift from snapshot timing and curation between the live pull and the monthly MRR export — this is normal and stays green. Supporters are excluded from the renewal book but are ~$0, so they do not move the reconciliation.
+
+**When a real break appears, do not just widen the tolerance** — find the cause (most often a forgotten MRR constant update or an entity that failed to pull).
+
+**When to update:** Every new Chargebee month, and any time the live book is re-pulled. The reconciliation makes a stale pull visible immediately.
+
+---
+
 ## Complete update checklist — new Chargebee month
 
 Run in this order:
@@ -222,11 +254,13 @@ Run in this order:
 - [ ] **9. Update `NAME_OWNER_MAP`** — add any new customers
 - [ ] **10. Update `SR_MONTHLY`** — add new month (usually 0 from Dec 2025 onwards)
 - [ ] **11. Update `LANDING_META.chargebee`** — set `date` to today and `period` to the new month for all four sites (NO, SE, US, PLG)
-- [ ] **12. Log any corrections** in `CHANGELOG` if prior-period data was restated
-- [ ] **13. Verify** Business KPIs tab renders new month in Scale section and waterfall
-- [ ] **14. Verify** Retention grid L12M window has rolled correctly
-- [ ] **15. Verify** Customer metadata tab shows new customers
-- [ ] **16. Verify** Home tab shows the correct updated dates
+- [ ] **12. Refresh `RENEWAL_SUBS`** — re-pull active + non-renewing subs (NO, SE, US) live from Chargebee, exclude supporters by plan id, convert to USD; update `RENEWAL_ASOF` and `LANDING_META.renewals`
+- [ ] **13. Log any corrections** in `CHANGELOG` if prior-period data was restated
+- [ ] **14. Verify** Business KPIs tab renders new month in Scale section and waterfall
+- [ ] **15. Verify** Retention grid L12M window has rolled correctly
+- [ ] **16. Verify** Customer metadata tab shows new customers
+- [ ] **17. Verify** Renewals tab MRR reconciliation is green for all entities (red = investigate, do not widen tolerance)
+- [ ] **18. Verify** Home tab shows the correct updated dates
 
 ---
 
