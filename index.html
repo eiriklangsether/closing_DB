@@ -2362,124 +2362,49 @@ function renderFin() {
 }
 
 
+
 const CAC_DATA = [
-  // ── 2025 ──
-  // Source A (non-salary): CAC_new_version_proposal.xlsx > CAC pivots > Grand Total row (NOK × 0.0990)
-  // Source B (salary+bonus): CAC_Costs_to_PBI.xlsx > cols F+I+L+O summed all regions (USD)
-  // Source C (deals/ARR): reports_06-01-202506-30-2026.xlsx — all activity types included (Standard, Pilot, Conversion, Essentials)
-  { month:"Jun 2025", non_sal_usd:59037,  sal_usd:135488, comm_usd:0,     total_usd:194525, deals:7,  new_arr:92044,
-    sales_sal:69724, mkt_sal:46463, sales_comm:19300, mkt_comm:0,
-    customers:[
-      {name:"Fullhouse Recruitment",            added:"2025-06-04", manual:false},
-      {name:"Ditio AS",                          added:"2025-06-19", manual:false},
-      {name:"Simpson & Marwick",                 added:"2025-06-20", manual:false},
-      {name:"Contentful GmbH",                   added:"2025-06-27", manual:false},
-      {name:"T Ash International Realty Broker", added:"2025-06-27", manual:false},
-      {name:"ITS (Southampton) Ltd",             added:"2025-06-27", manual:false},
-      {name:"Walter AG",                         added:"2025-06-30", manual:false}
-    ]},
-  { month:"Jul 2025", non_sal_usd:40111,  sal_usd:151453, comm_usd:0,     total_usd:191564, deals:2,  new_arr:28061,
-    sales_sal:69724, mkt_sal:46463, sales_comm:23405, mkt_comm:0,
-    customers:[
-      {name:"WS - The WallSwiss Partner's SA",  added:"2025-07-16", manual:false},
-      {name:"Vingcard-ASSA ABLOY",               added:"2025-07-28", manual:false}
-    ]},
-  { month:"Aug 2025", non_sal_usd:53286,  sal_usd:109769, comm_usd:0,     total_usd:163055, deals:5,  new_arr:20909,
-    sales_sal:63306, mkt_sal:46463, sales_comm:0, mkt_comm:0,
-    customers:[
-      {name:"JBS Partners AS",                   added:"2025-08-09", manual:false},
-      {name:"Fallon Insurance Agency",            added:"2025-08-11", manual:false},
-      {name:"We Rock Sales AS",                   added:"2025-08-12", manual:false},
-      {name:"Ignite Procurement AS",              added:"2025-08-14", manual:false},
-      {name:"iPill",                              added:"2025-08-28", manual:false}
-    ]},
-  { month:"Sep 2025", non_sal_usd:70433,  sal_usd:111585, comm_usd:0,     total_usd:182018, deals:10, new_arr:74657,
-    sales_sal:56223, mkt_sal:46463, sales_comm:8900, mkt_comm:0,
-    customers:[
-      {name:"Vivid Living Real Estate",           added:"2025-09-01", manual:false},
-      {name:"Mollie",                             added:"2025-09-05", manual:false},
-      {name:"Partnercall AS",                     added:"2025-09-08", manual:false},
-      {name:"Tidly GmbH",                         added:"2025-09-09", manual:false},
-      {name:"Owlie Jobs",                         added:"2025-09-09", manual:false},
-      {name:"Red Bull",                           added:"2025-09-23", manual:false},
-      {name:"Matrix Mind AI Solutions",           added:"2025-09-24", manual:false},
-      {name:"Tax Resolution Plus",                added:"2025-09-25", manual:false},
-      {name:"Maskineriet Forsikring AS",          added:"2025-09-30", manual:false},
-      {name:"Hallingdal Brannkasse",              added:"2025-09-30", manual:false}
-    ]},
-  { month:"Oct 2025", non_sal_usd:90131,  sal_usd:134694, comm_usd:0,     total_usd:224826, deals:5,  new_arr:32876,
-    sales_sal:56223, mkt_sal:46463, sales_comm:19068, mkt_comm:12941,
-    customers:[
-      {name:"Aptive Environmental",               added:"2025-10-04", manual:false},
-      {name:"ECIT Norway",                        added:"2025-10-06", manual:false},
-      {name:"Teya Services Ltd.",                 added:"2025-10-08", manual:false},
-      {name:"Elite Property Brokerage, L.L.C.",  added:"2025-10-10", manual:false},
-      {name:"Steadman Brown Limited",             added:"2025-10-20", manual:false}
-    ]},
-  { month:"Nov 2025", non_sal_usd:83047,  sal_usd:160462, comm_usd:0,     total_usd:243509, deals:4,  new_arr:70383,
-    sales_sal:56223, mkt_sal:46463, sales_comm:57777, mkt_comm:0,
-    customers:[
-      {name:"LMP Financial",                      added:"2025-11-06", manual:false},
-      {name:"Sne Eiendomsmegling AS",             added:"2025-11-07", manual:false},
-      {name:"Infor (norge) AS",                   added:"2025-11-14", manual:false},
-      {name:"Walter AG",                          added:"2025-11-27", manual:false}
-    ]},
-  { month:"Dec 2025", non_sal_usd:69317,  sal_usd:115998, comm_usd:0,     total_usd:185315, deals:8,  new_arr:250766,
-    sales_sal:51889, mkt_sal:46463, sales_comm:17646, mkt_comm:0,
-    customers:[
-      {name:"Nobia Norway AS",                    added:"2025-12-04", manual:false},
-      {name:"Mobino Salg og Service AS",          added:"2025-12-05", manual:false},
-      {name:"Primo Capital Real Estate L.L.C",   added:"2025-12-05", manual:false},
-      {name:"Spotio, Inc. (Stronghouse)",         added:"2025-12-18", manual:false},
-      {name:"Homely AS",                          added:"2025-12-22", manual:false},
-      {name:"Team Up Staffing LLC, DBA TeamUP",  added:"2025-12-23", manual:false},
-      {name:"Sovos Compliance, LLC",             added:"2025-12-24", manual:false},
-      {name:"Cyera US Inc.",                      added:"2025-12-29", manual:false}
-    ]},
-  // ── 2026 ──
-  // Source A (non-salary): CAC_calculation_2026.xlsx > CAC pivots > Grand Total row 35 (NOK × 0.0990)
-  // Source B (salary): Salary by market row 7 + row 20 (USD)
-  // Source C (commissions): Commissions tab row 3 + row 10 (USD)
-  // Source D (deals/ARR): reports_06-01-202506-30-2026.xlsx — all activity types
-  { month:"Jan 2026", non_sal_usd:65672,  sal_usd:85514,  comm_usd:27202, total_usd:178388, deals:1,  new_arr:7913,
-    sales_sal:38017, mkt_sal:47497, sales_comm:10880, mkt_comm:16322,
-    customers:[
-      {name:"PK Properties",                     added:"2026-01-26", manual:false}
-    ]},
-  { month:"Feb 2026", non_sal_usd:87727,  sal_usd:85514,  comm_usd:993,   total_usd:174233, deals:2,  new_arr:17500,
-    sales_sal:38017, mkt_sal:47497, sales_comm:993, mkt_comm:0,
-    customers:[
-      {name:"InnkjøpsGRUPPEN AS",               added:"2026-02-03", manual:false},
-      {name:"Generali",                           added:"2026-02-27", manual:false}
-    ]},
-  { month:"Mar 2026", non_sal_usd:111426, sal_usd:89497,  comm_usd:1658,  total_usd:202581, deals:4,  new_arr:43647,
-    sales_sal:39951, mkt_sal:49547, sales_comm:1658, mkt_comm:0,
-    customers:[
-      {name:"Concept Communication AS",          added:"2026-03-04", manual:false},
-      {name:"Soolar Solenergi AB",               added:"2026-03-18", manual:false},
-      {name:"BridgeFund",                        added:"2026-03-23", manual:false},
-      {name:"O.P.E.N. America dba OpenWorks",   added:"2026-03-25", manual:false}
-    ]},
-  { month:"Apr 2026", non_sal_usd:88468,  sal_usd:89497,  comm_usd:32670, total_usd:210635, deals:1,  new_arr:8100,
-    sales_sal:39951, mkt_sal:49547, sales_comm:20620, mkt_comm:12049,
-    customers:[
-      {name:"Everly Plumbing",                   added:"2026-04-07", manual:false}
-    ]},
-  { month:"May 2026", non_sal_usd:58451,  sal_usd:107661, comm_usd:9492,  total_usd:175604, deals:10, new_arr:148334,
-    sales_sal:58115, mkt_sal:49547, sales_comm:9492, mkt_comm:0,
-    customers:[
-      {name:"Silentium AB",                      added:"2026-05-04", manual:false},
-      {name:"BHG Financial",                     added:"2026-05-04", manual:false},
-      {name:"WVekst",                            added:"2026-05-13", manual:false},
-      {name:"SalesLink AS",                      added:"2026-05-13", manual:false},
-      {name:"Northwood Edinburgh Ltd",           added:"2026-05-13", manual:false},
-      {name:"Hoen Forsikringsformidling",        added:"2026-05-13", manual:false},
-      {name:"Christal Communications Limited",  added:"2026-05-15", manual:false},
-      {name:"Logistikkgruppen AS",              added:"2026-05-15", manual:false},
-      {name:"Islands Insurance Group",          added:"2026-05-20", manual:false},
-      {name:"Ryzeoutdoorcreations",             added:"2026-05-27", manual:false}
-    ]}
+  // ─────────────────────────────────────────────────────────────
+  // COST SOURCE (single source of truth for all months):
+  //   File:   CAC_Costs_to_PBI.xlsx
+  //   Column: col 29 — "Total Costs USD"
+  //   Rows:   All rows for the given Year + Month, summed across all regions (Norway, US, Sweden)
+  //
+  // Total Costs USD = Salary (uplifted ~22% for payroll overhead) + Supplier costs + Operational costs
+  // Bonus/commission is NOT added separately — it is embedded in the salary uplift methodology
+  // Do NOT use: CAC_new_version_proposal.xlsx, CAC_calculation_2026.xlsx, or cols F/I/L/O
+  //
+  // DEAL SOURCE:
+  //   File:     SalesScreen reports export (all activity types: Standard, Pilot, Conversion, Essentials)
+  //   Filter:   Quantity = 1, SAP excluded
+  //   Verified: Against SF Closed Won report — must match SF deal count per month
+  // ─────────────────────────────────────────────────────────────
+  { month:"Jun 2025", total_usd:236073.34, sales_sal_usd:109690.67, mkt_sal_usd:67345.76, mkt_sup_usd:0.0, op_usd:59036.91, deals:7, new_arr:92044,
+    customers:[{"name": "Fullhouse Recruitment", "added": "2025-06-04", "manual": false}, {"name": "Ditio AS", "added": "2025-06-19", "manual": false}, {"name": "Simpson & Marwick", "added": "2025-06-20", "manual": false}, {"name": "Contentful GmbH", "added": "2025-06-27", "manual": false}, {"name": "T Ash International Realty Broker", "added": "2025-06-27", "manual": false}, {"name": "ITS (Southampton) Ltd", "added": "2025-06-27", "manual": false}, {"name": "Walter AG", "added": "2025-06-30", "manual": false}]},
+  { month:"Jul 2025", total_usd:220861.94, sales_sal_usd:113056.87, mkt_sal_usd:67345.76, mkt_sup_usd:348.0, op_usd:40111.31, deals:2, new_arr:28061,
+    customers:[{"name": "WS - The WallSwiss Partner's SA", "added": "2025-07-16", "manual": false}, {"name": "Vingcard-ASSA ABLOY", "added": "2025-07-28", "manual": false}]},
+  { month:"Aug 2025", total_usd:185433.53, sales_sal_usd:76392.78, mkt_sal_usd:54231.26, mkt_sup_usd:1523.51, op_usd:53285.98, deals:5, new_arr:20909,
+    customers:[{"name": "JBS Partners AS", "added": "2025-08-09", "manual": false}, {"name": "Fallon Insurance Agency", "added": "2025-08-11", "manual": false}, {"name": "We Rock Sales AS", "added": "2025-08-12", "manual": false}, {"name": "Ignite Procurement AS", "added": "2025-08-14", "manual": false}, {"name": "iPill", "added": "2025-08-28", "manual": false}]},
+  { month:"Sep 2025", total_usd:244412.73, sales_sal_usd:80268.86, mkt_sal_usd:54231.26, mkt_sup_usd:39479.77, op_usd:70432.85, deals:10, new_arr:74657,
+    customers:[{"name": "Vivid Living Real Estate", "added": "2025-09-01", "manual": false}, {"name": "Mollie", "added": "2025-09-05", "manual": false}, {"name": "Partnercall AS", "added": "2025-09-08", "manual": false}, {"name": "Tidly GmbH", "added": "2025-09-09", "manual": false}, {"name": "Owlie Jobs", "added": "2025-09-09", "manual": false}, {"name": "Red Bull", "added": "2025-09-23", "manual": false}, {"name": "Matrix Mind AI Solutions", "added": "2025-09-24", "manual": false}, {"name": "Tax Resolution Plus", "added": "2025-09-25", "manual": false}, {"name": "Maskineriet Forsikring AS", "added": "2025-09-30", "manual": false}, {"name": "Hallingdal Brannkasse", "added": "2025-09-30", "manual": false}]},
+  { month:"Oct 2025", total_usd:255265.04, sales_sal_usd:91713.36, mkt_sal_usd:69221.22, mkt_sup_usd:4199.0, op_usd:90131.46, deals:5, new_arr:32876,
+    customers:[{"name": "Aptive Environmental", "added": "2025-10-04", "manual": false}, {"name": "ECIT Norway", "added": "2025-10-06", "manual": false}, {"name": "Teya Services Ltd.", "added": "2025-10-08", "manual": false}, {"name": "Elite Property Brokerage, L.L.C.", "added": "2025-10-10", "manual": false}, {"name": "Steadman Brown Limited", "added": "2025-10-20", "manual": false}]},
+  { month:"Nov 2025", total_usd:278207.27, sales_sal_usd:140928.76, mkt_sal_usd:54231.26, mkt_sup_usd:0.0, op_usd:83047.25, deals:4, new_arr:70383,
+    customers:[{"name": "LMP Financial", "added": "2025-11-06", "manual": false}, {"name": "Sne Eiendomsmegling AS", "added": "2025-11-07", "manual": false}, {"name": "Infor (norge) AS", "added": "2025-11-14", "manual": false}, {"name": "Walter AG", "added": "2025-11-27", "manual": false}]},
+  { month:"Dec 2025", total_usd:208861.46, sales_sal_usd:85282.88, mkt_sal_usd:54231.26, mkt_sup_usd:30.0, op_usd:69317.32, deals:8, new_arr:250766,
+    customers:[{"name": "Nobia Norway AS", "added": "2025-12-04", "manual": false}, {"name": "Mobino Salg og Service AS", "added": "2025-12-05", "manual": false}, {"name": "Primo Capital Real Estate L.L.C", "added": "2025-12-05", "manual": false}, {"name": "Spotio, Inc. (Stronghouse)", "added": "2025-12-18", "manual": false}, {"name": "Homely AS", "added": "2025-12-22", "manual": false}, {"name": "Team Up Staffing LLC, DBA TeamUP", "added": "2025-12-23", "manual": false}, {"name": "Sovos Compliance, LLC", "added": "2025-12-24", "manual": false}, {"name": "Cyera US Inc.", "added": "2025-12-29", "manual": false}]},
+  { month:"Jan 2026", total_usd:205586.69, sales_sal_usd:66931.07, mkt_sal_usd:72983.88, mkt_sup_usd:0.0, op_usd:65671.74, deals:1, new_arr:7913,
+    customers:[{"name": "PK Properties", "added": "2026-01-26", "manual": false}]},
+  { month:"Feb 2026", total_usd:191759.13, sales_sal_usd:49746.74, mkt_sal_usd:54231.26, mkt_sup_usd:0.0, op_usd:87781.14, deals:2, new_arr:17500,
+    customers:[{"name": "Innkj\u00f8psGRUPPEN AS", "added": "2026-02-03", "manual": false}, {"name": "Generali", "added": "2026-02-27", "manual": false}]},
+  { month:"Mar 2026", total_usd:221856.12, sales_sal_usd:52436.82, mkt_sal_usd:57993.12, mkt_sup_usd:0.0, op_usd:111426.18, deals:4, new_arr:43647,
+    customers:[{"name": "Concept Communication AS", "added": "2026-03-04", "manual": false}, {"name": "Soolar Solenergi AB", "added": "2026-03-18", "manual": false}, {"name": "BridgeFund", "added": "2026-03-23", "manual": false}, {"name": "O.P.E.N. America dba OpenWorks", "added": "2026-03-25", "manual": false}]},
+  { month:"Apr 2026", total_usd:237769.03, sales_sal_usd:77295.99, mkt_sal_usd:72004.97, mkt_sup_usd:0.0, op_usd:88468.06, deals:1, new_arr:8100,
+    customers:[{"name": "Everly Plumbing", "added": "2026-04-07", "manual": false}]},
+  { month:"May 2026", total_usd:198235.76, sales_sal_usd:81792.03, mkt_sal_usd:57992.66, mkt_sup_usd:0.0, op_usd:58451.06, deals:10, new_arr:148334,
+    customers:[{"name": "Silentium AB", "added": "2026-05-04", "manual": false}, {"name": "BHG Financial", "added": "2026-05-04", "manual": false}, {"name": "WVekst", "added": "2026-05-13", "manual": false}, {"name": "SalesLink AS", "added": "2026-05-13", "manual": false}, {"name": "Northwood Edinburgh Ltd", "added": "2026-05-13", "manual": false}, {"name": "Hoen Forsikringsformidling", "added": "2026-05-13", "manual": false}, {"name": "Christal Communications Limited", "added": "2026-05-15", "manual": false}, {"name": "Logistikkgruppen AS", "added": "2026-05-15", "manual": false}, {"name": "Islands Insurance Group", "added": "2026-05-20", "manual": false}, {"name": "Ryzeoutdoorcreations", "added": "2026-05-27", "manual": false}]},
 ];
+
 const NAME_OWNER_MAP = {"52realestate": "Thomas Testard", "A1 Gruppen AS": "Hanne Herseth", "Aasen Sparebank": "Caroline Ingrud", "ABChus AS": "Marius Ekerholt", "ABMarketing AS": "Caroline Ingrud", "Accquis Group Limited": "Hanne Herseth", "Adresseavisens Telefontjenester AS": "Hanne Herseth", "Akershus Forsikringssenter AS": "Hanne Herseth", "Aktiv Arna & Åsane AS": "Emil Lindblom", "Allstar Business Solutions": "Ece Ella", "AnyVan Limited": "Ece Ella", "Arun Estate Agencies Ltd": "Ece Ella", "Askim & Spydeberg Sparebank": "Caroline Ingrud", "Aust-agder Forsikringssenter AS": "Hanne Herseth", "Axo AS": "Hanne Herseth", "Balder Forsikring AS": "Caroline Ingrud", "Bank Norwegian, En filial av NOVA Bank Group AB (publ)": "Marius Ekerholt", "Berg Sparebank": "Marius Ekerholt", "Biisoni Group Oy": "Hanne Herseth", "Bjugn Sparebank": "Marius Ekerholt", "Blink Payment": "Harry Hindess", "Børsan AS": "Hanne Herseth", "BridgeFund": "Ece Ella", "Buy it Direct": "Hanne Herseth", "BWC Real Estate LLC": "Hanne Herseth", "Carter & Sønn AS": "Hanne Herseth", "Ccom AS": "Hanne Herseth", "Chestertons International Real Estate Brokerage LLC": "Caroline Ingrud", "Cognism Limited": "Marie Conza", "Coitio Gruppen AS": "Hanne Herseth", "Concept Communication AS": "Hanne Herseth", "Contentful GmbH": "Ece Ella", "Convins Nederland": "Caroline Ingrud", "Cornmarket Health Insurance": "Ece Ella", "Dacha Real Estate": "Ece Ella", "Dataquest UK ltd": "Marius Ekerholt", "Det Norske Kaffehus AS": "Hanne Herseth", "Devola Group": "Hanne Herseth", "Digiflow AS": "Hanne Herseth", "Digi Publishing AS": "Hanne Herseth", "Digitale Medier 1881 AS": "Hanne Herseth", "Din Salgskonsulent AS": "Marius Ekerholt", "Ditio AS": "Hanne Herseth", "DNB Bank ASA": "Vidar Haaland", "Domestic & General Insurance Europe AG": "Ece Ella", "[Do not invoice] &Partners, team invoicing": "Marius Ekerholt", "(DONT INVOICE) I@D International": "Barbara Kiss", "[DONT INVOICE] Proaktiv Trøndelag": "Marius Ekerholt", "[DONT INVOICE] Proaktiv Vest": "Marius Ekerholt", "Douglasdale": "Hanne Herseth", "Drangedal Sparebank": "Caroline Ingrud", "Duett AS": "Vidar Haaland", "ECIT Autogear AS": "Hanne Herseth", "Eie Bergen / Mekleriet AS": "Marius Ekerholt", "Eie - Main Account": "Vidar Haaland", "EiendomsMegler 1 Lillehammer og Gudbrandsdal": "Marius Ekerholt", "Eiendomsmegler 1 Midt-norge AS": "Marius Ekerholt", "Eiendomsmegler 1 Sør-norge AS": "Marius Ekerholt", "Eiendomsmegler A": "Vidar Haaland", "Eiendomsmegler Norge AS": "Marius Ekerholt", "EK Concept": "Hanne Herseth", "Electi Business Partner AS": "Marius Ekerholt", "Elis Norge AS": "Hanne Herseth", "Elite Property Brokerage, L.L.C.": "Ece Ella", "Eneas Services AS": "Hanne Herseth", "Erga & Partnere AS": "Hanne Herseth", "Esacon AS": "Vidar Haaland", "Esentya Estate & Promotion S.L.": "Hanne Herseth", "Every Matrix": "Hanne Herseth", "Exito Assuranse AS": "Hanne Herseth", "Extracover Limited": "Ece Ella", "Fana Sparebank Eiendom AS": "Caroline Ingrud", "Finansco AS": "Hanne Herseth", "Fjordkraft AS (11284)": "Vidar Haaland", "Fjordkraft AS (Fjordkraft KS, 111949)": "Marius Ekerholt", "Fjordkraft AS (SMB, 111948)": "Vidar Haaland", "Flexebee Ltd": "Hanne Herseth", "Flyt AS": "Marius Ekerholt", "Foodora Norway AS": "Marius Ekerholt", "Forsikring1 AS": "Hanne Herseth", "Forward Role": "Marius Ekerholt", "Fremtind Forsikring AS /Avdeling 1": "Caroline Ingrud", "Fullhouse Recruitment": "Hanne Herseth", "Garanti Eiendomsmegling [Team Invoicing]": "Caroline Ingrud", "Genertel Biztosító Zrt.": "Ece Ella", "Gjensidige Business Services AB": "Marius Ekerholt", "GrabTaxi Holdings Pte. Ltd.": "Ece Ella", "Grønn Jobb AS": "Hanne Herseth", "Grue Sparebank": "Marius Ekerholt", "Gule Sider AS [Team Invoicing]": "Marius Ekerholt", "Hallingdal Brannkasse": "Caroline Ingrud", "Hamar Innredning AS": "Caroline Ingrud", "Haugaland Forsikringssenter AS": "Hanne Herseth", "Heimdal Eiendomsmegling AS": "Marius Ekerholt", "Hjem Eiendomsmegling AS": "Hanne Herseth", "Hjemmesidehuset AS": "Hanne Herseth", "HMS Partner Norge": "Hanne Herseth", "Holo": "Hanne Herseth", "Homely AS": "Hanne Herseth", "Ideagen Limited": "Caroline Ingrud", "If IT Services A/S": "Marius Ekerholt", "Ignite Procurement AS": "Hanne Herseth", "Infor (norge) AS": "Ece Ella", "Initial Force AS": "Hanne Herseth", "Innkjøpsgruppen AS": "Hanne Herseth", "Intrum AS": "Hanne Herseth", "In-vest Eiendomsmegling AS": "Marius Ekerholt", "Irish Life Health": "Ece Ella", "Islands Insurance Group": "Ece Ella", "ITS (Southampton) Ltd": "Hanne Herseth", "Jay-Bee Telecom Ltd": "Hanne Herseth", "JBF Sparebank": "Marius Ekerholt", "JTalk Ltd": "Hanne Herseth", "Julius Caesar AS": "Hanne Herseth", "Kjøkkenspesialisten AS": "Hanne Herseth", "Kreftforeningen": "Hanne Herseth", "Kristiansand Forsikringssenter AS": "Hanne Herseth", "Kvik Kanalveien AS (111967)": "Hanne Herseth", "Landkreditt Forsikring AS": "Hanne Herseth", "Lendo AS": "Hanne Herseth", "LifeSearch Limited": "Ece Ella", "Linx Business Communications Ltd": "Hanne Herseth", "Living Forsikring": "Hanne Herseth", "Logistikkgruppen AS": "Hanne Herseth", "LUXFolio Real Estate": "Ece Ella", "Luxury Property LLC": "Ece Ella", "Lyse Tele AS": "Marius Ekerholt", "Lysholm Bil AS": "Hanne Herseth", "Maritech AS": "Hanne Herseth", "Maskineriet Forsikring AS": "Hanne Herseth", "Max Equity Real Estates LLC": "Ece Ella", "Media Access AS": "Hanne Herseth", "Meglerhuset Nylander AS": "Marius Ekerholt", "Meglerhuset Rele Haugesund AS": "Hanne Herseth", "MetaCompliance Ltd.": "Ece Ella", "MHDK ApS": "Hanne Herseth", "Mobino Salg og Service AS": "Hanne Herseth", "Mollie B.V": "Thomas Testard", "MØRE EIENDOMSMEGLING AS": "Hanne Herseth", "Mystore.no AS": "Marius Ekerholt", "N3 Group AS": "Hanne Herseth", "Nettbil AS": "Marius Ekerholt", "New Zealand Fine Touring Group": "Hanne Herseth", "NGage Recruitment BV": "Hanne Herseth", "Nidaros Sparebank": "Caroline Ingrud", "Nobia Norway AS": "Caroline Ingrud", "Nordvest Forsikringssenter AS": "Hanne Herseth", "Northwood Edinburgh Ltd": "Vidar Haaland", "Notar AS": "Marius Ekerholt", "Nova ehf": "Caroline Ingrud", "Novvi Properties": "Caroline Ingrud", "N&SLB Ltd": "Hanne Herseth", "Obos Eiendomsmeglere AS": "Caroline Ingrud", "OfficeLink Mobil og IT AS": "Hanne Herseth", "Okida Finans AS": "Hanne Herseth", "Olaya AS": "Hanne Herseth", "Orkla Sparebank": "Marius Ekerholt", "Ørland Sparebank": "Caroline Ingrud", "Outlook Publishing": "Hanne Herseth", "Øvre Romerike Eiendomsmegling AS": "Marius Ekerholt", "Owlie Jobs": "Hanne Herseth", "Partner Assuranse AS": "Hanne Herseth", "Partnercall AS": "Hanne Herseth", "Partners Bergen AS": "Emil Lindblom", "Partners Eiendomsmegling AS": "Marius Ekerholt", "Pedan A/S": "Hanne Herseth", "Per Aaland AS": "Hanne Herseth", "Personal Group Benefits": "Ece Ella", "Pistachio AS": "Hanne Herseth", "PK Properties": "Hanne Herseth", "Plusoffice AS": "Hanne Herseth", "Polardrikk AS": "Hanne Herseth", "Primo Capital Real Estate L.L.C": "Ece Ella", "Prismatch AS": "Hanne Herseth", "Privatmegleren Main Account": "Marius Ekerholt", "Proaktiv Romerike [Do not invoice, team invoicing]": "Marius Ekerholt", "RAM Tracking, Remote Asset Management Ltd": "Hanne Herseth", "Red Bull GmbH": "Hanne Herseth", "Redgo Norway AS": "Marius Ekerholt", "Redress AS": "Vidar Haaland", "ROGALAND EIENDOMSMEGLING AS": "Vidar Haaland", "Rogaland Sparebank": "Marius Ekerholt", "Rune Enstad AS": "Hanne Herseth", "Safedrive AS": "Hanne Herseth", "Safenames Ltd": "Caroline Ingrud", "Samlerhuset Group B.V.": "Marius Ekerholt", "Sandegruppen Management AS": "Hanne Herseth", "SAP SE": "Marius Ekerholt", "Schala & Partners [Do not invoice - Team invoicing]": "Marius Ekerholt", "Schibsted Norge Smb AS": "Marius Ekerholt", "Scrap Car Comparison": "Ece Ella", "Selbu Sparebank": "Caroline Ingrud", "Sem & Johnsen Eiendomsmegling AS": "Caroline Ingrud", "Shilton Sharpe Quarry Limited": "Caroline Ingrud", "Simpson Judge ltd": "Ece Ella", "Simpson & Marwick": "Hanne Herseth", "Skandia Greenpower AS": "Hanne Herseth", "Slatlem Gruppen AS": "Hanne Herseth", "Sne Eiendomsmegling AS": "Hanne Herseth", "Sølvrev AS": "Hanne Herseth", "Sordal Supply AS": "Hanne Herseth", "Sørmegleren AS": "Vidar Haaland", "Sos-barnebyer Norge Stiftelsen": "Hanne Herseth", "Sparebank 1 Nord-norge (111945)": "Caroline Ingrud", "Sparebank 1 Nord-norge (11580)": "Caroline Ingrud", "Sparebank 1 SMN (Direktebank, 11110)": "Caroline Ingrud", "Sparebank 1 SMN (Næring/BM, 111955)": "Caroline Ingrud", "Sparebank 1 Sør-norge ASA": "Vidar Haaland", "Staq GmbH": "Hanne Herseth", "Steadman Brown Limited": "Hanne Herseth", "Sticos AS": "Marius Ekerholt", "Storebrand Forsikring AS": "Hanne Herseth", "Strada Real Estate Brokerage LLC": "Ece Ella", "Sunnmøre Kjøkken AS": "Caroline Ingrud", "Talkmore AS": "Marius Ekerholt", "T Ash International Realty Broker": "Ece Ella", "T Ash International Realty Ltd": "Ece Ella", "Telenor Norge AS Avd: Talkmore": "Marius Ekerholt", "Tema Landbruk AS": "Hanne Herseth", "Teya Services Ltd.": "Hanne Herseth", "The Luxury Real Estate Broker LLC": "Thomas Testard", "The Neon Company": "Hanne Herseth", "The Talent Boom Inc": "Hanne Herseth", "Thor Companies Ltd": "Emil Lindblom", "Ticketco AS": "Emil Lindblom", "Tolga-Os Sparebank": "Caroline Ingrud", "Toten Forsikring og Finans": "Hanne Herseth", "Toyota Material Handling Norway AS": "Marius Ekerholt", "Tripletex AS": "Emil Lindblom", "Trondheim Forsikringssenter AS": "Hanne Herseth", "TutorCare": "Hanne Herseth", "Uitblinqers": "Hanne Herseth", "United Gas & Power": "Ece Ella", "Utedesign AS": "Hanne Herseth", "Utleiemegleren Forvaltning AS": "Marius Ekerholt", "Vertice Group Ltd": "Ece Ella", "Vestby Forsikring DA": "Hanne Herseth", "Vestfold Forsikringssenter AS": "Hanne Herseth", "Viken Kjøkkensenter AS": "Caroline Ingrud", "Viken Media AS": "Hanne Herseth", "Visma Enterprise AS": "Marius Ekerholt", "Vitality Corporate Services Limited": "Ece Ella", "Vitec Fixit Systemer AS": "Hanne Herseth", "Vivid Living Real Estate": "Hanne Herseth", "Walter AG": "Ece Ella", "Watercircles Norge AS": "Marius Ekerholt", "WAYRA Deutschland GmbH": "Ece Ella", "We Finance Any Car Limited": "Ece Ella", "We Rock Sales AS": "Hanne Herseth", "White & Co Properties": "Ece Ella", "Wille & Sand Forsikringspartner AS": "Hanne Herseth", "W Norge AS": "Hanne Herseth", "WS - The WallSwiss Partner’s SA": "Hanne Herseth", "XO Property": "Caroline Ingrud", "Annonssäljarna i Gamla Stan AB": "Hanne Herseth", "Bisdata AB": "Hanne Herseth", "Blendow Group": "Hanne Herseth", "Bonnier News Inhouse Sales AB": "Marius Ekerholt", "Bravura Sverige AB": "Hanne Herseth", "Cinode AB": "Hanne Herseth", "Cloudgruppen Sverige AB": "Marius Ekerholt", "Foodora AB": "Emil Lindblom", "Göteborg Energi Aktiebolag": "Hanne Herseth", "Hailey HR": "Marius Ekerholt", "Home Call AB": "Harry Hindess", "Hunter & Tailor Sverige AB": "Hanne Herseth", "Impressive Relations Sweden AB": "Marius Ekerholt", "Kassacentralen i Skåne AB": "Hanne Herseth", "Länsförsäkringar Jämtland": "Hanne Herseth", "Länsförsäkringar Norrbotten": "Hanne Herseth", "Länsförsäkringar Skåne - ömsesidigt": "Hanne Herseth", "Lån & Spar Sverige, Bankfilial": "Hanne Herseth", "Lawlabs AB": "Hanne Herseth", "Lime Technologies": "Caroline Ingrud", "Nimblr AB": "Hanne Herseth", "Nordax Bank AB (publ)": "Marius Ekerholt", "Nordea Bank Abp, filial i Sverige": "Marius Ekerholt", "Nordea (BB Direct Savings)": "Marius Ekerholt", "PO Söderberg & Partners AB": "Marius Ekerholt", "Puzzel AB": "Hanne Herseth", "Reliable AB": "Hanne Herseth", "Silentium AB": "Hanne Herseth", "Soolar Solenergi AB": "Hanne Herseth", "S.P. FTL Malmö AB": "Emil Lindblom", "Telink PBX AB": "Hanne Herseth", "Trygg-Hansa Försäkring Filial": "Marius Ekerholt", "Watercircles Sverige AB": "Marius Ekerholt", "Acrisure, LLC": "Cailin Kless", "Adobe Inc.": "Marie Conza", "Ahlers Roofing and Construction": "Hanne Herseth", "Akkar Limited": "Hanne Herseth", "BigID": "Marie Conza", "BMC Helix Inc": "Marie Conza", "BMC Software Inc": "Marie Conza", "BOSS Magazine": "Hanne Herseth", "BURNS WEALTH ADVISORS, LLC": "Hanne Herseth", "Carl Ferraro III, State Farm Agent": "Marie Conza", "Censys": "Cailin Kless", "Clear Start Tax": "Marie Conza", "Cyera US Inc.": "Marie Conza", "Everly Plumbing": "Marie Conza", "Farmers Insurance Exchange": "Marie Conza", "Fuchs Financial": "Hanne Herseth", "GoodLeap, LLC.": "Marie Conza", "Goosehead Insurance Agency, LLC": "Marie Conza", "Heather Schaefer Insurance Agency Inc": "Cailin Kless", "HP Inc.": "Marie Conza", "Hyde Park Capital": "Hanne Herseth", "Inter Miami CF": "Marie Conza", "Johnson Brunetti": "Hanne Herseth", "Kandji": "Marie Conza", "K-Designers": "Cailin Kless", "Kelly Insurance Agency, LLC": "Remy Cholhan", "LMP Financial": "Marie Conza", "Marisa Schaefer Insurance Agency Inc": "Cailin Kless", "New Western Acquisitions": "Marie Conza", "NSP Marketing": "Marie Conza", "Olympia Entertainment, Inc.": "Marie Conza", "One Capital Solutions, LLC": "Marie Conza", "O.P.E.N. America dba OpenWorks": "Marie Conza", "Phil Klein Insurance Group": "Marie Conza", "SafetyCulture Pty Ltd": "Marie Conza", "SalesRabbit Inc": "Cailin Kless", "Sovos Compliance, LLC": "Marie Conza", "Spotio, Inc. (Stronghouse)": "Cailin Kless", "State Farm Insurance": "Marie Conza", "Stor Mor Portable Buildings": "Marie Conza", "Tax Resolution Plus": "Hanne Herseth", "Team Up Staffing LLC, DBA TeamUP": "Hanne Herseth", "Tines Security Services Limited": "Cailin Kless", "Trailstone Insurance Group": "Marie Conza", "Unite Health Share Ministries": "Marie Conza", "Universal Processing LLC": "Hanne Herseth", "UWDTBA": "Cailin Kless", "Vingcard-ASSA ABLOY": "Marie Conza", "Western Pioneer Financial, Inc.": "Hanne Herseth", "WFG National Title Insurance Company": "Cailin Kless", "Your Home Improvement Company": "Marie Conza"};
 
 function drawWaterfall(mov, totals, months, periodStart, periodEnd) {
