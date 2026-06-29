@@ -1251,12 +1251,7 @@ function renderMRR(data, selectedMonth) {
           var d = CAC_DATA.find(function(r){return r.month===m;});
           if(!d) return;
           var mKey = m.replace(/ /g,'_');
-          var mOv = overrides[mKey] || {};
-          var custList = (d.customers||[]).map(function(c,i){
-            return {idx:i, name:c.name, added:c.added, manual:c.manual, removed: mOv['rm_'+i]||false};
-          });
-          (mOv.added||[]).forEach(function(a){ custList.push({idx:'a_'+a.ts, name:a.name, added:a.ts, manual:true, removed:false}); });
-          var activeCust = custList.filter(function(c){return !c.removed;});
+          var activeCust = cacActiveDeals(d, mKey);
           totalCost += d.total_usd||0;
           totalDeals += activeCust.length;
         });
@@ -1284,7 +1279,7 @@ function renderMRR(data, selectedMonth) {
         h += '<span style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em">LTV basis:</span>';
         h += '<button style="'+tb+'" onclick="window._ltvCmToggle()">'+cmLabel+'</button>';
         h += '<button style="'+tb+'" onclick="window._ltvSegToggle()">'+segLabel+'</button>';
-        h += '<button style="'+tbPlg+'" onclick="window._ltvPlgToggle()" title="Toggle PLG inclusion (PBI includes PLG)">'+plgLabel+'</button>';
+        h += '<button style="'+tbPlg+'" onclick="window._ltvPlgToggle()" title="Toggle PLG inclusion — affects both LTV churn and CAC deal count (PBI includes PLG in both)">'+plgLabel+'</button>';
         h += '<span style="font-size:11px;color:var(--text-muted);margin-left:8px">'+months12[0]+' – '+months12[months12.length-1]+'</span>';
         h += '</div>';
         h += '<div class="cac-card" onclick="window._openLtvCard()" title="LTV detail">';
@@ -1297,7 +1292,7 @@ function renderMRR(data, selectedMonth) {
         h += '<span class="carr">&#x2197;</span>';
         h += '<div class="cac-card-label">CAC · L12M</div>';
         h += '<div class="cac-card-value'+(cacL12?'':' cac-na')+'">'+(cacL12?usd(cacL12):'No data')+'</div>';
-        h += '<div class="cac-card-sub">'+totalDeals+' deals · '+usd(Math.round(totalCost))+' cost</div>';
+        h += '<div class="cac-card-sub">'+totalDeals+' deals · '+usd(Math.round(totalCost))+(includePlg?' · <span style="color:var(--cranberry);font-weight:700">incl. PLG</span>':' · excl. PLG')+'</div>';
         h += '</div>';
         h += "<div class=\"cac-card ratio\" onclick=\"window._openCacModal('ratio')\" title=\"LTV/CAC ratio\">";
         h += '<span class="carr">&#x2197;</span>';
@@ -1420,7 +1415,15 @@ function renderMRR(data, selectedMonth) {
   }
 
   function cacActiveDeals(d, mKey) {
-    return cacMonthCustomers(d, mKey).filter(function(c){return !c.removed;});
+    var deals = cacMonthCustomers(d, mKey).filter(function(c){return !c.removed;});
+    if(window._ltvIncludePlg) return deals;
+    // Exclude PLG customers from deal count when PLG toggle is off
+    var plgNames = Object.values(CUSTOMER_META)
+      .filter(function(c){return c.entity==='PLG';})
+      .map(function(c){return c.name.toLowerCase();});
+    return deals.filter(function(c){
+      return !plgNames.some(function(p){return c.name.toLowerCase()===p;});
+    });
   }
 
   // Compute L12M stats
