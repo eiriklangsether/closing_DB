@@ -1100,36 +1100,60 @@ function renderMRR(data, selectedMonth) {
           if(ev>0) icpE[c.name]=(icpE[c.name]||0)+ev;
         });
 
-        // --- Logo churn (true logo-grouped, excl. PLG + LiveScreen) ---
-        // Build logo→[customer] maps for All and ICP slices.
-        // Null-logo customers get a 1:1 fallback key (own customer_id).
-        // Each logo is "active" in a month if any of its customers has MRR > 0.
-        function buildLogoMRR(icpOnly) {
-          var logoS={}, logoE={};
+        // --- Logo churn: rolling monthly average (PBI-aligned method) ---
+        // For each consecutive month pair in the L12M window, compute:
+        //   (a) logo-level churn rate = logos lost that month / logos active prior month
+        //   (b) ARPA = total MRR / distinct active logos for that month
+        // Then average both across all 11 transitions (12 months → 11 pairs).
+        // Logos grouped by c.logo field (fallback: customer_id). PLG + LiveScreen excluded.
+        function calcLogoRolling(icpOnly) {
+          // Build per-month logo→MRR map from CUSTOMER_META mrr field
+          var mMap = {};  // month label → {logoKey: mrr}
           Object.entries(CUSTOMER_META).forEach(function(kv){
             var cid=kv[0], c=kv[1];
             if(c.entity==='PLG' || c.livescreen===true) return;
             if(_activeEntity!=='ALL' && c.entity!==_activeEntity) return;
             if(icpOnly && c.icp!==true) return;
             var key = c.logo || cid;
-            var sv=(c.mrr||{})[sM]||0, ev=(c.mrr||{})[eM]||0;
-            logoS[key]=(logoS[key]||0)+sv;
-            logoE[key]=(logoE[key]||0)+ev;
+            Object.entries(c.mrr||{}).forEach(function(mv){
+              var mo=mv[0], v=mv[1];
+              if(!mMap[mo]) mMap[mo]={};
+              mMap[mo][key]=(mMap[mo][key]||0)+v;
+            });
           });
-          return {S:logoS, E:logoE};
+          // months is the L12M array defined above (sM … eM)
+          var churnRates=[], arpas=[];
+          for(var i=0;i<months.length;i++){
+            var mk=months[i];
+            var logos={};
+            if(mMap[mk]) Object.entries(mMap[mk]).forEach(function(kv){ if(kv[1]>0) logos[kv[0]]=kv[1]; });
+            var cnt=Object.keys(logos).length;
+            if(cnt>0) arpas.push(Object.values(logos).reduce(function(a,v){return a+v;},0)/cnt);
+            if(i>0){
+              var prev=months[i-1];
+              var prevLogos={};
+              if(mMap[prev]) Object.entries(mMap[prev]).forEach(function(kv){ if(kv[1]>0) prevLogos[kv[0]]=kv[1]; });
+              var startN=Object.keys(prevLogos).length;
+              if(startN>0){
+                var lost=Object.keys(prevLogos).filter(function(k){return !(logos[k]>0);}).length;
+                churnRates.push(lost/startN);
+              }
+            }
+          }
+          var avgChurnMo = churnRates.length>0 ? churnRates.reduce(function(a,v){return a+v;},0)/churnRates.length : 0;
+          var avgArpa    = arpas.length>0 ? arpas.reduce(function(a,v){return a+v;},0)/arpas.length : 0;
+          var ltv = avgChurnMo>0 ? avgArpa/avgChurnMo : 0;
+          // Also compute point-to-point counts for modal display
+          var startLogos={}, endLogos={};
+          if(mMap[sM]) Object.entries(mMap[sM]).forEach(function(kv){ if(kv[1]>0) startLogos[kv[0]]=1; });
+          if(mMap[eM]) Object.entries(mMap[eM]).forEach(function(kv){ if(kv[1]>0) endLogos[kv[0]]=1; });
+          var ptLost=Object.keys(startLogos).filter(function(k){return !endLogos[k];}).length;
+          return {mo:avgChurnMo, ann:avgChurnMo*12, arpa:avgArpa, ltv:ltv,
+                  monthlyRates:churnRates,
+                  start:Object.keys(startLogos).length, lost:ptLost,
+                  desc:'Rolling avg of 12 monthly logo churn rates (excl. PLG & LiveScreen). Matches PBI method.'};
         }
-        function calcLogoChurn(logoMaps) {
-          var S=logoMaps.S, E=logoMaps.E;
-          var allKeys=new Set(Object.keys(S).concat(Object.keys(E)));
-          var start=0, lost=0;
-          allKeys.forEach(function(k){
-            if((S[k]||0)>0){ start++; if((E[k]||0)===0) lost++; }
-          });
-          var ann=start>0?lost/start:0;
-          return {start:start, lost:lost, ann:ann, mo:ann/12};
-        }
-        var allLogoMaps=buildLogoMRR(false),  icpLogoMaps=buildLogoMRR(true);
-        var allLC=calcLogoChurn(allLogoMaps),  icpLC=calcLogoChurn(icpLogoMaps);
+        var allLC=calcLogoRolling(false), icpLC=calcLogoRolling(true);
         // --- end logo churn ---
 
         function calcRet(S,E){
@@ -1146,18 +1170,18 @@ function renderMRR(data, selectedMonth) {
           return {sT:sT,eT:eT,grr:grr,nrr:nrr,yoy:yoy,ret:ret.length,sN:sN.size,S:S,E:E};
         }
         function calcLTVv(r, lc){
-          var arpu=r.sN>0?r.sT/r.sN:0;
+          var arpuSnap=r.sN>0?r.sT/r.sN:0;  // snapshot ARPA (used for rev churn path only)
           // Revenue churn: MRR lost to churn+contraction / starting MRR (from GRR)
           var revAnn=1-r.grr/100; var revMo=revAnn/12;
-          // Logo churn: true logo-grouped (excl. PLG + LiveScreen), combined across entities
-          var logoMo=lc.mo;
-          return {arpu:arpu, logoChurn:lc,
-                  rev:{ann:revAnn*100,mo:revMo*100,ltv:revMo>0?arpu/revMo:0,desc:'MRR lost \u00f7 starting MRR (GRR basis)'},
-                  logo:{ann:lc.ann*100,mo:logoMo*100,ltv:logoMo>0?arpu/logoMo:0,desc:'Logo churn: logos fully lost \u00f7 logos at start (excl. PLG & LiveScreen, combined entities)'}};
+          // Logo churn: rolling monthly average (PBI method), uses rolling ARPA
+          var logoMo=lc.mo, logoArpa=lc.arpa;
+          return {arpu:arpuSnap, logoChurn:lc,
+                  rev:{ann:revAnn*100,mo:revMo*100,ltv:revMo>0?arpuSnap/revMo:0,desc:'MRR lost \u00f7 starting MRR (GRR basis)'},
+                  logo:{ann:lc.ann*100,mo:logoMo*100,ltv:lc.ltv,desc:lc.desc}};
         }
         var allR=calcRet(allS,allE), icpR=calcRet(icpS,icpE);
         var allLV=calcLTVv(allR,allLC), icpLV=calcLTVv(icpR,icpLC);
-        var cm=window._ltvChurnMode||'rev';
+        var cm=window._ltvChurnMode||'logo';  // default: logo churn (PBI-aligned)
         var allL=cm==='logo'?allLV.logo:allLV.rev;
         var icpL=cm==='logo'?icpLV.logo:icpLV.rev;
         window._retData    ={snapStart:allS,snapEnd:allE,months:months,calcEntities:ents};
@@ -1441,8 +1465,8 @@ function renderMRR(data, selectedMonth) {
       body += '<div class="cac-formula-row"><span class="cac-formula-label">Value</span><span class="cac-formula-result">'+(ltvVal ? usdFmtCac(ltvVal) : '—')+'</span></div>';
       body += '<div style="margin-top:8px;padding:8px 10px;background:var(--bg);border-radius:6px;font-size:11px;color:var(--text-muted);line-height:1.6">';
       body += '<strong>Note on churn definitions:</strong> ';
-      body += '<strong>Logo churn</strong> — a logo is churned only when <em>all</em> subscriptions under that logo reach zero MRR. Multi-subscription accounts (e.g. Sparebank 1 Gruppen with 8 customers) stay active as long as any one subscription remains. PLG and LiveScreen subscriptions excluded. Logos without a mapping fall back to customer-level. ';
-      body += '<strong>Revenue churn</strong> — MRR lost to churn and contraction ÷ starting MRR (GRR basis), unaffected by the logo grouping.';
+      body += '<strong>Logo churn (default)</strong> — rolling average of 11 monthly logo churn rates over the L12M window. A logo churns in month M when all its subscriptions reach zero. Excludes PLG and LiveScreen. ARPA also averaged monthly. This matches the PBI/DAX method. ';
+      body += '<strong>Revenue churn</strong> — MRR lost to churn and contraction ÷ starting MRR (GRR basis), point-to-point over the L12M window.';
       body += '</div>';
     } else if (view==='ratio') {
       var cm3 = window._ltvChurnMode || 'rev';
