@@ -1105,13 +1105,16 @@ function renderMRR(data, selectedMonth) {
         //   (a) logo-level churn rate = logos lost that month / logos active prior month
         //   (b) ARPA = total MRR / distinct active logos for that month
         // Then average both across all 11 transitions (12 months → 11 pairs).
-        // Logos grouped by c.logo field (fallback: customer_id). PLG + LiveScreen excluded.
+        // Logos grouped by c.logo field (fallback: customer_id). LiveScreen always excluded.
+        // PLG excluded by default; included when _ltvIncludePlg=true (PBI-matching mode).
         function calcLogoRolling(icpOnly) {
+          var includePlg = window._ltvIncludePlg || false;
           // Build per-month logo→MRR map from CUSTOMER_META mrr field
           var mMap = {};  // month label → {logoKey: mrr}
           Object.entries(CUSTOMER_META).forEach(function(kv){
             var cid=kv[0], c=kv[1];
-            if(c.entity==='PLG' || c.livescreen===true) return;
+            if(c.livescreen===true) return;
+            if(!includePlg && c.entity==='PLG') return;
             if(_activeEntity!=='ALL' && c.entity!==_activeEntity) return;
             if(icpOnly && c.icp!==true) return;
             var key = c.logo || cid;
@@ -1259,8 +1262,9 @@ function renderMRR(data, selectedMonth) {
         });
         var cacL12 = totalDeals > 0 ? Math.round(totalCost/totalDeals) : null;
         var ld = window._ltvData;
-        var cm = window._ltvChurnMode || 'rev';
+        var cm = window._ltvChurnMode || 'logo';
         var ltvSeg = window._ltvSeg || 'all';
+        var includePlg = window._ltvIncludePlg || false;
         var ltvAll = ld ? Math.round((cm==='logo'?ld.all.ltvV.logo:ld.all.ltvV.rev).ltv) : null;
         var ltvIcp = ld ? Math.round((cm==='logo'?ld.icp.ltvV.logo:ld.icp.ltvV.rev).ltv) : null;
         var ltvShow = ltvSeg==='icp' ? ltvIcp : ltvAll;
@@ -1271,19 +1275,23 @@ function renderMRR(data, selectedMonth) {
         var usd = function(v){ if(!v && v!==0) return '—'; return '$'+(v>=1000000?(v/1000000).toFixed(2)+'M':v>=1000?Math.round(v/1000)+'K':v); };
         var cmLabel = cm==='logo' ? 'Logo churn' : 'Rev churn';
         var segLabel = ltvSeg==='icp' ? 'ICP' : 'All';
+        var plgLabel = includePlg ? 'incl. PLG' : 'excl. PLG';
+        var plgActive = includePlg ? 'background:var(--cranberry);color:#fff;border-color:var(--cranberry)' : '';
         var tb = 'font-size:10px;padding:1px 6px;border-radius:10px;border:1px solid var(--teal);background:var(--teal-lighter);color:var(--dark-teal);cursor:pointer;font-family:inherit;margin-left:4px';
+        var tbPlg = 'font-size:10px;padding:1px 6px;border-radius:10px;border:1px solid var(--teal);background:var(--teal-lighter);color:var(--dark-teal);cursor:pointer;font-family:inherit;margin-left:4px;'+plgActive;
         var h = '';
         h += '<div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:2px 0 10px">';
         h += '<span style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em">LTV basis:</span>';
         h += '<button style="'+tb+'" onclick="window._ltvCmToggle()">'+cmLabel+'</button>';
         h += '<button style="'+tb+'" onclick="window._ltvSegToggle()">'+segLabel+'</button>';
+        h += '<button style="'+tbPlg+'" onclick="window._ltvPlgToggle()" title="Toggle PLG inclusion (PBI includes PLG)">'+plgLabel+'</button>';
         h += '<span style="font-size:11px;color:var(--text-muted);margin-left:8px">'+months12[0]+' – '+months12[months12.length-1]+'</span>';
         h += '</div>';
         h += '<div class="cac-card" onclick="window._openLtvCard()" title="LTV detail">';
         h += '<span class="carr">&#x2197;</span>';
         h += '<div class="cac-card-label">LTV · '+segLabel+' · '+cmLabel+'</div>';
         h += '<div class="cac-card-value'+(ltvShow?'':' cac-na')+'">'+(ltvShow?usd(ltvShow):'—')+'</div>';
-        h += '<div class="cac-card-sub">'+(ltvSeg==='icp'?'ICP customers only':'All customers excl. PLG')+'</div>';
+        h += '<div class="cac-card-sub">'+(ltvSeg==='icp'?'ICP customers only':('All customers · '+(includePlg?'<span style="color:var(--cranberry);font-weight:700">incl. PLG</span>':'excl. PLG')))+'</div>';
         h += '</div>';
         h += "<div class=\"cac-card\" onclick=\"window._openCacModal('cac')\" title=\"CAC detail\">";
         h += '<span class="carr">&#x2197;</span>';
@@ -1361,8 +1369,12 @@ function renderMRR(data, selectedMonth) {
     renderMRR();
   };
   window._ltvCmToggle = function() {
-    var cm = window._ltvChurnMode || 'rev';
+    var cm = window._ltvChurnMode || 'logo';
     window._ltvChurnMode = cm === 'rev' ? 'logo' : 'rev';
+    renderMRR();
+  };
+  window._ltvPlgToggle = function() {
+    window._ltvIncludePlg = !(window._ltvIncludePlg || false);
     renderMRR();
   };
 
