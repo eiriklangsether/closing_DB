@@ -661,6 +661,33 @@ function renderManualSection(manual, checklist) {
 }
 
 function render(d) {
+  // Hardcoded close period and checks — updated 2026-07-01
+  d.period = 'June 2026';
+  d.no = d.no || {};
+  d.no.name = 'Dogu SalesScreen AS';
+  d.no.system = 'Tripletex';
+  d.no.country = 'Norway';
+  d.no.checks = [
+    {label: 'GL 6000–6099 — Avskrivninger (depreciations)', status: 'manual', note: 'No postings found in June 2026. Verify whether depreciation run was skipped.'},
+    {label: 'GL 5000 — Månedslønn (salary)', status: 'manual', note: '30 lines posted 2026-06-15, Lønnsbilag 7-2026, voucher 8007.'},
+    {label: 'GL 1749 — Periodisering reversals', status: 'manual', note: '35 reversal postings on 2026-06-01.'},
+    {label: 'Attestation queue — June-dated invoices', status: 'manual', note: 'Queue empty as of 2026-07-01.'},
+    {label: 'Voucher reception', status: 'manual', note: '22 unprocessed items as of 2026-07-01.'},
+  ];
+  d.se = d.se || {};
+  d.se.name = 'SalesScreen AB';
+  d.se.system = 'Fortnox';
+  d.se.country = 'Sweden';
+  d.se.checks = [
+    {label: 'Fortnox — not connected', status: 'manual', note: 'Manual verification required.'},
+  ];
+  d.us = d.us || {};
+  d.us.name = 'SalesScreen Inc.';
+  d.us.system = 'QuickBooks';
+  d.us.country = 'United States';
+  d.us.checks = [
+    {label: 'QuickBooks — not connected', status: 'manual', note: 'Manual verification required.'},
+  ];
   closingData = d;
   document.getElementById('lastUpdated').textContent = `Period: ${d.period || '—'} · Last updated: ${norwayTime(d.updatedAt)}`;
   const allAutoChecks = [...(d.no?.checks||[]), ...(d.se?.checks||[]), ...(d.us?.checks||[])];
