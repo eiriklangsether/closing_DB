@@ -3665,6 +3665,7 @@ function rnPaint(){
 }
 
 function renderChangelog() {
+  const el = document.getElementById('changelog-content');
   if (!el) return;
   const entries = CHANGELOG;
   const viewEl = el.querySelector ? el.querySelector('.cl-view-btn.active') : null;
