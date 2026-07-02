@@ -2395,8 +2395,8 @@ function renderFin() {
   h += '<div id="r40rows">';
   // Standard rows (shown by default)
   h += '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>ARR Growth YoY (May 25 → May 26)</span><strong style="color:var(--dark-teal)">+12.6%</strong></div>';
-  h += '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>EBITDAC Margin (L12M)</span><strong style="color:var(--dark-teal)">+8.3%</strong></div>';
-  h += '<div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px dashed var(--border)"><span style="font-weight:600">Rule of 40 = ARR Growth + EBITDAC Margin</span><strong>21.0</strong></div>';
+  h += '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>EBITDAC Margin (L12M)</span><strong style="color:var(--dark-teal)">+8.1%</strong></div>';
+  h += '<div style="display:flex;justify-content:space-between;padding-top:6px;border-top:1px dashed var(--border)"><span style="font-weight:600">Rule of 40 = ARR Growth + EBITDAC Margin</span><strong>20.7</strong></div>';
   h += '</div>';
   h += '</div>';
   h += '<div id="r40note" style="font-size:10px;color:var(--text-muted);margin-top:.5rem">Standard method: EBITDAC margin only</div>';
@@ -2421,7 +2421,7 @@ function renderFin() {
     document.getElementById('r40note').textContent      = isV ? 'Viking Growth: EBITDAC + Δ deferred revenue' : 'Standard: EBITDAC margin only';
     var rows =
       '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>ARR Growth YoY (May 25 → May 26)</span><strong style="color:var(--dark-teal)">+12.6%</strong></div>' +
-      '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>EBITDAC Margin (L12M)</span><strong style="color:var(--dark-teal)">+8.3%</strong></div>' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>EBITDAC Margin (L12M)</span><strong style="color:var(--dark-teal)">+8.1%</strong></div>' +
       (isV ?
         '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Δ Deferred Revenue</span><strong style="color:var(--cranberry)">-$206K (-2.6%)</strong></div>' +
         '<div style="display:flex;justify-content:space-between;margin-bottom:4px;padding-top:4px;border-top:1px dashed var(--border)"><span>Adjusted Margin</span><strong style="color:var(--dark-teal)">+5.8%</strong></div>'
