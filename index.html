@@ -1934,6 +1934,18 @@ const LANDING_META = {
 
 const CHANGELOG = [
   {
+    "date": "2026-07-02",
+    "side": "financial",
+    "upload": "Conso_Reporting_PL_Rolling_18",
+    "period": "Dec 2025",
+    "entity": "Group",
+    "gl": "profitVals",
+    "gl_name": "Profit After Tax",
+    "before": 641264,
+    "after": 695438,
+    "note": "Dec 2025 year-end timing adjustment (+$54,174). Corrects L12M Profit After Tax headline from $35,371 to $89,545 (1.1% margin). Source: Conso Reporting rolling L12M export Jun25-May26."
+  },
+  {
     "date": "2026-06-29",
     "side": "chargebee",
     "upload": "Manual correction",
@@ -2331,7 +2343,7 @@ function renderFin() {
   var opExpenses    = [-648275, -349793, -599725, -554596, -613582, -714438, -726382, 83097, -681014, -638607, -638091.88, -636330.83, -624535.35];
   var ebitdaVals    = [80934, 349740, 77427, 135769, 76867, -17466, -21829, 704262, -44206, -36519, -6304.22, -13610.73, -14764.8];
   var ebitdacVals   = [80934, 349740, 77427, 135769, 76867, -17466, -21829, 168012, -44206, -36519, -6304.22, -13610.73, -14764.8];
-  var profitVals    = [29699, 252864, 27482, 70318, 22877, -68923, -69592, 641264, -96418, -523781, -82304.16, -72344.7, -66070.79];
+  var profitVals    = [29699, 252864, 27482, 70318, 22877, -68923, -69592, 695438, -96418, -523781, -82304.16, -72344.7, -66070.79];
   var arrVals       = [6637764, 6664680, 6678840, 6744336, 6767412, 6789972, 7146888, 6827352, 7527096, 7615200, 7588584, 7540524, 7471236];
   var ebitdacMargin = [11.0, 48.7, 11.3, 19.3, 10.9, -2.4, -3.0, 26.1, -6.9, -6.0, -1.0, -2.1, 1.0];
   var arrMay25      = 6637764;
@@ -2359,7 +2371,7 @@ function renderFin() {
   h += kpi('Product Revenue <span style="font-size:10px;color:var(--text-muted)">incl. SalesRabbit</span>', fmtUSD(7778398), "var(--dark-teal)", "", prodRevIncSR, "#A7D6D4");
   h += kpi("Total Operating Expenses", fmtUSD(-6693998), vc(-6671197), "", opExpenses, "#D63C60");
   h += kpi("EBITDA", fmtUSD(1189365), vc(1210479), "14.7% margin", ebitdaVals, "#114B5C");
-  h += kpi("Profit After Tax", fmtUSD(35371), vc(102223), "0.4% margin", profitVals, "#114B5C");
+  h += kpi("Profit After Tax", fmtUSD(89545), vc(89545), "1.1% margin", profitVals, "#114B5C");
   h += kpi("EBITDAC", fmtUSD(653115), vc(672099), "8.1% margin", ebitdacVals, "#114B5C");
   h += "</div>";
   var r40color = ruleOf40 >= 40 ? "#1EAFAA" : ruleOf40 >= 20 ? "var(--dark-teal)" : "var(--cranberry)";
