@@ -3,6 +3,20 @@
 
 ---
 
+## How to use this document — read before every update
+
+Before touching `index.html`, read this document and run the checklist that matches the update type (Chargebee, P&L, or CAC). **Never update from memory.** Every update — no exceptions — ends with the **Final reconciliation check** at the bottom of this doc.
+
+### Golden rules (apply to every update)
+
+1. **Home labels every time.** Refresh the `LANDING_META` dates on every update: `chargebee.{no,se,us,plg}.date` on every CB export (even if no new period is added), `financial.date` on every P&L import, `cac.date` on every CAC update. These drive the Home tab freshness labels. Stale Home labels are the most common "it looks like it didn't update" complaint.
+2. **Check the past, not just the new month.** On every new extract, diff all months earlier than the latest against the incoming data. If any figure changed: (a) notify Eirik with the specific before→after, and (b) add a `CHANGELOG` entry. Never silently overwrite history.
+3. **Manual corrections are canonical facts.** Any correction already applied and logged is a fact. If a fresh export disagrees with a previously-applied manual correction (e.g. the Sparebank 1 split, a periodisation timing fix), do NOT overwrite it — flag the conflict to Eirik and reconcile before changing anything.
+4. **Notify on new customers.** If a new CB customer appears, add it to `CUSTOMER_META` (and `NAME_OWNER_MAP`) and tell Eirik explicitly.
+5. **One source of truth.** Every card and graph for a given period must trace back to the same underlying constants. Hardcoded values are the main risk — the Final reconciliation check exists to catch them.
+
+---
+
 ## Data sources overview
 
 | Source | How it enters the dashboard | Trigger |
@@ -241,43 +255,48 @@ The tab sums renewal-book MRR per entity (all active + non-renewing, supporters 
 
 ## Complete update checklist — new Chargebee month
 
-Run in this order:
+Run in this order. Do not skip the verify/notify steps.
 
 - [ ] **1. Export CB** for all four sites (NO, SE, US, PLG) for the new month
-- [ ] **2. Apply Sparebank 1 split** (NO only) — check if total changed vs prior month; if unchanged apply fixed split (LiveScreen NOK 490/mo, SalesScreen NOK 38,981.25/mo)
-- [ ] **3. Update `MRR_NO`** — add new month to `months[]`, `totals_usd{}`, `customer_counts{}`, `movements{}`
-- [ ] **4. Update `MRR_SE`** — same
-- [ ] **5. Update `MRR_US`** — same
-- [ ] **6. Update `MRR_PLG`** — same
-- [ ] **7. Update `SNAPSHOTS`** — add new month snapshot for all four entities
-- [ ] **8. Update `CUSTOMER_META`** — regenerate from new CB export (latest_mrr_usd, latest_month, mrr{} entry)
-- [ ] **9. Update `NAME_OWNER_MAP`** — add any new customers
-- [ ] **10. Update `SR_MONTHLY`** — add new month (usually 0 from Dec 2025 onwards)
-- [ ] **11. Update `LANDING_META.chargebee`** — set `date` to today and `period` to the new month for all four sites (NO, SE, US, PLG)
-- [ ] **12. Refresh `RENEWAL_SUBS`** — re-pull active + non-renewing subs (NO, SE, US) live from Chargebee, exclude supporters by plan id, convert to USD; update `RENEWAL_ASOF` and `LANDING_META.renewals`
-- [ ] **13. Log any corrections** in `CHANGELOG` if prior-period data was restated
-- [ ] **14. Verify** Business KPIs tab renders new month in Scale section and waterfall
-- [ ] **15. Verify** Retention grid L12M window has rolled correctly
-- [ ] **16. Verify** Customer metadata tab shows new customers
-- [ ] **17. Verify** Renewals tab MRR reconciliation is green for all entities (red = investigate, do not widen tolerance)
-- [ ] **18. Verify** Home tab shows the correct updated dates
+- [ ] **2. Apply Sparebank 1 split** (NO only) — check if total changed vs prior month; if unchanged apply fixed split (LiveScreen NOK 490/mo, SalesScreen NOK 38,981.25/mo). If the total changed, ask Eirik for the new split before updating.
+- [ ] **3. Check prior months for restatements** — diff every month earlier than the new one against the incoming export. If any MRR / customer / movement figure changed: **notify Eirik (before→after)** and add a `CHANGELOG` entry (side: chargebee). Do not silently overwrite history.
+- [ ] **4. Update `MRR_NO`** — add new month to `months[]`, `totals_usd{}`, `customer_counts{}`, `movements{}` (churn/contraction stored **negative**)
+- [ ] **5. Update `MRR_SE`** — same
+- [ ] **6. Update `MRR_US`** — same
+- [ ] **7. Update `MRR_PLG`** — same
+- [ ] **8. Update `SNAPSHOTS`** — add new month snapshot for all four entities
+- [ ] **9. Update `CUSTOMER_META`** — regenerate from new CB export (latest_mrr_usd, latest_month, mrr{} entry). **If any new customer appears: add it AND notify Eirik explicitly.**
+- [ ] **10. Update `NAME_OWNER_MAP`** — add any new customers
+- [ ] **11. Update `SR_MONTHLY`** — add new month (usually 0 from Dec 2025 onwards)
+- [ ] **12. Update `LANDING_META.chargebee`** — set `date` to today and `period` to the new month for all four sites (NO, SE, US, PLG). Refresh the date on every export, even if no new period is added.
+- [ ] **13. Refresh `RENEWAL_SUBS`** — re-pull active + non-renewing subs (NO, SE, US) live from Chargebee, exclude supporters by plan id, convert to USD; update `RENEWAL_ASOF` and `LANDING_META.renewals`
+- [ ] **14. Log corrections** — confirm every restatement found in step 3 has a `CHANGELOG` entry
+- [ ] **15. Verify Business KPIs tab** renders the new month across ALL of: MRR card, ARR card, Active customers card, all 8 cards under Retention/growth/unit economics, LTV & CAC (if a CAC month also landed), ARR graph, Monthly MRR graph, MRR waterfall **+ the MoM movement detail modal**, PLG graph
+- [ ] **16. Verify** Retention grid L12M window has rolled correctly
+- [ ] **17. Verify** Customer metadata tab shows new customers
+- [ ] **18. Verify** Renewals tab MRR reconciliation is green for all entities (red = investigate, do not widen tolerance)
+- [ ] **19. Verify** Home tab shows the correct updated dates
+- [ ] **20. Run the Waterfall integrity check** (see section below)
+- [ ] **21. Run the Final reconciliation check** (bottom of doc)
 
 ---
 
 ## Complete update checklist — new closed P&L month
 
-Run after Chargebee update is complete:
+Run after Chargebee update is complete.
 
 - [ ] **1. Get new Conso_Reporting** with the closed month
-- [ ] **2. Append to all `renderFin` arrays** (opIncome, prodRevIncSR, prodRevExcSR, opExpenses, ebitdaVals, ebitdacVals, profitVals, arrVals, ebitdacMargin)
-- [ ] **3. Update `months` array** in renderFin — append new label e.g. "Jun'26"
-- [ ] **4. Recalculate L12M headline cards** — rolling sum of last 12 months for each metric
-- [ ] **5. Update `arrMay26`** (or equivalent YoY end value) when the year rolls
-- [ ] **6. Update Rule of 40 period label** ("May 25 → May 26") when window moves
-- [ ] **7. Update Rule of 40 scores** (standard: 20.7, Viking: 18.1) — recalculate
-- [ ] **8. Update `LANDING_META.financial`** — set `date` to today and `period` to the new closed month
-- [ ] **9. Verify** Financial KPIs tab renders correctly
-- [ ] **10. Verify** Home tab shows the correct financial date and period
+- [ ] **2. Check prior months for restatements** — diff every month earlier than the new one against the incoming P&L. If any figure changed: **notify Eirik (before→after)** and add a `CHANGELOG` entry (side: financial).
+- [ ] **3. Append to all `renderFin` arrays** (opIncome, prodRevIncSR, prodRevExcSR, opExpenses, ebitdaVals, ebitdacVals, profitVals, arrVals, ebitdacMargin)
+- [ ] **4. Update `months` array** in renderFin — append new label e.g. "Jun'26"
+- [ ] **5. Recalculate all General Group Performance / headline cards** — rolling L12M sum for each metric (Total Operating Income, Product Rev excl. SR, Product Rev incl. SR, Total Operating Expenses, EBITDA, Profit After Tax, EBITDAC) **and their margin subtitles**
+- [ ] **6. Update `arrMay26`** (or equivalent YoY end value) and `ebitdacMrg` when the year/window rolls
+- [ ] **7. Update Rule of 40 period label** ("May 25 → May 26") when window moves
+- [ ] **8. Update BOTH Rule of 40 scores** — standard (ARR growth YoY + EBITDAC margin) and Viking (adds Δ deferred revenue). **If Eirik has not provided the deferred revenue numbers, remind him — the Viking score cannot be recomputed without them.**
+- [ ] **9. Update `LANDING_META.financial`** — set `date` to today and `period` to the new closed month
+- [ ] **10. Verify** Financial KPIs tab renders correctly
+- [ ] **11. Verify** Home tab shows the correct financial date and period
+- [ ] **12. Run the Final reconciliation check** (bottom of doc)
 
 ---
 
@@ -294,6 +313,26 @@ Run after Chargebee update is complete:
 - [ ] **6. Verify deal counts** match the reports export (Quantity=1 filter applied)
 - [ ] **7. Update methodology note** if source file format changes
 - [ ] **8. Verify** Home tab shows the correct CAC date and period
+
+---
+
+## Final reconciliation check — run at the END of every update
+
+Purpose: guarantee every visible number traces back to the same data for the same period, and that no stale hardcoded value survived.
+
+1. **Same-period trace.** For the newly added month, confirm the MRR card, ARR card, Active customers, ARR/MRR graphs and waterfall all read the updated `MRR_*` / `SNAPSHOTS` for that month — not a leftover value.
+2. **Waterfall arithmetic.** Start + New + Expansion + Churn + Contraction = End `totals_usd` (churn & contraction negative). See Waterfall integrity check.
+3. **CAC/LTV window.** Confirm CAC & LTV is exactly one month behind the MRR window (by design) and all its labels derive from `CAC_DATA.slice(-12)`.
+4. **Hardcoded sweep — the main risk.** Re-verify every manual field, because none recompute themselves:
+   - `renderFin` headline / General Group Performance card values and margin subtitles
+   - Rule of 40 scores (standard + Viking) and the period label
+   - `arrMay25` / `arrMay26`, `ebitdacMrg`
+   - `SR_MONTHLY` new month
+   - `LANDING_META.chargebee.{no,se,us,plg}`, `LANDING_META.financial`, `LANDING_META.cac`, `LANDING_META.renewals` — dates and periods
+   - Any value hardcoded into `render()` on the Monthly Close tab (KV auth bypass)
+5. **Cross-entity totals.** Group MRR total = NO + SE + US (+ PLG where shown). Confirm they reconcile; the Renewals tab reconciliation should be green.
+6. **Mechanics.** `curl` / `git pull` the live file before editing so you never edit a stale copy; `node --check` the script block before committing; never push a dashboard where two cards disagree on the same metric.
+7. If anything fails to reconcile, fix before pushing.
 
 ---
 
