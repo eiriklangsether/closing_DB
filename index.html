@@ -1927,7 +1927,7 @@ function refreshModalTable() {
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeRetModal(); } });
 
-const RETENTION = { grr: 98.2, nrr: 99.8, yoy_arr: 10.4, arr_start: 6654178, arr_end: 7347950, window_start: 'Jul 2025', window_end: 'Jun 2026' };
+const RETENTION = { grr: 88.7, nrr: 96.6, yoy_arr: 10.4, arr_start: 6654178, arr_end: 7347950, window_start: 'Jul 2025', window_end: 'Jun 2026' };
 
 const SR_MONTHLY = {"Jul 2025":42119.57,"Aug 2025":42119.57,"Sep 2025":40760.87,"Oct 2025":42119.57,"Nov 2025":28532.61,"Dec 2025":0.0,"Jan 2026":0.0,"Feb 2026":0.0,"Mar 2026":0.0,"Apr 2026":0.0,"May 2026":0.0,"Jun 2026":0.0};
 let _showSR = false;
@@ -3932,7 +3932,6 @@ function _rdFmt(v){
 function _rdFmtT(v){ return '$' + v.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 
 function _rdChecks(e){
-  // Runs the four reconciliation checks for one entity, all months.
   var M = _rdMrrObj(e), snapE = SNAPSHOTS[e] || {};
   var out = [];
   M.months.forEach(function(m, idx){
@@ -3941,23 +3940,27 @@ function _rdChecks(e){
     if (!snap){ out.push(row); return; }
     var snapSum = 0; snap.forEach(function(r){ snapSum += r.mrr_usd; });
     row.snapSum = snapSum;
-    // 1 — Card total (Business KPIs Scale / ARR / trends)
+
+    // 1 — Card total vs totals_usd
     var tot = M.totals_usd[m];
     row.total = tot;
     row.totalDelta = (tot === undefined) ? null : snapSum - tot;
     row.totalOK = row.totalDelta !== null && Math.abs(row.totalDelta) <= 1;
+
     // 2 — Customer count
     var cnt = M.customer_counts[m];
     row.snapCount = snap.length; row.count = cnt;
     row.countOK = (cnt !== undefined) && snap.length === cnt;
-    // 3 — Waterfall bridge: prev total + movements = this total
+
+    // 3 — Waterfall bridge
     if (idx > 0 && M.movements[m] && M.totals_usd[M.months[idx-1]] !== undefined){
       var mv = M.movements[m];
       var calc = M.totals_usd[M.months[idx-1]] + mv.new_total + mv.expansion_total + mv.churned_total + mv.contraction_total;
       row.bridgeDelta = tot - calc;
       row.bridgeOK = Math.abs(row.bridgeDelta) <= 1;
     } else { row.bridgeDelta = null; row.bridgeOK = true; }
-    // 4 — CUSTOMER_META mrr{} sum (feeds Export tab + metadata cards)
+
+    // 4 — CUSTOMER_META mrr{} sum
     var metaSum = 0;
     Object.keys(CUSTOMER_META).forEach(function(cid){
       var c = CUSTOMER_META[cid];
@@ -3966,8 +3969,44 @@ function _rdChecks(e){
     row.metaSum = metaSum;
     row.metaDelta = metaSum - snapSum;
     row.metaOK = Math.abs(row.metaDelta) <= 1;
+
+    // 5 — Movements integrity (declared totals vs array sums + sign conventions)
+    row.movOK = true; row.movIssues = [];
+    if (idx > 0 && M.movements[m]){
+      var mv2 = M.movements[m]; var tol = 0.02;
+      var newSum = mv2.new.reduce(function(s,r){return s+r.mrr;},0);
+      var churnSum = mv2.churned.reduce(function(s,r){return s+r.mrr;},0);
+      var expSum = mv2.expansions.reduce(function(s,r){return s+r.mrr;},0);
+      var conSum = mv2.contractions.reduce(function(s,r){return s+r.mrr;},0);
+      if (Math.abs(newSum - mv2.new_total) > tol)
+        row.movIssues.push('new_total declared ' + mv2.new_total.toFixed(2) + ' vs Σ ' + newSum.toFixed(2));
+      if (Math.abs(churnSum - mv2.churned_total) > tol)
+        row.movIssues.push('churned_total declared ' + mv2.churned_total.toFixed(2) + ' vs Σ ' + churnSum.toFixed(2));
+      if (Math.abs(expSum - mv2.expansion_total) > tol)
+        row.movIssues.push('expansion_total declared ' + mv2.expansion_total.toFixed(2) + ' vs Σ ' + expSum.toFixed(2));
+      if (Math.abs(conSum - mv2.contraction_total) > tol)
+        row.movIssues.push('contraction_total declared ' + mv2.contraction_total.toFixed(2) + ' vs Σ ' + conSum.toFixed(2));
+      mv2.new.forEach(function(r){ if(r.mrr<0) row.movIssues.push('negative MRR in new[]: '+r.Company); });
+      mv2.expansions.forEach(function(r){ if(r.mrr<0) row.movIssues.push('negative MRR in expansions[]: '+r.Company); });
+      mv2.churned.forEach(function(r){ if(r.mrr>0) row.movIssues.push('positive MRR in churned[]: '+r.Company); });
+      mv2.contractions.forEach(function(r){ if(r.mrr>0) row.movIssues.push('positive MRR in contractions[]: '+r.Company); });
+      var newNames = {}; mv2.new.forEach(function(r){ newNames[r.Company]=1; });
+      mv2.churned.forEach(function(r){ if(newNames[r.Company]) row.movIssues.push('in both new+churned same month: '+r.Company); });
+      row.movOK = row.movIssues.length === 0;
+    }
+
     out.push(row);
   });
+
+  // 6 — SNAPSHOTS month coverage (stray or missing keys vs MRR_*.months)
+  var snapKeys = Object.keys(snapE);
+  var mrrSet = {}; M.months.forEach(function(m){ mrrSet[m]=1; });
+  var snapSet = {}; snapKeys.forEach(function(k){ snapSet[k]=1; });
+  var stray   = snapKeys.filter(function(k){ return !mrrSet[k]; });
+  var missing  = M.months.filter(function(m){ return !snapSet[m]; });
+  out._stray = stray; out._missing = missing;
+  out._coverageOK = stray.length===0 && missing.length===0;
+
   return out;
 }
 
@@ -4008,103 +4047,139 @@ function rdDownloadCSV(){
   a.click();
 }
 
+function _rdRetentionCheck(){
+  var ents = ['NO','SE','US'];
+  var months = MRR_NO.months;
+  var sM = months[1], eM = months[months.length-1]; // Jul 2025 → Jun 2026 (L12M window)
+  var rS={}, rE={};
+  ents.forEach(function(e){
+    (SNAPSHOTS[e][sM]||[]).forEach(function(r){ if(r.mrr_usd>0) rS[r.Company]=(rS[r.Company]||0)+r.mrr_usd; });
+    (SNAPSHOTS[e][eM]||[]).forEach(function(r){ if(r.mrr_usd>0) rE[r.Company]=(rE[r.Company]||0)+r.mrr_usd; });
+  });
+  var sT=Object.values(rS).reduce(function(a,v){return a+v;},0);
+  var eT=Object.values(rE).reduce(function(a,v){return a+v;},0);
+  var retained=Object.keys(rS).filter(function(n){ return rS[n]>0 && rE[n]>0; });
+  var retS=retained.reduce(function(a,n){return a+rS[n];},0);
+  var retE=retained.reduce(function(a,n){return a+rE[n];},0);
+  var grr=retS/sT*100, nrr=retE/sT*100, yoy=(eT-sT)/sT*100;
+  var arrStart=sT*12, arrEnd=eT*12;
+  var issues=[];
+  if(Math.abs(grr - RETENTION.grr) > 0.5) issues.push('GRR: live ' + grr.toFixed(1)+'% vs RETENTION.grr '+RETENTION.grr+'%');
+  if(Math.abs(nrr - RETENTION.nrr) > 0.5) issues.push('NRR: live ' + nrr.toFixed(1)+'% vs RETENTION.nrr '+RETENTION.nrr+'%');
+  if(Math.abs(yoy - RETENTION.yoy_arr) > 0.5) issues.push('YoY ARR: live '+yoy.toFixed(1)+'% vs RETENTION.yoy_arr '+RETENTION.yoy_arr+'%');
+  if(Math.abs(arrStart - RETENTION.arr_start) > 100) issues.push('arr_start: live '+Math.round(arrStart)+' vs '+RETENTION.arr_start);
+  if(Math.abs(arrEnd   - RETENTION.arr_end)   > 100) issues.push('arr_end: live '+Math.round(arrEnd)+' vs '+RETENTION.arr_end);
+  if(RETENTION.window_start !== sM) issues.push('window_start: '+RETENTION.window_start+' should be '+sM);
+  if(RETENTION.window_end   !== eM) issues.push('window_end: '+RETENTION.window_end+' should be '+eM);
+  return {ok: issues.length===0, issues:issues, live:{grr:grr,nrr:nrr,yoy:yoy,arrStart:arrStart,arrEnd:arrEnd,sM:sM,eM:eM}};
+}
+
 function _rdRenderBody(){
   var e = _rdEntity, M = _rdMrrObj(e), snapE = SNAPSHOTS[e] || {};
-  var legMonths = (typeof LEGACY_MONTHS !== 'undefined' ? LEGACY_MONTHS : []).filter(function(m){ return snapE[m]; });
-  var months = legMonths.concat(M.months.filter(function(m){ return snapE[m]; }));
-  var isLegacy = function(m){ return legMonths.indexOf(m) !== -1; };
+  var months = M.months.filter(function(m){ return snapE[m]; });
+  var checks = _rdChecks(e);
   var el = document.getElementById('rawdata-body');
 
-  // ── Multi-entity reconciliation summary (all four entities, always visible) ──
+  // ── Multi-entity reconciliation summary ──
   var summaryRows = _RD_ENTITIES.map(function(ent){
-    var checks = _rdChecks(ent);
+    var ch = _rdChecks(ent);
     var fails = [];
-    checks.forEach(function(r){
-      if (!r.hasSnap){ fails.push(r.month + ': no snapshot'); return; }
-      if (!r.totalOK)  fails.push(r.month + ': total Δ' + _rdFmtT(r.totalDelta));
-      if (!r.countOK)  fails.push(r.month + ': count ' + r.snapCount + ' vs ' + r.count);
-      if (!r.bridgeOK) fails.push(r.month + ': bridge Δ' + _rdFmtT(r.bridgeDelta));
-      if (!r.metaOK)   fails.push(r.month + ': meta Δ' + _rdFmtT(r.metaDelta));
+    ch.forEach(function(r){
+      if (!r.hasSnap){ fails.push(r.month+': no snapshot'); return; }
+      if (!r.totalOK)  fails.push(r.month+': total Δ'+_rdFmtT(r.totalDelta));
+      if (!r.countOK)  fails.push(r.month+': count '+r.snapCount+' vs '+r.count);
+      if (!r.bridgeOK) fails.push(r.month+': bridge Δ'+_rdFmtT(r.bridgeDelta));
+      if (!r.metaOK)   fails.push(r.month+': meta Δ'+_rdFmtT(r.metaDelta));
+      if (!r.movOK)    r.movIssues.forEach(function(s){ fails.push(r.month+': '+s); });
     });
+    if (!ch._coverageOK){
+      ch._stray.forEach(function(k){ fails.push('stray SNAPSHOTS key: '+k); });
+      ch._missing.forEach(function(k){ fails.push('missing from SNAPSHOTS: '+k); });
+    }
     var ok = fails.length === 0;
-    var icon = ok ? '<span style="color:var(--teal);font-weight:700">&#10003;</span>' : '<span style="color:#d63c60;font-weight:700">&#10007; ' + fails.length + '</span>';
+    var icon = ok ? '<span style="color:var(--teal);font-weight:700">&#10003;</span>' : '<span style="color:#d63c60;font-weight:700">&#10007; '+fails.length+'</span>';
     var detail = ok ? '<span style="color:var(--text-muted);font-size:11px">All checks pass</span>'
-      : '<span style="color:#d63c60;font-size:11px">' + fails.slice(0,3).join(' · ') + (fails.length > 3 ? ' …' : '') + '</span>';
-    var activeStyle = ent === e ? 'background:var(--teal-lighter);font-weight:700' : '';
-    return '<tr style="cursor:pointer;' + activeStyle + '" onclick="rdSetEntityFromSummary(\'' + ent + '\')">'
-      + '<td style="padding:7px 12px;font-weight:600;white-space:nowrap">' + ent + '</td>'
-      + '<td style="padding:7px 12px;text-align:center">' + icon + '</td>'
-      + '<td style="padding:7px 12px">' + detail + '</td>'
-      + '</tr>';
+      : '<span style="color:#d63c60;font-size:11px">'+fails.slice(0,3).join(' · ')+(fails.length>3?' …':'')+'</span>';
+    var activeStyle = ent===e ? 'background:var(--teal-lighter);font-weight:700' : '';
+    return '<tr style="cursor:pointer;'+activeStyle+'" onclick="rdSetEntityFromSummary(\''+ent+'\')">'
+      +'<td style="padding:7px 12px;font-weight:600;white-space:nowrap">'+ent+'</td>'
+      +'<td style="padding:7px 12px;text-align:center">'+icon+'</td>'
+      +'<td style="padding:7px 12px">'+detail+'</td></tr>';
   });
+
+  // ── RETENTION constant drift check ──
+  var retChk = _rdRetentionCheck();
+  var retBanner = retChk.ok
+    ? '<div class="rd-banner rd-ok" style="margin-bottom:.5rem">&#10003; RETENTION constant is in sync with live SNAPSHOTS (GRR '+retChk.live.grr.toFixed(1)+'% · NRR '+retChk.live.nrr.toFixed(1)+'% · YoY ARR '+retChk.live.yoy.toFixed(1)+'% · window '+retChk.live.sM+' → '+retChk.live.eM+')</div>'
+    : '<div class="rd-banner rd-fail" style="margin-bottom:.5rem"><strong>&#10007; RETENTION constant is stale — update before push:</strong><ul>'+retChk.issues.map(function(s){return '<li>'+s+'</li>';}).join('')+'</ul><div style="font-size:11px;margin-top:4px">Correct values: <code>grr:'+retChk.live.grr.toFixed(1)+'</code> · <code>nrr:'+retChk.live.nrr.toFixed(1)+'</code> · <code>yoy_arr:'+retChk.live.yoy.toFixed(1)+'</code> · <code>arr_start:'+Math.round(retChk.live.arrStart)+'</code> · <code>arr_end:'+Math.round(retChk.live.arrEnd)+'</code> · <code>window_start:\''+retChk.live.sM+'\'</code> · <code>window_end:\''+retChk.live.eM+'\'</code></div></div>';
+
   var summaryTable =
     '<div class="rd-recon-wrap" style="margin-bottom:1rem">'
-    + '<table class="rd-recon" style="width:100%"><thead><tr>'
-    + '<th style="text-align:left;width:60px">Entity</th><th style="text-align:center;width:60px">Status</th><th style="text-align:left">Detail (click row to drill in)</th>'
-    + '</tr></thead><tbody>' + summaryRows.join('') + '</tbody></table></div>';
+    +'<table class="rd-recon" style="width:100%"><thead><tr>'
+    +'<th style="text-align:left;width:60px">Entity</th><th style="text-align:center;width:60px">Status</th><th style="text-align:left">Detail (click row to drill in)</th>'
+    +'</tr></thead><tbody>'+summaryRows.join('')+'</tbody></table></div>';
 
-  // ── Per-entity reconciliation detail ──
-  var checks = _rdChecks(e);
+  // ── Per-entity detail ──
   var fails = [];
   checks.forEach(function(r){
-    if (!r.hasSnap){ fails.push(r.month + ': no snapshot in SNAPSHOTS'); return; }
-    if (!r.totalOK)  fails.push(r.month + ': card total off by ' + _rdFmtT(r.totalDelta) + ' vs totals_usd');
-    if (!r.countOK)  fails.push(r.month + ': ' + r.snapCount + ' customers in raw data vs ' + r.count + ' in customer_counts');
-    if (!r.bridgeOK) fails.push(r.month + ': waterfall bridge off by ' + _rdFmtT(r.bridgeDelta));
-    if (!r.metaOK)   fails.push(r.month + ': CUSTOMER_META sum off by ' + _rdFmtT(r.metaDelta));
+    if (!r.hasSnap){ fails.push(r.month+': no snapshot in SNAPSHOTS'); return; }
+    if (!r.totalOK)  fails.push(r.month+': card total off by '+_rdFmtT(r.totalDelta)+' vs totals_usd');
+    if (!r.countOK)  fails.push(r.month+': '+r.snapCount+' customers in raw data vs '+r.count+' in customer_counts');
+    if (!r.bridgeOK) fails.push(r.month+': waterfall bridge off by '+_rdFmtT(r.bridgeDelta));
+    if (!r.metaOK)   fails.push(r.month+': CUSTOMER_META sum off by '+_rdFmtT(r.metaDelta));
+    if (!r.movOK)    r.movIssues.forEach(function(s){ fails.push(r.month+': '+s); });
   });
+  if (!checks._coverageOK){
+    checks._stray.forEach(function(k){ fails.push('Stray SNAPSHOTS key not in months[]: '+k); });
+    checks._missing.forEach(function(k){ fails.push('Month missing from SNAPSHOTS: '+k); });
+  }
   var banner = fails.length === 0
-    ? '<div class="rd-banner rd-ok">&#10003; All reconciliation checks pass for ' + e + ' — cards, counts, waterfall and metadata all tie to the raw Chargebee table.</div>'
-    : '<div class="rd-banner rd-fail"><strong>&#10007; ' + fails.length + ' reconciliation ' + (fails.length===1?'check':'checks') + ' failing for ' + e + ':</strong><ul>' + fails.map(function(f){ return '<li>'+f+'</li>'; }).join('') + '</ul></div>';
+    ? '<div class="rd-banner rd-ok">&#10003; All reconciliation checks pass for '+e+' — totals, counts, waterfall, metadata, movements integrity and month coverage all clear.</div>'
+    : '<div class="rd-banner rd-fail"><strong>&#10007; '+fails.length+' check'+(fails.length===1?'':'s')+' failing for '+e+':</strong><ul>'+fails.map(function(f){return '<li>'+f+'</li>';}).join('')+'</ul></div>';
 
   var recon = '<div class="rd-recon-wrap"><table class="rd-recon"><thead><tr>'
-    + '<th>Month</th><th>Raw total</th><th>Card total</th><th>&Delta;</th>'
-    + '<th>Raw count</th><th>Card count</th>'
-    + '<th>Waterfall &Delta;</th><th>Metadata &Delta;</th><th>Status</th></tr></thead><tbody>'
-    + checks.map(function(r){
-        if (!r.hasSnap) return '<tr><td>'+r.month+'</td><td colspan="7">no snapshot</td><td class="rd-x">&#10007;</td></tr>';
-        var ok = r.totalOK && r.countOK && r.bridgeOK && r.metaOK;
+    +'<th>Month</th><th>Raw total</th><th>Card total</th><th>&Delta;</th>'
+    +'<th>Raw count</th><th>Card count</th>'
+    +'<th>Bridge &Delta;</th><th>Meta &Delta;</th><th>Movements</th><th>Status</th></tr></thead><tbody>'
+    +checks.filter(function(r){return r.hasSnap!==undefined;}).map(function(r){
+        if (!r.hasSnap) return '<tr><td>'+r.month+'</td><td colspan="8">no snapshot</td><td class="rd-x">&#10007;</td></tr>';
+        var ok = r.totalOK && r.countOK && r.bridgeOK && r.metaOK && r.movOK;
         return '<tr>'
-          + '<td>' + r.month + '</td>'
-          + '<td class="rd-num">' + _rdFmtT(r.snapSum) + '</td>'
-          + '<td class="rd-num">' + _rdFmtT(r.total) + '</td>'
-          + '<td class="rd-num' + (r.totalOK?'':' rd-bad') + '">' + (r.totalDelta===null?'—':_rdFmtT(r.totalDelta)) + '</td>'
-          + '<td class="rd-num' + (r.countOK?'':' rd-bad') + '">' + r.snapCount + '</td>'
-          + '<td class="rd-num' + (r.countOK?'':' rd-bad') + '">' + (r.count===undefined?'—':r.count) + '</td>'
-          + '<td class="rd-num' + (r.bridgeOK?'':' rd-bad') + '">' + (r.bridgeDelta===null?'—':_rdFmtT(r.bridgeDelta)) + '</td>'
-          + '<td class="rd-num' + (r.metaOK?'':' rd-bad') + '">' + _rdFmtT(r.metaDelta) + '</td>'
-          + '<td class="' + (ok?'rd-check':'rd-x') + '">' + (ok?'&#10003;':'&#10007;') + '</td></tr>';
+          +'<td>'+r.month+'</td>'
+          +'<td class="rd-num">'+_rdFmtT(r.snapSum)+'</td>'
+          +'<td class="rd-num">'+_rdFmtT(r.total)+'</td>'
+          +'<td class="rd-num'+(r.totalOK?'':' rd-bad')+'">'+( r.totalDelta===null?'—':_rdFmtT(r.totalDelta))+'</td>'
+          +'<td class="rd-num'+(r.countOK?'':' rd-bad')+'">'+r.snapCount+'</td>'
+          +'<td class="rd-num'+(r.countOK?'':' rd-bad')+'">'+(r.count===undefined?'—':r.count)+'</td>'
+          +'<td class="rd-num'+(r.bridgeOK?'':' rd-bad')+'">'+(r.bridgeDelta===null?'—':_rdFmtT(r.bridgeDelta))+'</td>'
+          +'<td class="rd-num'+(r.metaOK?'':' rd-bad')+'">'+_rdFmtT(r.metaDelta)+'</td>'
+          +'<td class="'+(r.movOK?'rd-check':'rd-x')+'" title="'+(r.movOK?'All movement checks pass':r.movIssues.join('; '))+'">'+( r.movOK?'&#10003;':'&#10007; '+r.movIssues.length)+'</td>'
+          +'<td class="'+(ok?'rd-check':'rd-x')+'">'+(ok?'&#10003;':'&#10007;')+'</td></tr>';
       }).join('')
-    + '</tbody></table></div>';
+    +'</tbody></table></div>';
 
-  // ── Raw customer table ──
+  // ── Raw table ──
   var names = {};
   months.forEach(function(m){ snapE[m].forEach(function(r){
     if (!names[r.Company]) names[r.Company] = {};
-    names[r.Company][m] = (names[r.Company][m] || 0) + r.mrr_usd;
+    names[r.Company][m] = (names[r.Company][m]||0)+r.mrr_usd;
   }); });
   var last = months[months.length-1];
-  var rows = Object.keys(names).sort(function(a,b){ return (names[b][last]||0)-(names[a][last]||0) || a.localeCompare(b); });
+  var rows = Object.keys(names).sort(function(a,b){ return (names[b][last]||0)-(names[a][last]||0)||a.localeCompare(b); });
   var totals = {};
-  rows.forEach(function(n){ months.forEach(function(m){ if (names[n][m]) totals[m] = (totals[m]||0) + names[n][m]; }); });
+  rows.forEach(function(n){ months.forEach(function(m){ if(names[n][m]) totals[m]=(totals[m]||0)+names[n][m]; }); });
 
   var table = '<div class="rd-table-wrap"><table class="rd-table"><thead><tr><th class="rd-sticky">Customer ('+rows.length+')</th>'
-    + months.map(function(m){ return '<th'+(isLegacy(m)?' class="rd-legacy-col" title="Legacy / unverified placeholder — excluded from all Business KPIs">'+m+' \u26A0':'>'+m)+'</th>'; }).join('') + '</tr>'
-    + '<tr class="rd-total-row"><th class="rd-sticky">TOTAL</th>'
-    + months.map(function(m){ return '<th class="rd-num'+(isLegacy(m)?' rd-legacy-col':'')+'">'+_rdFmt(totals[m]||0)+'</th>'; }).join('') + '</tr></thead><tbody>'
-    + rows.map(function(n, i){
-        return '<tr' + (i%2 ? ' class="rd-alt"' : '') + '><td class="rd-sticky">' + n + '</td>'
-          + months.map(function(m){ return '<td class="rd-num'+(isLegacy(m)?' rd-legacy-col':'')+'">' + _rdFmt(names[n][m]) + '</td>'; }).join('') + '</tr>';
+    +months.map(function(m){return '<th>'+m+'</th>';}).join('')+'</tr>'
+    +'<tr class="rd-total-row"><th class="rd-sticky">TOTAL</th>'
+    +months.map(function(m){return '<th class="rd-num">'+_rdFmt(totals[m]||0)+'</th>';}).join('')+'</tr></thead><tbody>'
+    +rows.map(function(n,i){
+        return '<tr'+(i%2?' class="rd-alt"':'')+' ><td class="rd-sticky">'+n+'</td>'
+          +months.map(function(m){return '<td class="rd-num">'+_rdFmt(names[n][m])+'</td>';}).join('')+'</tr>';
       }).join('')
-    + '</tbody></table></div>';
+    +'</tbody></table></div>';
 
-  var legacyBanner = legMonths.length
-    ? '<div class="rd-banner" style="background:#fff7e6;border:1px solid #f0c36d;color:#8a5a00;font-weight:500">'
-      + '<strong>&#9888; Legacy months (' + legMonths.join(', ') + ')</strong> are unverified placeholders — not reconciled against Chargebee. '
-      + 'They are retained in raw data and metadata for reference only and are <strong>excluded from every Business KPI</strong> (MRR scale, retention, waterfall, trends). Do not use unless specifically requested.</div>'
-    : '';
-
-  el.innerHTML = summaryTable + banner + legacyBanner + recon + table;
+  el.innerHTML = summaryTable + retBanner + banner + recon + table;
 }
 
 function rdSetEntityFromSummary(ent) {
