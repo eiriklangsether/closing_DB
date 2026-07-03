@@ -3710,11 +3710,11 @@ function rnRenderRetention() {
           (filterEntity === 'ALL' ? '<td style="padding:.45rem .75rem;font-size:11px;color:var(--text-muted);border-bottom:0.5px solid var(--border)">' + r.entity + '</td>' : '') +
           '<td style="padding:.45rem .75rem;color:var(--text-secondary);font-size:12px;border-bottom:0.5px solid var(--border)">' + (r.csm || '&mdash;') + '</td>' +
           '<td style="padding:.45rem .75rem;border-bottom:0.5px solid var(--border)">' +
-            '<div style="font-size:11px;color:var(--text-muted);margin-bottom:1px">prior renewal · ' + r.prior_ml + '</div>' +
+            '<div style="font-size:11px;color:var(--text-muted);margin-bottom:1px">prior renewal · ' + (function(d){var ms=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];d.setMonth(d.getMonth()-12);return ms[d.getMonth()]+' '+d.getFullYear();})(new Date(r.tstart)) + '</div>' +
             '<div style="font-size:13px;font-variant-numeric:tabular-nums;font-weight:500">' + fa(r.arr_p) + '</div>' +
           '</td>' +
           '<td style="padding:.45rem .75rem;border-bottom:0.5px solid var(--border)">' +
-            '<div style="font-size:11px;color:var(--text-muted);margin-bottom:1px">this renewal · ' + r.curr_ml + '</div>' +
+            '<div style="font-size:11px;color:var(--text-muted);margin-bottom:1px">this renewal · ' + (function(d){var ms=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return ms[d.getMonth()]+' '+d.getFullYear();})(new Date(r.tstart)) + '</div>' +
             '<div style="font-size:13px;font-variant-numeric:tabular-nums;font-weight:500">' + fa(r.arr_c) + '</div>' +
           '</td>' +
           '<td style="padding:.45rem .75rem;text-align:right;border-bottom:0.5px solid var(--border)">' + daStr + '</td>' +
