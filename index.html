@@ -1145,6 +1145,46 @@ function renderMRR(data, selectedMonth) {
           if(ev>0) icpE[c.name]=(icpE[c.name]||0)+ev;
         });
 
+        // --- First Renewal filter ---
+        // Customers whose first_renewal_date month falls within the L12M window.
+        // Uses effective_date month MRR as "Landing" and first_renewal_date month MRR as "Renewal".
+        var _frMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        function _dateToMonthKey(ds) {
+          if (!ds) return null;
+          var p = ds.split('-');
+          return _frMonths[parseInt(p[1],10)-1] + ' ' + p[0];
+        }
+        var frS={}, frE={}, frLanding=0, frRenewal=0, frCount=0, frCusts=[];
+        Object.values(CUSTOMER_META).forEach(function(c){
+          if(c.entity==='PLG' || c.livescreen===true) return;
+          if(_activeEntity!=='ALL' && c.entity!==_activeEntity) return;
+          if(!c.first_renewal_date) return;
+          var renMo = _dateToMonthKey(c.first_renewal_date);
+          if(!renMo || months.indexOf(renMo) < 0) return;
+          // This customer's first renewal falls within L12M window
+          var sv=(c.mrr||{})[sM]||0, ev=(c.mrr||{})[eM]||0;
+          if(sv>0) frS[c.name]=(frS[c.name]||0)+sv;
+          if(ev>0) frE[c.name]=(frE[c.name]||0)+ev;
+          // Landing vs Renewal ARR
+          var effMo = _dateToMonthKey(c.effective_date);
+          var landMrr = effMo ? ((c.mrr||{})[effMo]||0) : 0;
+          var renMrr  = (c.mrr||{})[renMo]||0;
+          if(!landMrr && c.mrr) {
+            // Effective date predates mrr window — use earliest available MRR as proxy
+            var sortedMo = Object.keys(c.mrr).sort(function(a,b){
+              var pa=a.split(' '), pb=b.split(' ');
+              return (pa[1]+_frMonths.indexOf(pa[0])) < (pb[1]+_frMonths.indexOf(pb[0])) ? -1 : 1;
+            });
+            for(var si=0;si<sortedMo.length;si++){ if(c.mrr[sortedMo[si]]>0){ landMrr=c.mrr[sortedMo[si]]; break; } }
+          }
+          frLanding += landMrr;
+          frRenewal += renMrr;
+          frCount++;
+          frCusts.push({name:c.name, entity:c.entity, effDate:c.effective_date, renDate:c.first_renewal_date,
+                        landMrr:landMrr, renMrr:renMrr, effMo:effMo, renMo:renMo, proxy:!effMo||!((c.mrr||{})[effMo])});
+        });
+        window._frData = {count:frCount, landingARR:frLanding*12, renewalARR:frRenewal*12, custs:frCusts, snapStart:frS, snapEnd:frE, months:months};
+
         // --- Logo churn: rolling monthly average (PBI-aligned method) ---
         // For each consecutive month pair in the L12M window, compute:
         //   (a) logo-level churn rate = logos lost that month / logos active prior month
@@ -1227,13 +1267,17 @@ function renderMRR(data, selectedMonth) {
                   rev:{ann:revAnn*100,mo:revMo*100,ltv:revMo>0?arpuSnap/revMo:0,desc:'MRR lost \u00f7 starting MRR (GRR basis)'},
                   logo:{ann:lc.ann*100,mo:logoMo*100,ltv:lc.ltv,desc:lc.desc}};
         }
-        var allR=calcRet(allS,allE), icpR=calcRet(icpS,icpE);
+        var allR=calcRet(allS,allE), icpR=calcRet(icpS,icpE), frR=calcRet(frS,frE);
+        var frARR=frR.eT*12, frARRs=frR.sT*12;
+        var frLandARR=window._frData.landingARR, frRenARR=window._frData.renewalARR;
+        var frRetPct = frLandARR>0 ? Math.round(frRenARR/frLandARR*1000)/10 : 0;
         var allLV=calcLTVv(allR,allLC), icpLV=calcLTVv(icpR,icpLC);
         var cm=window._ltvChurnMode||'logo';  // default: logo churn (PBI-aligned)
         var allL=cm==='logo'?allLV.logo:allLV.rev;
         var icpL=cm==='logo'?icpLV.logo:icpLV.rev;
         window._retData    ={snapStart:allS,snapEnd:allE,months:months,calcEntities:ents};
         window._icpRetData ={snapStart:icpS,snapEnd:icpE,months:months};
+        window._frRetData  ={snapStart:frS,snapEnd:frE,months:months,calcEntities:ents};
         var _cacWinStart = CAC_DATA.length>=12 ? CAC_DATA[CAC_DATA.length-12].month : sM;
         var _cacWinEnd   = CAC_DATA[CAC_DATA.length-1].month;
         window._ltvData    ={all:{ret:allR,ltv:allL,ltvV:allLV},icp:{ret:icpR,ltv:icpL,ltvV:icpLV},startM:_cacWinStart,endM:_cacWinEnd};
@@ -1280,6 +1324,21 @@ function renderMRR(data, selectedMonth) {
         h += '<div class="cgsub">' + usdFmt(icpARRs) + ' \u2192 ' + usdFmt(icpARR) + '</div></div>';
 
         h += '</div>';
+        // ── First Renewal row ──
+        if (frCount > 0) {
+        h += '<div class="cgrow" style="border-top:1px dashed var(--border)">';
+        h += '<div class="cgrow-label" style="color:var(--cranberry)">1st Renewal<span class="sub">' + frCount + ' customers</span></div>';
+        h += '<div class="cgcell" onclick="window._frModal(\'landing\')" title="Landing vs Renewal ARR"><span class="carr">&#x2197;</span>';
+        h += '<div class="cgval neu">' + usdFmt(frRenARR) + '</div><div class="cgsub">Landing ' + usdFmt(frLandARR) + ' \u2192 ' + usdFmt(frRenARR) + '</div></div>';
+        h += '<div class="cgcell" data-cg-type="grr" data-cg-seg="fr" onclick="window._cgOpen(this)" title="First renewal GRR"><span class="carr">&#x2197;</span>';
+        h += '<div class="cgval ' + (frR.grr>=90?'pos':frR.grr>=80?'neu':'warn') + '">' + frR.grr.toFixed(1) + '%</div><div class="cgsub">Gross retention</div></div>';
+        h += '<div class="cgcell" data-cg-type="nrr" data-cg-seg="fr" onclick="window._cgOpen(this)" title="First renewal NRR"><span class="carr">&#x2197;</span>';
+        h += '<div class="cgval ' + (frR.nrr>=100?'pos':frR.nrr>=90?'neu':'warn') + '">' + frR.nrr.toFixed(1) + '%</div><div class="cgsub">Net retention</div></div>';
+        h += '<div class="cgcell" onclick="window._frModal(\'landing\')" title="Landing retention rate"><span class="carr">&#x2197;</span>';
+        h += '<div class="cgval ' + (frRetPct>=100?'pos':frRetPct>=90?'neu':'warn') + '">' + frRetPct.toFixed(1) + '%</div>';
+        h += '<div class="cgsub">Landing \u2192 Renewal</div></div>';
+        h += '</div>';
+        }
         return h;
       })()} 
     </div>
@@ -1391,9 +1450,62 @@ function renderMRR(data, selectedMonth) {
   window._cgOpen = function(el) {
     var type = el.dataset.cgType;
     var seg  = el.dataset.cgSeg;
-    var d = seg === 'icp' ? window._icpRetData : window._retData;
+    var d = seg === 'icp' ? window._icpRetData : seg === 'fr' ? window._frRetData : window._retData;
     if (!d) return;
     openRetModal(type, d.snapStart, d.snapEnd, d.months, d.calcEntities || ['ICP']);
+  };
+  window._frModal = function() {
+    var fd = window._frData;
+    if (!fd || !fd.count) return;
+    var usd = function(v){ return '$'+(Math.abs(v)>=1000?Math.round(v/1000).toLocaleString()+'K':Math.round(v).toLocaleString()); };
+    var h = '<div style="margin-bottom:16px">';
+    h += '<div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">Customers whose first renewal date falls within the L12M window. ';
+    h += 'Landing ARR = MRR at effective date month \u00d7 12. Renewal ARR = MRR at first renewal date month \u00d7 12.</div>';
+    h += '<div style="display:flex;gap:16px;margin-bottom:16px">';
+    h += '<div style="background:var(--bg-card);padding:12px 18px;border-radius:8px;flex:1;text-align:center">';
+    h += '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Landing ARR</div>';
+    h += '<div style="font-size:22px;font-weight:700">' + usd(fd.landingARR) + '</div></div>';
+    h += '<div style="background:var(--bg-card);padding:12px 18px;border-radius:8px;flex:1;text-align:center">';
+    h += '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Renewal ARR</div>';
+    h += '<div style="font-size:22px;font-weight:700">' + usd(fd.renewalARR) + '</div></div>';
+    h += '<div style="background:var(--bg-card);padding:12px 18px;border-radius:8px;flex:1;text-align:center">';
+    h += '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Retention</div>';
+    var retPct = fd.landingARR>0 ? (fd.renewalARR/fd.landingARR*100).toFixed(1) : 0;
+    h += '<div style="font-size:22px;font-weight:700;color:'+(retPct>=100?'var(--green)':'var(--cranberry)')+'">' + retPct + '%</div></div>';
+    h += '</div></div>';
+    // Customer table
+    h += '<table style="width:100%;border-collapse:collapse;font-size:12px">';
+    h += '<tr style="border-bottom:2px solid var(--border)">';
+    h += '<th style="text-align:left;padding:6px 8px">Customer</th>';
+    h += '<th style="text-align:center;padding:6px 4px">Entity</th>';
+    h += '<th style="text-align:center;padding:6px 4px">Effective</th>';
+    h += '<th style="text-align:center;padding:6px 4px">1st Renewal</th>';
+    h += '<th style="text-align:right;padding:6px 8px">Landing MRR</th>';
+    h += '<th style="text-align:right;padding:6px 8px">Renewal MRR</th>';
+    h += '<th style="text-align:right;padding:6px 8px">\u0394</th>';
+    h += '</tr>';
+    var sorted = fd.custs.slice().sort(function(a,b){return (b.landMrr||0)-(a.landMrr||0);});
+    sorted.forEach(function(c,i){
+      var delta = (c.renMrr||0) - (c.landMrr||0);
+      var bg = i%2===0 ? 'var(--bg-card)' : 'transparent';
+      var dCol = delta>=0 ? 'var(--green)' : 'var(--cranberry)';
+      h += '<tr style="background:'+bg+';border-bottom:1px solid var(--border)">';
+      h += '<td style="padding:5px 8px">' + c.name + (c.proxy?' <span style="font-size:9px;color:var(--text-muted)" title="Effective date predates MRR window; using earliest available MRR">\u2248</span>':'') + '</td>';
+      h += '<td style="text-align:center;padding:5px 4px;font-size:10px">' + (c.entity||'') + '</td>';
+      h += '<td style="text-align:center;padding:5px 4px;font-size:10px">' + (c.effDate||'\u2014') + '</td>';
+      h += '<td style="text-align:center;padding:5px 4px;font-size:10px">' + (c.renDate||'\u2014') + '</td>';
+      h += '<td style="text-align:right;padding:5px 8px">$' + Math.round(c.landMrr||0).toLocaleString() + '</td>';
+      h += '<td style="text-align:right;padding:5px 8px">$' + Math.round(c.renMrr||0).toLocaleString() + '</td>';
+      h += '<td style="text-align:right;padding:5px 8px;color:'+dCol+'">' + (delta>=0?'+':'') + '$' + Math.round(delta).toLocaleString() + '</td>';
+      h += '</tr>';
+    });
+    h += '</table>';
+    document.getElementById('retModalTitle').textContent = '1st Renewal \u00b7 Landing vs Renewal ARR';
+    document.getElementById('retModalSub').textContent = fd.count + ' customers with first renewal in the L12M window';
+    document.getElementById('retModalBody').innerHTML = h;
+    var ov = document.getElementById('retModal');
+    ov.style.display = 'flex';
+    ov.scrollTop = 0;
   };
   window._openWaterfallDetail = function() {
     if (!window._movDetailHtml) return;
