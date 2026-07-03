@@ -3462,7 +3462,7 @@ function renderRenewals(){
   if (!document.getElementById('rn-view-toggle')) {
     var hdr = document.createElement('div');
     hdr.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:1.25rem';
-    hdr.innerHTML = '<button id="rn-btn-pipeline" onclick="rnSetView(\'pipeline\')" style="font-size:12px;padding:4px 14px;border-radius:20px;border:0.5px solid var(--border-strong);cursor:pointer;background:var(--teal);color:#fff;font-family:inherit">Renewal pipeline</button><button id="rn-btn-retention" onclick="rnSetView(\'retention\')" style="font-size:12px;padding:4px 14px;border-radius:20px;border:0.5px solid var(--border-strong);cursor:pointer;background:var(--surface);color:var(--text-secondary);font-family:inherit">SE retention tracker</button>';
+    hdr.innerHTML = '<button id="rn-btn-pipeline" onclick="rnSetView(\'pipeline\')" style="font-size:12px;padding:4px 14px;border-radius:20px;border:0.5px solid var(--border-strong);cursor:pointer;background:var(--teal);color:#fff;font-family:inherit">Renewal pipeline</button><button id="rn-btn-retention" onclick="rnSetView(\'retention\')" style="font-size:12px;padding:4px 14px;border-radius:20px;border:0.5px solid var(--border-strong);cursor:pointer;background:var(--surface);color:var(--text-secondary);font-family:inherit">Retention tracker</button>';
     hdr.id = 'rn-view-toggle';
     el.parentNode.insertBefore(hdr, el);
   }
@@ -3594,7 +3594,7 @@ function rnSetView(v) {
 
 function rnRenderRetention() {
   var el = document.getElementById('renewals-content');
-  var filterICP = false, filterFirst = false, filterEntity = 'SE';
+  var filterICP = false, filterFirst = false, filterEntity = 'ALL';
 
   function fa(v) { return v != null ? '$' + Math.round(v).toLocaleString() : '&mdash;'; }
   function clsBadge(cls) {
@@ -3605,13 +3605,37 @@ function rnRenderRetention() {
     return '<span style="font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;white-space:nowrap;background:' + bg + ';color:' + col + '">' + txt + '</span>';
   }
 
+  function getRows(d) {
+    var rows = [];
+    d.quarterly.forEach(function(qd) {
+      qd.rows.forEach(function(r) { rows.push(r); });
+    });
+    return rows;
+  }
+
   function renderContent() {
-    var entityData = filterEntity === 'NO' ? RENEWAL_NO : filterEntity === 'US' ? RENEWAL_US : RENEWAL_SE;
-    var d = entityData;
+    // Build dataset for selected entity
+    var datasets = filterEntity === 'ALL'
+      ? [{d: RENEWAL_SE, entity: 'SE'}, {d: RENEWAL_NO, entity: 'NO'}, {d: RENEWAL_US, entity: 'US'}]
+      : filterEntity === 'NO' ? [{d: RENEWAL_NO, entity: 'NO'}]
+      : filterEntity === 'US' ? [{d: RENEWAL_US, entity: 'US'}]
+      : [{d: RENEWAL_SE, entity: 'SE'}];
+
+    // Merge all quarterly data, tagging with entity
+    var mergedQuarters = {};
+    datasets.forEach(function(ds) {
+      ds.d.quarterly.forEach(function(qd) {
+        if (!mergedQuarters[qd.qs]) mergedQuarters[qd.qs] = {ql: qd.ql, qs: qd.qs, rows: []};
+        qd.rows.forEach(function(r) {
+          mergedQuarters[qd.qs].rows.push(Object.assign({}, r, {entity: ds.entity}));
+        });
+      });
+    });
+    var allQuarters = Object.keys(mergedQuarters).sort().map(function(k) { return mergedQuarters[k]; });
 
     // Portfolio KPIs
     var port_p = 0, port_c = 0, sub_count = 0;
-    d.quarterly.forEach(function(qd) {
+    allQuarters.forEach(function(qd) {
       qd.rows.forEach(function(r) {
         if (filterICP && !r.icp) return;
         if (filterFirst && !r.first) return;
@@ -3623,8 +3647,8 @@ function rnRenderRetention() {
     var port_nrr = port_p > 0 ? port_c / port_p * 100 : 100;
 
     var kpiHtml = '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1rem">' +
-      [['Annual subs tracked', sub_count + ' subs', d.excluded_note.split('.')[0]],
-       ['Portfolio ARR (prior)', '$' + Math.round(port_p).toLocaleString(), 'Contracted at term start'],
+      [['Annual subs tracked', sub_count + ' subs', filterEntity === 'ALL' ? 'SE + NO + US combined' : filterEntity + ' entity'],
+       ['Portfolio ARR (prior)', '$' + Math.round(port_p).toLocaleString(), 'At prior renewal / start'],
        ['Portfolio GRR', port_grr.toFixed(1) + '%', 'Retained vs prior'],
        ['Portfolio NRR', port_nrr.toFixed(1) + '%', 'Net expansion']
       ].map(function(p) {
@@ -3632,9 +3656,9 @@ function rnRenderRetention() {
         return '<div style="background:var(--surface);border-radius:var(--radius-sm);padding:.875rem 1rem"><div style="font-size:12px;color:var(--text-muted);margin-bottom:.25rem">' + p[0] + '</div><div style="font-size:20px;font-weight:600;' + valCol + '">' + p[1] + '</div><div style="font-size:11px;color:var(--text-secondary);margin-top:.2rem">' + p[2] + '</div></div>';
       }).join('') + '</div>';
 
-    var noteHtml = '<div style="font-size:12px;color:var(--text-muted);line-height:1.55;padding:.6rem .875rem;background:var(--surface);border-radius:var(--radius-sm);border-left:3px solid #eda100;margin-bottom:1.25rem">ARR = MRR at <code>current_term_start</code> \xd7 12, fixed FX (NOK \xd7 0.0990, GBP \xd7 1.3390, EUR \xd7 1.1658, SEK \xd7 0.1056). Prior ARR: SE from Chargebee MRR history; NO/US from dashboard monthly snapshots (proof of concept &mdash; snapshot grain may differ slightly from contracted baseline). Data as of ' + d.asof + '.</div>';
+    var noteHtml = '<div style="font-size:12px;color:var(--text-muted);line-height:1.55;padding:.6rem .875rem;background:var(--surface);border-radius:var(--radius-sm);border-left:3px solid #eda100;margin-bottom:1.25rem">Annual contracts only. Sub-annual excluded. SE prior ARR: Chargebee MRR history (subscription-grain). NO/US prior ARR: monthly snapshot 1 month before renewal (proof of concept). Fixed FX: NOK\xd70.0990, GBP\xd71.3390, EUR\xd71.1658, SEK\xd70.1056.</div>';
 
-    var entBtns = ['SE','NO','US'].map(function(e) {
+    var entBtns = ['ALL','SE','NO','US'].map(function(e) {
       var act = e === filterEntity;
       return '<button id="rn-ent-' + e + '" onclick="rnSetEntity(\'' + e + '\')" style="font-size:12px;padding:4px 12px;border-radius:20px;border:0.5px solid var(--border-strong);cursor:pointer;background:' + (act?'var(--teal)':'var(--surface)') + ';color:' + (act?'#fff':'var(--text-secondary)') + ';font-family:inherit">' + e + '</button>';
     }).join('');
@@ -3648,7 +3672,7 @@ function rnRenderRetention() {
       '</div>';
 
     var cohortsHtml = '';
-    d.quarterly.forEach(function(qd) {
+    allQuarters.forEach(function(qd) {
       var rows = qd.rows.filter(function(r) {
         if (filterICP && !r.icp) return false;
         if (filterFirst && !r.first) return false;
@@ -3672,18 +3696,36 @@ function rnRenderRetention() {
 
       var rowsHtml = rows.map(function(r) {
         var da = r.arr_p && r.arr_c ? ((r.arr_c - r.arr_p) / r.arr_p * 100) : null;
-        var daStr = da != null ? '<span style="color:' + (da > 0.5 ? '#1baf7a' : da < -0.5 ? '#e34948' : 'var(--text-muted)') + ';font-weight:500">' + (da > 0 ? '+' : '') + da.toFixed(1) + '%</span>' : '<span style="color:var(--text-muted)">new</span>';
+        var daStr = da != null
+          ? '<span style="color:' + (da > 0.5 ? '#1baf7a' : da < -0.5 ? '#e34948' : 'var(--text-muted)') + ';font-weight:500">' + (da > 0 ? '+' : '') + da.toFixed(1) + '%</span>'
+          : '<span style="color:var(--text-muted)">new</span>';
+        // Derive readable date labels from tstart
+        var priorDateLabel = r.arr_p != null ? ('Prior (' + r.tstart + ')') : '&mdash;';
+        var currDateLabel = 'Current (' + r.tstart + ')';
         return '<tr>' +
-          '<td style="padding:.45rem .75rem;font-weight:500;border-bottom:0.5px solid var(--border)">' + r.co + (r.icp ? ' <span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#EEEDFE;color:#3C3489;font-weight:500">ICP</span>' : '') + '</td>' +
+          '<td style="padding:.45rem .75rem;font-weight:500;border-bottom:0.5px solid var(--border);white-space:nowrap">' +
+            r.co + (r.icp ? ' <span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#EEEDFE;color:#3C3489;font-weight:500">ICP</span>' : '') +
+          '</td>' +
+          (filterEntity === 'ALL' ? '<td style="padding:.45rem .75rem;font-size:11px;color:var(--text-muted);border-bottom:0.5px solid var(--border)">' + r.entity + '</td>' : '') +
           '<td style="padding:.45rem .75rem;color:var(--text-secondary);font-size:12px;border-bottom:0.5px solid var(--border)">' + (r.csm || '&mdash;') + '</td>' +
-          '<td style="padding:.45rem .75rem;color:var(--text-muted);font-size:12px;font-style:italic;border-bottom:0.5px solid var(--border)">TBD</td>' +
-          '<td style="padding:.45rem .75rem;text-align:right;font-variant-numeric:tabular-nums;border-bottom:0.5px solid var(--border)">' + fa(r.arr_p) + '</td>' +
-          '<td style="padding:.45rem .75rem;text-align:right;font-variant-numeric:tabular-nums;border-bottom:0.5px solid var(--border)">' + fa(r.arr_c) + '</td>' +
+          '<td style="padding:.45rem .75rem;border-bottom:0.5px solid var(--border)">' +
+            '<div style="font-size:11px;color:var(--text-muted);margin-bottom:1px">prev renewal · ' + r.tstart + '</div>' +
+            '<div style="font-size:13px;font-variant-numeric:tabular-nums;font-weight:500">' + fa(r.arr_p) + '</div>' +
+          '</td>' +
+          '<td style="padding:.45rem .75rem;border-bottom:0.5px solid var(--border)">' +
+            '<div style="font-size:11px;color:var(--text-muted);margin-bottom:1px">next renewal · ' + r.tend + '</div>' +
+            '<div style="font-size:13px;font-variant-numeric:tabular-nums;font-weight:500">' + fa(r.arr_c) + '</div>' +
+          '</td>' +
           '<td style="padding:.45rem .75rem;text-align:right;border-bottom:0.5px solid var(--border)">' + daStr + '</td>' +
-          '<td style="padding:.45rem .75rem;border-bottom:0.5px solid var(--border)">' + clsBadge(r.cls) + (r.first && r.cls !== 'New' ? ' <span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#faeeda;color:#854F0B;font-weight:500">1st</span>' : '') + '</td>' +
-          '<td style="padding:.45rem .75rem;color:var(--text-muted);font-size:12px;border-bottom:0.5px solid var(--border)">' + r.tend + '</td>' +
-          '</tr>';
+          '<td style="padding:.45rem .75rem;border-bottom:0.5px solid var(--border)">' +
+            clsBadge(r.cls) +
+            (r.first && r.cls !== 'New' ? ' <span style="font-size:10px;padding:1px 6px;border-radius:6px;background:#faeeda;color:#854F0B;font-weight:500">1st</span>' : '') +
+          '</td>' +
+        '</tr>';
       }).join('');
+
+      // Show entity col header only in ALL mode
+      var entityTh = filterEntity === 'ALL' ? '<th style="font-size:11px;font-weight:500;color:var(--text-muted);padding:.375rem .75rem;border-bottom:0.5px solid var(--border)">Entity</th>' : '';
 
       var uid = 'rn-q-' + qd.qs.replace(/[^a-z0-9]/gi,'');
       cohortsHtml += '<div style="border:0.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:.625rem">' +
@@ -3696,13 +3738,12 @@ function rnRenderRetention() {
           '<table style="width:100%;border-collapse:collapse;font-size:12.5px">' +
             '<thead><tr style="background:var(--surface)">' +
               '<th style="font-size:11px;font-weight:500;color:var(--text-muted);text-align:left;padding:.375rem .75rem;border-bottom:0.5px solid var(--border)">Customer</th>' +
+              entityTh +
               '<th style="font-size:11px;font-weight:500;color:var(--text-muted);text-align:left;padding:.375rem .75rem;border-bottom:0.5px solid var(--border)">CSM</th>' +
-              '<th style="font-size:11px;font-weight:500;color:var(--text-muted);text-align:left;padding:.375rem .75rem;border-bottom:0.5px solid var(--border)">Solution Specialist</th>' +
-              '<th style="font-size:11px;font-weight:500;color:var(--text-muted);text-align:right;padding:.375rem .75rem;border-bottom:0.5px solid var(--border)">Prior ARR</th>' +
-              '<th style="font-size:11px;font-weight:500;color:var(--text-muted);text-align:right;padding:.375rem .75rem;border-bottom:0.5px solid var(--border)">Current ARR</th>' +
+              '<th style="font-size:11px;font-weight:500;color:var(--text-muted);text-align:left;padding:.375rem .75rem;border-bottom:0.5px solid var(--border)">ARR at prev renewal</th>' +
+              '<th style="font-size:11px;font-weight:500;color:var(--text-muted);text-align:left;padding:.375rem .75rem;border-bottom:0.5px solid var(--border)">ARR at next renewal</th>' +
               '<th style="font-size:11px;font-weight:500;color:var(--text-muted);text-align:right;padding:.375rem .75rem;border-bottom:0.5px solid var(--border)">&Delta;</th>' +
               '<th style="font-size:11px;font-weight:500;color:var(--text-muted);text-align:left;padding:.375rem .75rem;border-bottom:0.5px solid var(--border)">Outcome</th>' +
-              '<th style="font-size:11px;font-weight:500;color:var(--text-muted);text-align:left;padding:.375rem .75rem;border-bottom:0.5px solid var(--border)">Next renewal</th>' +
             '</tr></thead>' +
             '<tbody>' + rowsHtml + '</tbody>' +
           '</table>' +
