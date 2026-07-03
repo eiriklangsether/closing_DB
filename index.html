@@ -3656,7 +3656,7 @@ function rnRenderRetention() {
         return '<div style="background:var(--surface);border-radius:var(--radius-sm);padding:.875rem 1rem"><div style="font-size:12px;color:var(--text-muted);margin-bottom:.25rem">' + p[0] + '</div><div style="font-size:20px;font-weight:600;' + valCol + '">' + p[1] + '</div><div style="font-size:11px;color:var(--text-secondary);margin-top:.2rem">' + p[2] + '</div></div>';
       }).join('') + '</div>';
 
-    var noteHtml = '<div style="font-size:12px;color:var(--text-muted);line-height:1.55;padding:.6rem .875rem;background:var(--surface);border-radius:var(--radius-sm);border-left:3px solid #eda100;margin-bottom:1.25rem">Annual contracts only. Sub-annual excluded. SE prior ARR: Chargebee MRR history (subscription-grain). NO/US prior ARR: monthly snapshot 1 month before renewal (proof of concept). Fixed FX: NOK\xd70.0990, GBP\xd71.3390, EUR\xd71.1658, SEK\xd70.1056.</div>';
+    var noteHtml = '<div style="font-size:12px;color:var(--text-muted);line-height:1.55;padding:.6rem .875rem;background:var(--surface);border-radius:var(--radius-sm);border-left:3px solid #eda100;margin-bottom:1.25rem">Clean snapshot data only. Both the renewal month and prior renewal month (12 months earlier) must exist in the dashboard DB. Cohorts grow automatically as monthly history accumulates. Fixed FX: NOK×0.0990, GBP×1.3390, EUR×1.1658, SEK×0.1056.</div>';
 
     var entBtns = ['ALL','SE','NO','US'].map(function(e) {
       var act = e === filterEntity;
