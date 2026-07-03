@@ -3569,7 +3569,7 @@ function rnSetView(v) {
 
 function rnRenderRetention() {
   var el = document.getElementById('renewals-content');
-  var filterICP = false, filterFirst = false, filterEntity = 'ALL';
+  var filterICP = false, filterFirst = false, filterOwner = 'ALL', filterEntity = 'ALL';
 
   function fa(v) { return v != null ? '$' + Math.round(v).toLocaleString() : '&mdash;'; }
   function clsBadge(cls) {
