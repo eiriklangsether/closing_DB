@@ -1267,10 +1267,7 @@ function renderMRR(data, selectedMonth) {
                   rev:{ann:revAnn*100,mo:revMo*100,ltv:revMo>0?arpuSnap/revMo:0,desc:'MRR lost \u00f7 starting MRR (GRR basis)'},
                   logo:{ann:lc.ann*100,mo:logoMo*100,ltv:lc.ltv,desc:lc.desc}};
         }
-        var allR=calcRet(allS,allE), icpR=calcRet(icpS,icpE), frR=calcRet(frS,frE);
-        var frARR=frR.eT*12, frARRs=frR.sT*12;
-        var frLandARR=window._frData.landingARR, frRenARR=window._frData.renewalARR;
-        var frRetPct = frLandARR>0 ? Math.round(frRenARR/frLandARR*1000)/10 : 0;
+        var allR=calcRet(allS,allE), icpR=calcRet(icpS,icpE);
         var allLV=calcLTVv(allR,allLC), icpLV=calcLTVv(icpR,icpLC);
         var cm=window._ltvChurnMode||'logo';  // default: logo churn (PBI-aligned)
         var allL=cm==='logo'?allLV.logo:allLV.rev;
@@ -1324,21 +1321,6 @@ function renderMRR(data, selectedMonth) {
         h += '<div class="cgsub">' + usdFmt(icpARRs) + ' \u2192 ' + usdFmt(icpARR) + '</div></div>';
 
         h += '</div>';
-        // ── First Renewal row ──
-        if (frCount > 0) {
-        h += '<div class="cgrow" style="border-top:1px dashed var(--border)">';
-        h += '<div class="cgrow-label" style="color:var(--cranberry)">1st Renewal<span class="sub">' + frCount + ' customers</span></div>';
-        h += '<div class="cgcell" onclick="window._frModal(\'landing\')" title="Landing vs Renewal ARR"><span class="carr">&#x2197;</span>';
-        h += '<div class="cgval neu">' + usdFmt(frRenARR) + '</div><div class="cgsub">Landing ' + usdFmt(frLandARR) + ' \u2192 ' + usdFmt(frRenARR) + '</div></div>';
-        h += '<div class="cgcell" data-cg-type="grr" data-cg-seg="fr" onclick="window._cgOpen(this)" title="First renewal GRR"><span class="carr">&#x2197;</span>';
-        h += '<div class="cgval ' + (frR.grr>=90?'pos':frR.grr>=80?'neu':'warn') + '">' + frR.grr.toFixed(1) + '%</div><div class="cgsub">Gross retention</div></div>';
-        h += '<div class="cgcell" data-cg-type="nrr" data-cg-seg="fr" onclick="window._cgOpen(this)" title="First renewal NRR"><span class="carr">&#x2197;</span>';
-        h += '<div class="cgval ' + (frR.nrr>=100?'pos':frR.nrr>=90?'neu':'warn') + '">' + frR.nrr.toFixed(1) + '%</div><div class="cgsub">Net retention</div></div>';
-        h += '<div class="cgcell" onclick="window._frModal(\'landing\')" title="Landing retention rate"><span class="carr">&#x2197;</span>';
-        h += '<div class="cgval ' + (frRetPct>=100?'pos':frRetPct>=90?'neu':'warn') + '">' + frRetPct.toFixed(1) + '%</div>';
-        h += '<div class="cgsub">Landing \u2192 Renewal</div></div>';
-        h += '</div>';
-        }
         return h;
       })()} 
     </div>
@@ -1453,59 +1435,6 @@ function renderMRR(data, selectedMonth) {
     var d = seg === 'icp' ? window._icpRetData : seg === 'fr' ? window._frRetData : window._retData;
     if (!d) return;
     openRetModal(type, d.snapStart, d.snapEnd, d.months, d.calcEntities || ['ICP']);
-  };
-  window._frModal = function() {
-    var fd = window._frData;
-    if (!fd || !fd.count) return;
-    var usd = function(v){ return '$'+(Math.abs(v)>=1000?Math.round(v/1000).toLocaleString()+'K':Math.round(v).toLocaleString()); };
-    var h = '<div style="margin-bottom:16px">';
-    h += '<div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">Customers whose first renewal date falls within the L12M window. ';
-    h += 'Landing ARR = MRR at effective date month \u00d7 12. Renewal ARR = MRR at first renewal date month \u00d7 12.</div>';
-    h += '<div style="display:flex;gap:16px;margin-bottom:16px">';
-    h += '<div style="background:var(--bg-card);padding:12px 18px;border-radius:8px;flex:1;text-align:center">';
-    h += '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Landing ARR</div>';
-    h += '<div style="font-size:22px;font-weight:700">' + usd(fd.landingARR) + '</div></div>';
-    h += '<div style="background:var(--bg-card);padding:12px 18px;border-radius:8px;flex:1;text-align:center">';
-    h += '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Renewal ARR</div>';
-    h += '<div style="font-size:22px;font-weight:700">' + usd(fd.renewalARR) + '</div></div>';
-    h += '<div style="background:var(--bg-card);padding:12px 18px;border-radius:8px;flex:1;text-align:center">';
-    h += '<div style="font-size:11px;color:var(--text-muted);text-transform:uppercase">Retention</div>';
-    var retPct = fd.landingARR>0 ? (fd.renewalARR/fd.landingARR*100).toFixed(1) : 0;
-    h += '<div style="font-size:22px;font-weight:700;color:'+(retPct>=100?'var(--green)':'var(--cranberry)')+'">' + retPct + '%</div></div>';
-    h += '</div></div>';
-    // Customer table
-    h += '<table style="width:100%;border-collapse:collapse;font-size:12px">';
-    h += '<tr style="border-bottom:2px solid var(--border)">';
-    h += '<th style="text-align:left;padding:6px 8px">Customer</th>';
-    h += '<th style="text-align:center;padding:6px 4px">Entity</th>';
-    h += '<th style="text-align:center;padding:6px 4px">Effective</th>';
-    h += '<th style="text-align:center;padding:6px 4px">1st Renewal</th>';
-    h += '<th style="text-align:right;padding:6px 8px">Landing MRR</th>';
-    h += '<th style="text-align:right;padding:6px 8px">Renewal MRR</th>';
-    h += '<th style="text-align:right;padding:6px 8px">\u0394</th>';
-    h += '</tr>';
-    var sorted = fd.custs.slice().sort(function(a,b){return (b.landMrr||0)-(a.landMrr||0);});
-    sorted.forEach(function(c,i){
-      var delta = (c.renMrr||0) - (c.landMrr||0);
-      var bg = i%2===0 ? 'var(--bg-card)' : 'transparent';
-      var dCol = delta>=0 ? 'var(--green)' : 'var(--cranberry)';
-      h += '<tr style="background:'+bg+';border-bottom:1px solid var(--border)">';
-      h += '<td style="padding:5px 8px">' + c.name + (c.proxy?' <span style="font-size:9px;color:var(--text-muted)" title="Effective date predates MRR window; using earliest available MRR">\u2248</span>':'') + '</td>';
-      h += '<td style="text-align:center;padding:5px 4px;font-size:10px">' + (c.entity||'') + '</td>';
-      h += '<td style="text-align:center;padding:5px 4px;font-size:10px">' + (c.effDate||'\u2014') + '</td>';
-      h += '<td style="text-align:center;padding:5px 4px;font-size:10px">' + (c.renDate||'\u2014') + '</td>';
-      h += '<td style="text-align:right;padding:5px 8px">$' + Math.round(c.landMrr||0).toLocaleString() + '</td>';
-      h += '<td style="text-align:right;padding:5px 8px">$' + Math.round(c.renMrr||0).toLocaleString() + '</td>';
-      h += '<td style="text-align:right;padding:5px 8px;color:'+dCol+'">' + (delta>=0?'+':'') + '$' + Math.round(delta).toLocaleString() + '</td>';
-      h += '</tr>';
-    });
-    h += '</table>';
-    document.getElementById('retModalTitle').textContent = '1st Renewal \u00b7 Landing vs Renewal ARR';
-    document.getElementById('retModalSub').textContent = fd.count + ' customers with first renewal in the L12M window';
-    document.getElementById('retModalBody').innerHTML = h;
-    var ov = document.getElementById('retModal');
-    ov.style.display = 'flex';
-    ov.scrollTop = 0;
   };
   window._openWaterfallDetail = function() {
     if (!window._movDetailHtml) return;
@@ -3561,12 +3490,13 @@ function renderRenewals(){
   if (!document.getElementById('rn-view-toggle')) {
     var hdr = document.createElement('div');
     hdr.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:1.25rem';
-    hdr.innerHTML = '<button id="rn-btn-pipeline" onclick="rnSetView(\'pipeline\')" style="font-size:12px;padding:4px 14px;border-radius:20px;border:0.5px solid var(--border-strong);cursor:pointer;background:var(--teal);color:#fff;font-family:inherit">Renewal pipeline</button><button id="rn-btn-retention" onclick="rnSetView(\'retention\')" style="font-size:12px;padding:4px 14px;border-radius:20px;border:0.5px solid var(--border-strong);cursor:pointer;background:var(--surface);color:var(--text-secondary);font-family:inherit">Retention tracker</button>';
+    hdr.innerHTML = '<button id="rn-btn-pipeline" onclick="rnSetView(\'pipeline\')" style="font-size:12px;padding:4px 14px;border-radius:20px;border:0.5px solid var(--border-strong);cursor:pointer;background:var(--teal);color:#fff;font-family:inherit">Renewal pipeline</button><button id="rn-btn-retention" onclick="rnSetView(\'retention\')" style="font-size:12px;padding:4px 14px;border-radius:20px;border:0.5px solid var(--border-strong);cursor:pointer;background:var(--surface);color:var(--text-secondary);font-family:inherit">Retention tracker</button><button id="rn-btn-firstren" onclick="rnSetView(\'firstren\')" style="font-size:12px;padding:4px 14px;border-radius:20px;border:0.5px solid var(--border-strong);cursor:pointer;background:var(--surface);color:var(--text-secondary);font-family:inherit">1st Renewal cohorts</button>';
     hdr.id = 'rn-view-toggle';
     el.parentNode.insertBefore(hdr, el);
   }
   window._rnView = window._rnView || 'pipeline';
   if (window._rnView === 'retention') { rnRenderRetention(); return; }
+  if (window._rnView === 'firstren')  { rnRenderFirstRenewal(); return; }
   var rc=rnRecon();
   var lm=MRR_NO.months[MRR_NO.months.length-1];
   var reconRows=rc.rows.map(function(x){
@@ -3686,9 +3616,172 @@ function rnSetView(v) {
   document.getElementById('rn-btn-pipeline').style.color = v === 'pipeline' ? '#fff' : 'var(--text-secondary)';
   document.getElementById('rn-btn-retention').style.background = v === 'retention' ? 'var(--teal)' : 'var(--surface)';
   document.getElementById('rn-btn-retention').style.color = v === 'retention' ? '#fff' : 'var(--text-secondary)';
+  document.getElementById('rn-btn-firstren').style.background = v === 'firstren' ? 'var(--teal)' : 'var(--surface)';
+  document.getElementById('rn-btn-firstren').style.color = v === 'firstren' ? '#fff' : 'var(--text-secondary)';
   var el = document.getElementById('renewals-content');
   el.innerHTML = '';
-  if (v === 'retention') { rnRenderRetention(); } else { renderRenewals(); }
+  if (v === 'retention') { rnRenderRetention(); }
+  else if (v === 'firstren') { rnRenderFirstRenewal(); }
+  else { renderRenewals(); }
+}
+
+function rnRenderFirstRenewal() {
+  var el = document.getElementById('renewals-content');
+  var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function dateToKey(d) {
+    if (!d) return null;
+    var p = d.split('-');
+    return MONTHS[parseInt(p[1],10)-1] + ' ' + p[0];
+  }
+  function dateToQuarter(d) {
+    if (!d) return null;
+    var p = d.split('-'); var m = parseInt(p[1],10);
+    return p[0] + '-Q' + Math.ceil(m/3);
+  }
+  function quarterLabel(qs) {
+    var p = qs.split('-'); return p[1] + ' ' + p[0];
+  }
+  function fa(v) { return '$' + Math.round(v).toLocaleString(); }
+  function pct(v) { return (v>=0?'+':'') + v.toFixed(1) + '%'; }
+
+  // Build quarterly cohorts from CUSTOMER_META
+  var cohorts = {}; // quarter -> {customers, landArr, renArr}
+  Object.values(CUSTOMER_META).forEach(function(c) {
+    if (!c.first_renewal_date || !c.effective_date) return;
+    if (c.entity === 'PLG' || c.livescreen === true) return;
+    var qs = dateToQuarter(c.first_renewal_date);
+    if (!qs) return;
+    var effKey = dateToKey(c.effective_date);
+    var renKey = dateToKey(c.first_renewal_date);
+    var mrr = c.mrr || {};
+    var landMrr = effKey ? (mrr[effKey] || 0) : 0;
+    // Fallback: earliest available MRR if effective date predates window
+    if (!landMrr) {
+      var keys = Object.keys(mrr).sort(function(a,b){
+        var ya=a.split(' ')[1], yb=b.split(' ')[1];
+        if (ya!==yb) return ya<yb?-1:1;
+        return MONTHS.indexOf(a.split(' ')[0]) - MONTHS.indexOf(b.split(' ')[0]);
+      });
+      for (var ki=0;ki<keys.length;ki++) { if (mrr[keys[ki]]>0) { landMrr=mrr[keys[ki]]; break; } }
+    }
+    var renMrr = renKey ? (mrr[renKey] || 0) : 0;
+    if (!cohorts[qs]) cohorts[qs] = {qs:qs, custs:[], landArr:0, renArr:0};
+    cohorts[qs].landArr += landMrr * 12;
+    cohorts[qs].renArr  += renMrr * 12;
+    cohorts[qs].custs.push({name:c.name, entity:c.entity, icp:c.icp,
+      effDate:c.effective_date, renDate:c.first_renewal_date,
+      effKey:effKey, renKey:renKey, landMrr:landMrr, renMrr:renMrr});
+  });
+
+  var quarters = Object.keys(cohorts).sort();
+
+  // Grand totals
+  var totLand=0, totRen=0, totCusts=0;
+  quarters.forEach(function(q){ totLand+=cohorts[q].landArr; totRen+=cohorts[q].renArr; totCusts+=cohorts[q].custs.length; });
+
+  // Summary KPI cards
+  var totalDelta = totRen - totLand;
+  var totalRetPct = totLand > 0 ? totRen/totLand*100 : 0;
+  var kpiHtml = '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1.25rem">' +
+    [['Customers tracked', totCusts, 'With both effective & 1st renewal date'],
+     ['Total Landing ARR', fa(totLand), 'At effective date month'],
+     ['Total Renewal ARR', fa(totRen), 'At 1st renewal date month'],
+     ['Overall retention', pct(totalRetPct - 100) + ' · ' + (totalDelta>=0?'+':'') + fa(Math.abs(totalDelta)), totalDelta>=0?'Net expansion':'Net contraction']
+    ].map(function(p, i) {
+      var valCol = i===3 ? (totalDelta>=0?'color:var(--green)':'color:var(--cranberry)') : '';
+      return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.875rem 1rem">' +
+        '<div style="font-size:12px;color:var(--text-muted);margin-bottom:.25rem">' + p[0] + '</div>' +
+        '<div style="font-size:18px;font-weight:700;' + valCol + '">' + p[1] + '</div>' +
+        '<div style="font-size:11px;color:var(--text-secondary);margin-top:.2rem">' + p[2] + '</div></div>';
+    }).join('') + '</div>';
+
+  // Quarterly table
+  var thStyle = 'padding:8px 12px;text-align:right;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);border-bottom:2px solid var(--border)';
+  var thL = 'padding:8px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);border-bottom:2px solid var(--border)';
+  var tableHtml = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1.25rem">' +
+    '<table style="width:100%;border-collapse:collapse;font-size:13px">' +
+    '<thead><tr style="background:var(--bg)">' +
+      '<th style="' + thL + '">Quarter</th>' +
+      '<th style="' + thStyle + '">Customers</th>' +
+      '<th style="' + thStyle + '">Landing ARR</th>' +
+      '<th style="' + thStyle + '">Renewal ARR</th>' +
+      '<th style="' + thStyle + '">\u0394 ARR</th>' +
+      '<th style="' + thStyle + '">Retention</th>' +
+    '</tr></thead><tbody>';
+
+  quarters.forEach(function(qs, qi) {
+    var co = cohorts[qs];
+    var delta = co.renArr - co.landArr;
+    var ret = co.landArr > 0 ? co.renArr/co.landArr*100 : null;
+    var dCol = delta >= 0 ? 'var(--green)' : 'var(--cranberry)';
+    var rCol = ret === null ? 'var(--text-muted)' : ret >= 100 ? 'var(--green)' : ret >= 80 ? 'var(--teal)' : 'var(--cranberry)';
+    var bg = qi % 2 === 0 ? 'background:var(--surface)' : 'background:var(--bg)';
+    var custList = co.custs.slice().sort(function(a,b){return (b.landMrr||0)-(a.landMrr||0);});
+    var detailId = 'fr-detail-' + qs;
+
+    tableHtml += '<tr style="' + bg + ';cursor:pointer;border-bottom:1px solid var(--border)" onclick="(function(){var d=document.getElementById(\'' + detailId + '\');d.style.display=d.style.display===\'none\'?\'\':\'none\';})()">' +
+      '<td style="padding:10px 12px;font-weight:700;color:var(--dark-teal)">' +
+        '<span style="font-size:11px;margin-right:6px;color:var(--text-muted)">&#9660;</span>' + quarterLabel(qs) +
+      '</td>' +
+      '<td style="padding:10px 12px;text-align:right">' + co.custs.length + '</td>' +
+      '<td style="padding:10px 12px;text-align:right">' + fa(co.landArr) + '</td>' +
+      '<td style="padding:10px 12px;text-align:right">' + fa(co.renArr) + '</td>' +
+      '<td style="padding:10px 12px;text-align:right;font-weight:600;color:' + dCol + '">' + (delta>=0?'+':'') + fa(Math.abs(delta)) + '</td>' +
+      '<td style="padding:10px 12px;text-align:right;font-weight:700;color:' + rCol + '">' + (ret!==null ? ret.toFixed(1)+'%' : '\u2014') + '</td>' +
+    '</tr>';
+
+    // Expandable customer detail rows
+    tableHtml += '<tr id="' + detailId + '" style="display:none"><td colspan="6" style="padding:0;background:var(--bg-card)">' +
+      '<table style="width:100%;border-collapse:collapse;font-size:12px">' +
+      '<thead><tr style="background:var(--teal-lighter)">' +
+        '<th style="padding:6px 20px;text-align:left;color:var(--dark-teal);font-weight:600">Customer</th>' +
+        '<th style="padding:6px 8px;text-align:center;color:var(--dark-teal);font-weight:600">Entity</th>' +
+        '<th style="padding:6px 8px;text-align:center;color:var(--dark-teal);font-weight:600">Effective</th>' +
+        '<th style="padding:6px 8px;text-align:center;color:var(--dark-teal);font-weight:600">1st Renewal</th>' +
+        '<th style="padding:6px 12px;text-align:right;color:var(--dark-teal);font-weight:600">Landing MRR</th>' +
+        '<th style="padding:6px 12px;text-align:right;color:var(--dark-teal);font-weight:600">Renewal MRR</th>' +
+        '<th style="padding:6px 12px;text-align:right;color:var(--dark-teal);font-weight:600">\u0394</th>' +
+      '</tr></thead><tbody>';
+
+    custList.forEach(function(c, ci) {
+      var cd = (c.renMrr||0) - (c.landMrr||0);
+      var cdCol = cd >= 0 ? 'var(--green)' : 'var(--cranberry)';
+      var cbg = ci % 2 === 0 ? 'var(--surface)' : 'var(--bg-card)';
+      var icpBadge = c.icp ? '<span style="font-size:10px;padding:1px 5px;border-radius:4px;background:var(--teal-lighter);color:var(--dark-teal);font-weight:600;margin-left:4px">ICP</span>' : '';
+      tableHtml += '<tr style="background:' + cbg + ';border-bottom:1px solid var(--border)">' +
+        '<td style="padding:5px 20px">' + c.name + icpBadge + '</td>' +
+        '<td style="padding:5px 8px;text-align:center;color:var(--text-muted)">' + (c.entity||'') + '</td>' +
+        '<td style="padding:5px 8px;text-align:center;color:var(--text-muted)">' + (c.effDate||'\u2014') + '</td>' +
+        '<td style="padding:5px 8px;text-align:center;color:var(--text-muted)">' + (c.renDate||'\u2014') + '</td>' +
+        '<td style="padding:5px 12px;text-align:right">$' + Math.round(c.landMrr||0).toLocaleString() + '</td>' +
+        '<td style="padding:5px 12px;text-align:right">' + (c.renMrr===0?'<span style="color:var(--cranberry)">Churned</span>':'$'+Math.round(c.renMrr).toLocaleString()) + '</td>' +
+        '<td style="padding:5px 12px;text-align:right;font-weight:600;color:' + cdCol + '">' + (cd>=0?'+':'') + '$' + Math.round(Math.abs(cd)).toLocaleString() + '</td>' +
+      '</tr>';
+    });
+    tableHtml += '</tbody></table></td></tr>';
+  });
+
+  // Totals row
+  var tDelta = totRen - totLand;
+  var tRet = totLand > 0 ? totRen/totLand*100 : 0;
+  tableHtml += '<tr style="background:var(--teal-lighter);border-top:2px solid var(--teal)">' +
+    '<td style="padding:10px 12px;font-weight:700;color:var(--dark-teal)">All quarters</td>' +
+    '<td style="padding:10px 12px;text-align:right;font-weight:700;color:var(--dark-teal)">' + totCusts + '</td>' +
+    '<td style="padding:10px 12px;text-align:right;font-weight:700;color:var(--dark-teal)">' + fa(totLand) + '</td>' +
+    '<td style="padding:10px 12px;text-align:right;font-weight:700;color:var(--dark-teal)">' + fa(totRen) + '</td>' +
+    '<td style="padding:10px 12px;text-align:right;font-weight:700;color:' + (tDelta>=0?'var(--green)':'var(--cranberry)') + '">' + (tDelta>=0?'+':'') + fa(Math.abs(tDelta)) + '</td>' +
+    '<td style="padding:10px 12px;text-align:right;font-weight:700;color:' + (tRet>=100?'var(--green)':'var(--cranberry)') + '">' + tRet.toFixed(1) + '%</td>' +
+  '</tr>';
+
+  tableHtml += '</tbody></table></div>';
+
+  var noteHtml = '<div style="font-size:12px;color:var(--text-muted);line-height:1.55;padding:.6rem .875rem;background:var(--surface);border-radius:var(--radius-sm);border-left:3px solid #eda100">' +
+    'Cohorts grouped by <strong>first_renewal_date</strong> quarter. Landing ARR = MRR at effective date month \u00d7 12. ' +
+    'If effective date predates the MRR history window, earliest available MRR is used as proxy. ' +
+    'PLG and LiveScreen excluded. Click any quarter row to expand customer detail.' +
+    '</div>';
+
+  el.innerHTML = kpiHtml + tableHtml + noteHtml;
 }
 
 function rnRenderRetention() {
