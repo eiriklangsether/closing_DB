@@ -14,6 +14,7 @@ Before touching `index.html`, read this document and run the checklist that matc
 3. **Manual corrections are canonical facts.** Any correction already applied and logged is a fact. If a fresh export disagrees with a previously-applied manual correction (e.g. the Sparebank 1 split, a periodisation timing fix), do NOT overwrite it — flag the conflict to Eirik and reconcile before changing anything.
 4. **Notify on new customers.** If a new CB customer appears, add it to `CUSTOMER_META` (and `NAME_OWNER_MAP`) and tell Eirik explicitly.
 5. **One source of truth.** Every card and graph for a given period must trace back to the same underlying constants. Hardcoded values are the main risk — the Final reconciliation check exists to catch them.
+6. **The Raw data tab is the control point.** `SNAPSHOTS` (per-customer MRR USD, straight from the CB export) is the canonical raw data. Every MRR-derived number on any card must reconcile to the Raw data tab totals. After every CB update, open the Raw data tab and confirm the reconciliation banner is green for all four entities. Red = stop and investigate; never widen tolerances to make it pass.
 
 ---
 
@@ -27,6 +28,7 @@ Before touching `index.html`, read this document and run the checklist that matc
 | Sales reports (SalesScreen export) | Claude manual entry → `CAC_DATA.customers` | New deals closed |
 | Renewal pipeline (Chargebee contract terms) | Claude live CB pull → `RENEWAL_SUBS` constant | New CB month / ad hoc |
 | Home page status dates | Claude manual entry → `LANDING_META` constant | After every data update |
+| Raw data tab (control point) | No independent data — derives from `SNAPSHOTS` + `CUSTOMER_META` + `MRR_*` | Updates automatically with every CB update |
 | Closing checks | Claude API call → KV `/api/data` | Monthly close run |
 | Owner overrides | User edits → KV `/api/overrides` | Ad hoc |
 | CAC deal overrides | User edits → KV `/api/overrides-cac` | Ad hoc |
@@ -253,6 +255,33 @@ The tab sums renewal-book MRR per entity (all active + non-renewing, supporters 
 
 ---
 
+## Tab 8 — Raw data (Chargebee control point)
+
+**Purpose:** the single control point for all Chargebee-derived numbers. Shows per-customer MRR (USD) exactly as exported from Chargebee — customers as rows, months as columns — with a TOTAL row and a CSV download. Every card and metric in the dashboard must reconcile to the totals of this table.
+
+**Source:** `SNAPSHOTS[entity][month]` — no separate constant. The table renders directly from the raw snapshot data, so it updates automatically whenever `SNAPSHOTS` is updated (checklist step 8 of the CB update). If `SNAPSHOTS` is updated correctly, the Raw data tab requires **zero extra maintenance**.
+
+**Automated reconciliation checks (run on every render, per entity, per month):**
+
+| # | Check | Compares | Tolerance | Catches |
+|---|---|---|---|---|
+| 1 | Card total | Σ `SNAPSHOTS` mrr_usd vs `MRR_*.totals_usd[month]` | ± $1 | Aggregate baked incorrectly — MRR/ARR cards, graphs and retention grid all read `totals_usd`/`SNAPSHOTS` |
+| 2 | Customer count | `SNAPSHOTS` row count vs `MRR_*.customer_counts[month]` | exact | Count card wrong, missing/duplicate customer rows |
+| 3 | Waterfall bridge | prior `totals_usd` + new + expansion + churn + contraction vs `totals_usd[month]` | ± $1 | Movement sign errors, missing movements (waterfall & MoM modal) |
+| 4 | Metadata sum | Σ `CUSTOMER_META[*].mrr[month]` per entity vs Σ `SNAPSHOTS` | ± $1 | `CUSTOMER_META` stale or churn-month timing off — this feeds the **Export tab** and metadata cards |
+
+A green banner means all four checks pass for all months of the selected entity. A red banner lists every failing month/check with the exact delta.
+
+**How to act on red:**
+- Check 1 or 3 red → the CB update itself is inconsistent. Rebuild `totals_usd` / `movements` from the export. Do not push.
+- Check 2 red → count logic disagrees with the snapshot rows. Determine which is right against the CB export (watch the Sparebank 1 Østlandet split — it is TWO rows in `SNAPSHOTS` and must be TWO in `customer_counts`).
+- Check 4 red → `CUSTOMER_META` was not regenerated, or churn-month convention differs. Canonical rule: **a churned customer's last non-zero MRR month is its final active month; the churn month itself is zero/absent in BOTH `SNAPSHOTS` and `CUSTOMER_META.mrr{}`.**
+- Never "fix" a red by editing the raw table side. The raw side is the truth; correct the derived constant, and log a `CHANGELOG` entry if a prior period changes.
+
+**What is NOT covered:** Financial KPIs (`renderFin`) come from Conso_Reporting, not Chargebee, and cannot reconcile to this table — those are covered by the Final reconciliation hardcoded sweep. CAC deal data comes from SalesScreen reports, also out of scope here.
+
+---
+
 ## Complete update checklist — new Chargebee month
 
 Run in this order. Do not skip the verify/notify steps.
@@ -275,6 +304,7 @@ Run in this order. Do not skip the verify/notify steps.
 - [ ] **16. Verify** Retention grid L12M window has rolled correctly
 - [ ] **17. Verify** Customer metadata tab shows new customers
 - [ ] **18. Verify** Renewals tab MRR reconciliation is green for all entities (red = investigate, do not widen tolerance)
+- [ ] **18b. Verify Raw data tab** — cycle all four entities (NO, SE, US, PLG); the reconciliation banner must be green for every entity. Red = the update is not done. Investigate using the per-month delta table; do not widen tolerances.
 - [ ] **19. Verify** Home tab shows the correct updated dates
 - [ ] **20. Run the Waterfall integrity check** (see section below)
 - [ ] **21. Run the Final reconciliation check** (bottom of doc)
@@ -308,6 +338,7 @@ Run after Chargebee update is complete.
   - Commissions: Commissions tab → row 3 (Marketing) + row 10 (Sales)
 - [ ] **2. Get new reports export** from SalesScreen — filter Quantity=1, exclude SAP
 - [ ] **3. Append new entry to `CAC_DATA`** with all fields populated
+- [ ] **3b. Internal consistency** — verify `total_usd == non_sal_usd + sal_usd + comm_usd` and `sal_usd == sales_sal + mkt_sal`, `comm_usd == sales_comm + mkt_comm` for the new entry
 - [ ] **4. Update `LANDING_META.cac`** — set `date` to today and `period` to the new L12M window (e.g. "Jul 2025 – Jun 2026")
 - [ ] **5. Verify L12M window** — should now include the new month, dropping the oldest
 - [ ] **6. Verify deal counts** match the reports export (Quantity=1 filter applied)
@@ -330,9 +361,35 @@ Purpose: guarantee every visible number traces back to the same data for the sam
    - `SR_MONTHLY` new month
    - `LANDING_META.chargebee.{no,se,us,plg}`, `LANDING_META.financial`, `LANDING_META.cac`, `LANDING_META.renewals` — dates and periods
    - Any value hardcoded into `render()` on the Monthly Close tab (KV auth bypass)
-5. **Cross-entity totals.** Group MRR total = NO + SE + US (+ PLG where shown). Confirm they reconcile; the Renewals tab reconciliation should be green.
-6. **Mechanics.** `curl` / `git pull` the live file before editing so you never edit a stale copy; `node --check` the script block before committing; never push a dashboard where two cards disagree on the same metric.
-7. If anything fails to reconcile, fix before pushing.
+5. **Raw data tab green.** Open the Raw data tab and cycle NO → SE → US → PLG. All four banners must be green. This single check covers card totals, customer counts, waterfall arithmetic and `CUSTOMER_META` alignment for every month at once.
+6. **Cross-entity totals.** Group MRR total = NO + SE + US (+ PLG where shown). Confirm they reconcile; the Renewals tab reconciliation should be green.
+7. **Mechanics.** `curl` / `git pull` the live file before editing so you never edit a stale copy; `node --check` the script block before committing; never push a dashboard where two cards disagree on the same metric.
+8. If anything fails to reconcile, fix before pushing.
+
+---
+
+## Data-quality conventions (single definitions — both data stores must follow them)
+
+These conventions exist so that `SNAPSHOTS`, `CUSTOMER_META`, `totals_usd` and `customer_counts` can never legitimately disagree. Any deviation is a defect, not an interpretation.
+
+1. **Churn month:** a churned customer's last non-zero MRR month is its final active month. The churn month itself carries no row in `SNAPSHOTS` and no `mrr{}` entry in `CUSTOMER_META`. (The churn *movement* is recorded in `movements[churnMonth]`.)
+2. **Customer count:** `customer_counts[month]` = number of rows in `SNAPSHOTS[entity][month]`. No separate counting logic. The Sparebank 1 Østlandet split counts as **two** customers wherever it is two snapshot rows.
+3. **Historic months in `CUSTOMER_META.mrr{}`:** every month a customer had non-zero MRR must be present, including months before the customer later churned. Truncated history breaks the Export tab and check 4 on the Raw data tab.
+4. **Month keys:** `SNAPSHOTS[entity]` must contain exactly the months in `MRR_*.months` — no stray keys (e.g. a leftover partial month) and no gaps.
+5. **Signs:** churn and contraction are stored **negative** everywhere (`movements`, waterfall).
+
+### Open reconciliation items — as of 2 Jul 2026 (visible as red on the Raw data tab until corrected)
+
+| Entity | Months | Check | Root cause (verified) | Proposed correction |
+|---|---|---|---|---|
+| NO | Jul 2025 – May 2026 | Count | `customer_counts` counts Sparebank 1 Østlandet once while `SNAPSHOTS` correctly has two rows (main + LiveScreen) | Increment `customer_counts` by 1 for these 11 months (convention 2) |
+| NO | Jun 2026 | Metadata (+$584) | `CUSTOMER_META` Jun 2026 is stale vs the final Jun CB export (Novvi churn, EM1 Sør-norge expansion etc. missing) — also Jun 2026 `SNAPSHOTS` has Sparebank as ONE combined row, inconsistent with prior months | Regenerate `CUSTOMER_META` Jun 2026; re-apply the Sparebank two-row split to the Jun 2026 snapshot (part of the queued Sparebank split push) |
+| SE | Jun 2025 | Metadata (+$4,963) | Trygg-Hansa "filial" vs "Filial" duplicate-name mapping in `CUSTOMER_META` | Verify against CB export and align to snapshot values |
+| US | Jun 2025, Nov 2025, Jun 2026 | Metadata | Churn-month convention mismatch: WFG (Nov 25) and BMC Helix + BMC Software (Jun 26) still carry MRR in `CUSTOMER_META` for their churn month; Confidence Wealth and NO's Jul-25 churns (ANWB, Trendstream, Smartcraft, Vinsit) lack their last active month | Align `CUSTOMER_META.mrr{}` to convention 1 |
+| PLG | Jun 2026 | Count | `customer_counts` says 15; snapshot correctly has 14 (Fokustm in, Hoen out) | Set `customer_counts["Jun 2026"] = 14` in `MRR_PLG` |
+| SE | — | Hygiene | Stray `"May 2025"` key in `SNAPSHOTS.SE` not in `months[]` | Delete the stray key |
+
+Do not apply these corrections without Eirik's confirmation; once applied, log `CHANGELOG` entries for any prior-period change and remove the row from this table.
 
 ---
 
