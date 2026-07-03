@@ -3634,16 +3634,16 @@ function rnRenderRetention() {
     var allQuarters = Object.keys(mergedQuarters).sort().map(function(k) { return mergedQuarters[k]; });
 
     // Portfolio KPIs
-    var port_p = 0, port_c = 0, sub_count = 0;
+    var port_p = 0, port_c = 0, port_min = 0, sub_count = 0;
     allQuarters.forEach(function(qd) {
       qd.rows.forEach(function(r) {
         if (filterICP && !r.icp) return;
         if (filterFirst && !r.first) return;
         sub_count++;
-        if (r.arr_p != null) { port_p += r.arr_p; port_c += r.arr_c; }
+        if (r.arr_p != null) { port_p += r.arr_p; port_c += r.arr_c; port_min += Math.min(r.arr_c, r.arr_p); }
       });
     });
-    var port_grr = port_p > 0 ? Math.min(port_c, port_p) / port_p * 100 : 100;
+    var port_grr = port_p > 0 ? port_min / port_p * 100 : 100;
     var port_nrr = port_p > 0 ? port_c / port_p * 100 : 100;
 
     var kpiHtml = '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1rem">' +
@@ -3685,7 +3685,8 @@ function rnRenderRetention() {
         if (r.arr_p != null) { qp += r.arr_p; qc += r.arr_c; }
         if (r.cls === 'New') qnew++;
       });
-      var qgrr = qp > 0 ? Math.min(qc, qp) / qp * 100 : null;
+      var qmin = rows.reduce(function(s,r){ return r.arr_p != null ? s + Math.min(r.arr_c, r.arr_p) : s; }, 0);
+      var qgrr = qp > 0 ? qmin / qp * 100 : null;
       var qnrr = qp > 0 ? qc / qp * 100 : null;
       var qtot = rows.reduce(function(s,r){return s+(r.arr_c||0);},0);
 
