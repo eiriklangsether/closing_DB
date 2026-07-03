@@ -2456,6 +2456,18 @@ function openCustomerCard(id) {
           <span class="cc-label">MRR trend</span>
           <span class="cc-value">${sparkline}</span>
         </div>
+        <div class="cc-row" style="border-top:1px solid var(--border);padding-top:8px;margin-top:4px">
+          <span class="cc-label">Effective date</span>
+          <span class="cc-value">${c.effective_date || '<span style="color:var(--text-muted)">—</span>'}</span>
+        </div>
+        <div class="cc-row">
+          <span class="cc-label">1st renewal</span>
+          <span class="cc-value">${c.first_renewal_date || '<span style="color:var(--text-muted)">—</span>'}</span>
+        </div>
+        <div class="cc-row">
+          <span class="cc-label">Next renewal</span>
+          <span class="cc-value">${c.renewal_date || '<span style="color:var(--text-muted)">—</span>'}</span>
+        </div>
         <div class="cc-row" style="gap:10px;justify-content:flex-end;border-top:1px solid var(--border);padding-top:8px;margin-top:4px">
           ${c.cb_url ? '<a href="' + c.cb_url + '" target="_blank" style="font-size:12px;color:var(--teal);text-decoration:none;font-weight:500">↗ Chargebee</a>' : '<span style="font-size:12px;color:var(--text-muted)">No Chargebee link</span>'}
           ${c.sf_url ? '<a href="' + c.sf_url + '" target="_blank" style="font-size:12px;color:var(--teal);text-decoration:none;font-weight:500">↗ Salesforce</a>' : '<span style="font-size:12px;color:var(--text-muted)">Not in Salesforce</span>'}
