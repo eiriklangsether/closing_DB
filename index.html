@@ -2565,7 +2565,7 @@ function _rdInitExport(ALL_MONTHS) {
   var _exLevel  = 'customer';
   var _exMetric = 'mrr';
   var _exPeriod = { from: ALL_MONTHS[0], to: ALL_MONTHS[ALL_MONTHS.length-1] };
-  var _exMeta   = { entity: true, icp: false, logo: false, owner: false };
+  var _exMeta   = { entity: true, icp: false, logo: false, owner: false, cbid: false };
 
   function getMetaCols() {
     if (_exLevel !== 'customer') return [];
@@ -2574,6 +2574,7 @@ function _rdInitExport(ALL_MONTHS) {
     if (_exMeta.icp)    cols.push({ key: 'icp',    label: 'ICP' });
     if (_exMeta.logo)   cols.push({ key: 'logo',   label: 'Logo / Group' });
     if (_exMeta.owner)  cols.push({ key: 'owner',  label: 'Account Owner' });
+    if (_exMeta.cbid)   cols.push({ key: 'cbid',   label: 'Chargebee ID' });
     return cols;
   }
 
@@ -2593,7 +2594,8 @@ function _rdInitExport(ALL_MONTHS) {
         if (!hasAny) return;
         var row = { name: c.name, entity: c.entity || '',
           icp: c.icp === true ? 'Yes' : c.icp === false ? 'No' : '',
-          logo: (c.logo || '').trim(), owner: c.owner_name || '', _flag: false };
+          logo: (c.logo || '').trim(), owner: c.owner_name || '',
+          cbid: c.customer_id || '', _flag: false };
         months.forEach(function(m, mi) {
           if (isMovement) {
             var prevM = mi > 0 ? months[mi-1] : prevPeriodMonth;
@@ -4344,6 +4346,7 @@ function renderRawData(){
     + '<label class="export-meta-check"><input type="checkbox" id="chk-icp" onchange="expToggleMeta(\'icp\')"> ICP</label>'
     + '<label class="export-meta-check"><input type="checkbox" id="chk-logo" onchange="expToggleMeta(\'logo\')"> Logo</label>'
     + '<label class="export-meta-check"><input type="checkbox" id="chk-owner" onchange="expToggleMeta(\'owner\')"> Owner</label>'
+    + '<label class="export-meta-check"><input type="checkbox" id="chk-cbid" onchange="expToggleMeta(\'cbid\')"> Chargebee ID</label>'
     + '</div></div>'
     + '<div style="display:flex;flex-direction:column;gap:.4rem;justify-content:flex-end">'
     + '<button class="btn-export btn-csv" onclick="expDownloadCSV()" style="margin-top:auto">&#8681; CSV</button>'
