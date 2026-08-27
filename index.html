@@ -2280,10 +2280,94 @@ function renderForecast() {
       '<span style="color:' + col + ';flex-shrink:0">' + dot + '</span>' +
       '<div><strong>' + label + '</strong><div style="color:var(--text-muted);font-size:11.5px;margin-top:2px">' + detail + '</div></div></div>';
   }
+  function fcUsd(v) { var s = v < 0 ? "\u2212" : "", a = Math.abs(v); if (a >= 1e6) return s + "$" + (a/1e6).toFixed(2) + "M"; if (a >= 1e3) return s + "$" + Math.round(a/1e3) + "K"; return s + "$" + Math.round(a).toLocaleString(); }
+  var _fcMonthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  function _fcForwardLabel(offset) {
+    // MRR_NO.months entries look like "Aug 2026" — parse and add (offset+1) months
+    var parts = MRR_NO.months[MRR_NO.months.length - 1].split(' ');
+    var mi = _fcMonthNames.indexOf(parts[0].slice(0,3));
+    var yr = parseInt(parts[1], 10);
+    var total = mi + offset + 1;
+    var newYr = yr + Math.floor(total / 12);
+    var newMi = total % 12;
+    return _fcMonthNames[newMi] + "'" + String(newYr).slice(2);
+  }
+
+  // ── L12M run-rate forecast (v0 — assumption-based, for exploration only) ──
+  // MRR movement window: last 12 months present in MRR_NO.months. Recalculates automatically as new CB months are added.
+  var _fcMonths = MRR_NO.months.slice(-12);
+  function _fcSumMove(entity, field) {
+    return _fcMonths.reduce(function(sum, m) {
+      var mv = (entity.movements && entity.movements[m]) || {};
+      return sum + (mv[field] || 0);
+    }, 0);
+  }
+  function _fcNewLogoCount(entity) {
+    return _fcMonths.reduce(function(sum, m) {
+      var mv = (entity.movements && entity.movements[m]) || {};
+      return sum + ((mv.new || []).length);
+    }, 0);
+  }
+  var _fcNewTotal   = _fcSumMove(MRR_NO,'new_total')   + _fcSumMove(MRR_SE,'new_total')   + _fcSumMove(MRR_US,'new_total');
+  var _fcExpTotal   = _fcSumMove(MRR_NO,'expansion_total') + _fcSumMove(MRR_SE,'expansion_total') + _fcSumMove(MRR_US,'expansion_total');
+  var _fcChurnTotal = _fcSumMove(MRR_NO,'churned_total')   + _fcSumMove(MRR_SE,'churned_total')   + _fcSumMove(MRR_US,'churned_total');
+  var _fcConTotal   = _fcSumMove(MRR_NO,'contraction_total') + _fcSumMove(MRR_SE,'contraction_total') + _fcSumMove(MRR_US,'contraction_total');
+  var _fcNewLogos   = _fcNewLogoCount(MRR_NO) + _fcNewLogoCount(MRR_SE) + _fcNewLogoCount(MRR_US);
+  var _fcNetMonthly = (_fcNewTotal + _fcExpTotal + _fcChurnTotal + _fcConTotal) / 12;
+
+  var _fcLatestMonth = MRR_NO.months[MRR_NO.months.length - 1];
+  var _fcLatestMRR = (MRR_NO.totals_usd[_fcLatestMonth] || 0) + (MRR_SE.totals_usd[_fcLatestMonth] || 0) + (MRR_US.totals_usd[_fcLatestMonth] || 0);
+
+  // OpEx L12M average — mirrored from the Financial KPIs tab (renderFin, Aug'25-Jul'26 window, L12M OpEx $6,662,184). Update this alongside the Financial KPIs update.
+  var _fcOpexAvg = -6662184 / 12;
+  // Starting cash — Conso Reporting B/S, "Cash and cash equivalents", Jul 2026 (latest available B/S pull). Update when a new B/S export lands.
+  var _fcStartCash = 852431;
+  var _fcCashMonth = "Jul'26";
+
+  var _fcRows = [];
+  var _fcMRR = _fcLatestMRR, _fcCash = _fcStartCash;
+  for (var i = 1; i <= 12; i++) {
+    _fcMRR += _fcNetMonthly;
+    var _fcARR = _fcMRR * 12;
+    var _fcNetFlow = _fcMRR + _fcOpexAvg; // revenue proxied by recurring MRR only — see caveats
+    _fcCash += _fcNetFlow;
+    _fcRows.push({ mrr: _fcMRR, arr: _fcARR, flow: _fcNetFlow, cash: _fcCash });
+  }
 
   var h = '';
 
-  h += '<div class="fin-disclaimer"><div class="fin-disclaimer-icon">🧭</div><div class="fin-disclaimer-text"><strong>Draft only.</strong> This tab lays out what a forecast would need and what we already have — no forecast is computed yet. Horizon: next 12 months. Single best-estimate line (no scenarios yet). Consolidated group cash only for now.</div></div>';
+  h += '<div class="fin-disclaimer"><div class="fin-disclaimer-icon">🧭</div><div class="fin-disclaimer-text"><strong>v0 — assumption-based, for exploration.</strong> Projects forward using L12M average run-rates, not the Salesforce pipeline. See caveats below before relying on this for anything external.</div></div>';
+
+  h += card('12-month projection · L12M run-rate basis', 'var(--teal)', (function(){
+    var b = '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:1rem;line-height:1.6">';
+    b += 'L12M window: <strong>' + _fcMonths[0] + ' \u2013 ' + _fcMonths[_fcMonths.length-1] + '</strong> (NO+SE+US, excl. PLG). ';
+    b += 'Average new logos: <strong>' + (_fcNewLogos/12).toFixed(1) + '/mo</strong> (' + _fcNewLogos + ' over 12 months). ';
+    b += 'Net MRR change: <strong>' + fcUsd(_fcNetMonthly) + '/mo</strong> (new ' + fcUsd(_fcNewTotal/12) + ' + expansion ' + fcUsd(_fcExpTotal/12) + ' &minus; churn ' + fcUsd(Math.abs(_fcChurnTotal/12)) + ' &minus; contraction ' + fcUsd(Math.abs(_fcConTotal/12)) + ').';
+    b += '</div>';
+    b += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
+    b += '<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:4px 8px;color:var(--text-muted);font-weight:600">Month</th><th style="text-align:right;padding:4px 8px;color:var(--text-muted);font-weight:600">MRR</th><th style="text-align:right;padding:4px 8px;color:var(--text-muted);font-weight:600">ARR</th><th style="text-align:right;padding:4px 8px;color:var(--text-muted);font-weight:600">Net cash flow</th><th style="text-align:right;padding:4px 8px;color:var(--text-muted);font-weight:600">Cash balance</th></tr>';
+    for (var i = 0; i < 12; i++) {
+      var r = _fcRows[i];
+      b += '<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 8px">' + _fcForwardLabel(i) + '</td>' +
+        '<td style="text-align:right;padding:4px 8px">' + fcUsd(r.mrr) + '</td>' +
+        '<td style="text-align:right;padding:4px 8px">' + fcUsd(r.arr) + '</td>' +
+        '<td style="text-align:right;padding:4px 8px;color:' + (r.flow>=0?'var(--dark-teal)':'var(--cranberry)') + '">' + fcUsd(r.flow) + '</td>' +
+        '<td style="text-align:right;padding:4px 8px;font-weight:600">' + fcUsd(r.cash) + '</td></tr>';
+    }
+    b += '</table></div>';
+    return b;
+  })());
+
+  h += card('Caveats — read before using this for anything', 'var(--cranberry)',
+    '<div style="font-size:12.5px;color:var(--text-secondary);line-height:1.7">' +
+    '<ul style="margin:0 0 0 1.1rem;padding:0">' +
+    '<li><strong>Run-rate only, not pipeline-weighted.</strong> Ignores the actual Salesforce pipeline (Pipeline/Best Case/Commit) entirely — just assumes the next 12 months look like the trailing 12.</li>' +
+    '<li><strong>Revenue proxied by recurring MRR.</strong> Ignores one-off implementation/setup fees, SalesRabbit, and other non-recurring P&L revenue lines — the real revenue forecast will run a bit higher than this.</li>' +
+    '<li><strong>OpEx held flat</strong> at the L12M average ($' + Math.round(Math.abs(_fcOpexAvg)).toLocaleString() + '/mo) — no growth, seasonality (e.g. the June feriepenya swing), or planned hiring/cost changes applied.</li>' +
+    '<li><strong>No collection lag.</strong> Assumes MRR converts to cash in the same month it\u2019s recognized — real collection timing (esp. annual invoices, NO/SE aging) isn\u2019t modeled yet.</li>' +
+    '<li><strong>No one-off cash events</strong> — R&D cap booking, bonus payouts, capex, etc. are not included.</li>' +
+    '<li>Single best-estimate line — no upside/downside band.</li>' +
+    '</ul></div>');
 
   h += card('Target outputs', 'var(--teal)',
     '<div style="font-size:12.5px;color:var(--text-secondary);line-height:1.6">' +
@@ -2294,6 +2378,7 @@ function renderForecast() {
     '</ol></div>');
 
   h += card('What we already have', 'var(--dark-teal)',
+
     sourceRow('Historical MRR + movements', 'have', 'MRR_NO / MRR_SE / MRR_US — monthly totals plus new/expansion/churn/contraction detail, back to 2025. Run-rate baseline and historical volatility per movement type.') +
     sourceRow('Scheduled cancellations', 'partial', 'CUSTOMER_META[].scheduled_cancellation — flags non-renewing subscriptions with a renewal date in the next 6 months (~19 customers, ~$17.8K MRR at risk as of the last pull). Only screened for customers with a known renewal_date.') +
     sourceRow('Historical P&L (income, opex, EBITDA)', 'have', 'renderFin arrays — Operating Income, Product Revenue, OpEx, EBITDA/EBITDAC, Profit After Tax, monthly since May 2025. Opex run-rate for the cash-burn side.') +
