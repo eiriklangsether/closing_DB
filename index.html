@@ -2283,47 +2283,44 @@ function renderForecast() {
 
   var h = '';
 
-  h += '<div class="fin-disclaimer"><div class="fin-disclaimer-icon">🧭</div><div class="fin-disclaimer-text"><strong>Draft only.</strong> This tab lays out what a forecast would need and what we already have — no forecast is computed yet.</div></div>';
+  h += '<div class="fin-disclaimer"><div class="fin-disclaimer-icon">🧭</div><div class="fin-disclaimer-text"><strong>Draft only.</strong> This tab lays out what a forecast would need and what we already have — no forecast is computed yet. Horizon: next 12 months. Single best-estimate line (no scenarios yet). Consolidated group cash only for now.</div></div>';
 
   h += card('Target outputs', 'var(--teal)',
     '<div style="font-size:12.5px;color:var(--text-secondary);line-height:1.6">' +
     'Two numbers matter most, in this order:' +
     '<ol style="margin:.5rem 0 0 1.1rem;padding:0">' +
-    '<li><strong>Expected MRR / revenue</strong> — near-term (next 1&ndash;3 closed months) and a longer run-rate (6&ndash;12 months), split by entity (NO/SE/US) and in aggregate.</li>' +
-    '<li><strong>Expected cash</strong> — what actually lands in the bank, which lags revenue due to invoicing terms, annual/quarterly billing, and payment collection time.</li>' +
+    '<li><strong>Expected MRR / revenue</strong> — 12-month best-estimate, split by entity (NO/SE/US) and in aggregate. PLG included only if the pipeline/renewal sources below turn out to cover it cleanly — otherwise excluded, consistent with Business KPIs.</li>' +
+    '<li><strong>Expected cash</strong> — consolidated group cash, which lags revenue due to invoicing terms, annual/quarterly billing, and collection time.</li>' +
     '</ol></div>');
 
   h += card('What we already have', 'var(--dark-teal)',
-    sourceRow('Historical MRR + movements', 'have', 'MRR_NO / MRR_SE / MRR_US — monthly totals plus new/expansion/churn/contraction detail, back to 2025. Gives a run-rate baseline and historical volatility per movement type.') +
-    sourceRow('Scheduled cancellations', 'partial', 'CUSTOMER_META[].scheduled_cancellation — flags non-renewing subscriptions with a renewal date in the next 6 months (~19 customers, ~$17.8K MRR at risk as of the last pull). Only screened for customers with a known renewal_date; some active customers still unscreened.') +
-    sourceRow('Historical P&L (income, opex, EBITDA)', 'have', 'renderFin arrays — Operating Income, Product Revenue, OpEx, EBITDA/EBITDAC, Profit After Tax, monthly since May 2025. Gives an opex run-rate for the cash-burn side.') +
-    sourceRow('CAC / new bookings pace', 'have', 'CAC_DATA — monthly new deals, new ARR added, and cost per acquisition. Useful as a rough new-MRR-per-month input, though it is not a sales pipeline.') +
-    sourceRow('Customer-level MRR history', 'have', 'CUSTOMER_META + raw Chargebee export — per-customer MRR trend, useful for expansion/contraction pattern-matching at the account level.'));
+    sourceRow('Historical MRR + movements', 'have', 'MRR_NO / MRR_SE / MRR_US — monthly totals plus new/expansion/churn/contraction detail, back to 2025. Run-rate baseline and historical volatility per movement type.') +
+    sourceRow('Scheduled cancellations', 'partial', 'CUSTOMER_META[].scheduled_cancellation — flags non-renewing subscriptions with a renewal date in the next 6 months (~19 customers, ~$17.8K MRR at risk as of the last pull). Only screened for customers with a known renewal_date.') +
+    sourceRow('Historical P&L (income, opex, EBITDA)', 'have', 'renderFin arrays — Operating Income, Product Revenue, OpEx, EBITDA/EBITDAC, Profit After Tax, monthly since May 2025. Opex run-rate for the cash-burn side.') +
+    sourceRow('Balance sheet incl. deferred revenue and cash', 'have', 'Conso Reporting B/S rolling export — Cash and cash equivalents (bank balance starting point) and Prepaid revenues / Deferred Revenue (GL 20480+2969+2990) by month. Currently pulled ad hoc, not yet a standing dashboard constant.') +
+    sourceRow('Sales pipeline — Salesforce Opportunity object', 'have', 'Queryable directly via SOQL — no separate "report" to find, query the object. Filter on ForecastCategoryName (Pipeline / Best Case / Commit), NOT CloseDate alone: as of this check, open pipeline in real forecast categories = 57 deals / $1.64M ARR (Pipeline) + 20 / $347K (Best Case) + 2 / $35K (Commit). A further 981 deals / $6.8M ARR sit in "Omitted" — mostly stale, not forecast-worthy. Many open deals have CloseDate long in the past (hygiene issue) — filter by ForecastCategory, treat CloseDate as directional only.') +
+    sourceRow('Renewal-type opportunities in Salesforce', 'partial', 'Type=\'Renewal\' open opportunities: 42 in Pipeline ($964K ARR) + 13 in Best Case ($174K) + 246 in Omitted ($5.8M — mostly auto-generated placeholders, not actively worked). Useful cross-reference for the renewal book, but Omitted-heavy and not a complete calendar on its own.') +
+    sourceRow('AR aging — US (QuickBooks)', 'have', 'QuickBooks has native A/R Aging Summary and Detail report tools (accrual basis, by customer, by aging bucket) — ready to use for the US entity once connected in a chat that authorizes it.') +
+    sourceRow('CAC / new bookings pace', 'have', 'CAC_DATA — monthly new deals, new ARR added, cost per acquisition. A backward-looking run-rate, not a forward pipeline.'));
 
   h += card('What we don\u2019t have yet', 'var(--cranberry)',
-    sourceRow('Sales pipeline / forecasted new bookings', 'missing', 'CAC_DATA shows what has already closed, not what is in Salesforce pipeline for future months. Needed to forecast new MRR beyond a flat run-rate assumption.') +
-    sourceRow('Full renewal book (not just non-renewing)', 'partial', 'We can see who is scheduled to cancel, but not a complete forward renewal calendar (upcoming renewal dates and terms for all active contracts) to model timing of expansion/downgrade decisions.') +
-    sourceRow('AR aging / invoice payment terms', 'missing', 'Needed to convert revenue into a cash-timing forecast — e.g. annual invoices paid upfront vs. monthly in arrears vs. actual collection lag by customer.') +
-    sourceRow('Bank balance / cash position', 'missing', 'Not currently pulled into the dashboard from any connected source. Needed as the cash forecast\u2019s starting point.') +
-    sourceRow('Deferred revenue schedule', 'missing', 'Needed to know how much already-invoiced cash will recognize as revenue in future months (relevant for the revenue side, separate from the cash side).') +
+    sourceRow('Full renewal book (not just non-renewing)', 'partial', 'No complete forward renewal calendar (dates + terms for all active contracts). Chargebee\u2019s newer connectors only expose retrieve_subscription and subscription_renewal_estimate one customer at a time — no bulk list_subscriptions endpoint — so building this from Chargebee directly means one API call per customer (463 in CUSTOMER_META), not practical in one session. Best path: combine the Salesforce Renewal-type opportunities above with the existing scheduled_cancellation enrichment.') +
+    sourceRow('AR aging — NO (Tripletex) and SE (Fortnox)', 'missing', 'Neither connector exposes a ready-made aging report. Would need to build one from Tripletex\u2019s search_invoices (open invoices with due dates) for NO, and from Fortnox\u2019s SIE export or an equivalent open-invoice pull for SE.') +
     sourceRow('One-off / known cash events', 'missing', 'E.g. R&D cap booking timing, bonus payouts, planned capex — currently manual knowledge, not in any dashboard constant.'));
 
   h += card('Proposed approach (draft — not built)', 'var(--teal-light)',
     '<div style="font-size:12.5px;color:var(--text-secondary);line-height:1.7">' +
-    '<strong>MRR forecast:</strong> start from latest closed-month MRR per entity, roll forward known scheduled cancellations (subtract), apply a historical new/expansion run-rate (trailing 3&ndash;6 month average from movements), apply a historical churn/contraction run-rate for the unscheduled portion. Output monthly for the forecast horizon.<br><br>' +
+    '<strong>MRR forecast:</strong> start from latest closed-month MRR per entity, subtract known scheduled cancellations, add Salesforce Pipeline/Best Case/Commit ARR weighted by category (e.g. Commit ~90%, Best Case ~50%, Pipeline ~20% — weights to calibrate against actual historical win rates once available), apply a historical churn/contraction run-rate for the unscheduled portion. Output monthly for 12 months.<br><br>' +
     '<strong>Revenue forecast:</strong> MRR forecast × 12, adjusted for periodisation timing using the same GL logic as the P&L (accounts 3995/3999), plus known one-off fees (implementation, setup) at expected close dates.<br><br>' +
-    '<strong>Cash forecast:</strong> revenue forecast, shifted by an assumed (or actual, once available) collection lag per billing interval, less the OpEx run-rate from renderFin (trended forward, holding recent averages or applying a small OpEx growth assumption), less known one-off cash events. Needs a starting bank balance to anchor to an actual $ figure rather than just a delta.' +
+    '<strong>Cash forecast:</strong> revenue forecast, shifted by a collection lag (build from US QuickBooks A/R aging first since that\u2019s readily available; approximate NO/SE lag from Tripletex/Fortnox open invoices until a proper aging pull exists), less the OpEx run-rate from renderFin, less known one-off cash events, anchored to the actual bank balance from the B/S Cash and cash equivalents line.' +
     '</div>');
 
   h += card('Open questions before building this out', '#b8860b',
     '<div style="font-size:12.5px;color:var(--text-secondary);line-height:1.7">' +
     '<ul style="margin:0 0 0 1.1rem;padding:0">' +
-    '<li>What forecast horizon matters most — next quarter, next 12 months, or both?</li>' +
-    '<li>Scenario-based (base/upside/downside) or a single best-estimate line?</li>' +
-    '<li>Entity-level (NO/SE/US) cash forecasts, or consolidated group cash only?</li>' +
-    '<li>Include PLG in the MRR/revenue forecast, or exclude it as we do elsewhere in Business KPIs?</li>' +
-    '<li>Is there an existing sales pipeline source (Salesforce stage/close-date data) we should connect, or should new-MRR be run-rate based for now?</li>' +
-    '<li>For cash: is there a bank feed or manual balance Eirik can supply monthly, or should this stay revenue/opex only until that exists?</li>' +
+    '<li>Pipeline weighting by ForecastCategory (Pipeline/Best Case/Commit) — use flat assumptions to start, or calibrate against last 12 months\u2019 actual close rates per category first?</li>' +
+    '<li>For NO/SE AR aging: worth the effort to script something from Tripletex/Fortnox open invoices now, or wait and use US-only (QuickBooks) collection-lag as a proxy for the whole group initially?</li>' +
+    '<li>Should the ~246 Omitted-category Renewal opportunities in Salesforce get cleaned up / worked, since they represent $5.8M ARR sitting outside any forecast category?</li>' +
     '</ul></div>');
 
   document.getElementById('forecast-content').innerHTML = h;
