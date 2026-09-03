@@ -457,6 +457,36 @@
     .cac-cost-value{font-size:16px;font-weight:700;color:var(--dark-teal)}
     .cac-cost-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
     .cac-manual-note{font-size:11px;color:var(--amber-text);background:var(--amber-bg);border:1px solid var(--amber-dot);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:12px}
+    /* ── Forecast page (v1 — bridge & callouts) ── */
+    .fc-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.25rem}
+    .fc-chart-grid .chart-section.full{grid-column:1/-1}
+    .fc-chart-hint{font-size:11px;color:var(--text-muted);margin:-.4rem 0 .85rem}
+    .fc-bridge{background:var(--surface);border:1px solid var(--teal-light);border-radius:var(--radius);padding:1.25rem 1.5rem;margin-bottom:1.25rem}
+    .fc-bridge-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.25rem;gap:1rem}
+    .fc-bridge-title{font-size:14px;font-weight:700;color:var(--dark-teal)}
+    .fc-bridge-net{font-size:16px;font-weight:700}
+    .fc-bridge-sub{font-size:11px;color:var(--text-muted);margin-bottom:1rem}
+    .fc-bridge-cols{display:grid;grid-template-columns:1fr 1fr;gap:1.75rem}
+    .fc-bt{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:.5rem}
+    table.fc-br{width:100%;border-collapse:collapse;font-size:12px}
+    table.fc-br td{padding:5px 0;border-top:1px solid var(--border)}
+    table.fc-br td.n{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+    table.fc-br td.note{color:var(--text-muted);font-size:11px;padding-left:10px;font-style:italic}
+    table.fc-br tr.tot td{border-top:2px solid var(--dark-teal);font-weight:700;color:var(--dark-teal)}
+    .fc-placeholder{font-size:12px;color:var(--text-muted);padding:1.5rem 0;text-align:center}
+    .fc-callouts{display:flex;flex-direction:column;gap:6px;margin-bottom:1.25rem}
+    .fc-callout{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.7rem 1rem;display:flex;gap:.75rem;align-items:flex-start;cursor:pointer}
+    .fc-callout:hover{background:#f7fbfb}
+    .fc-callout.open{border-color:var(--teal-light);background:#f7fbfb}
+    .fc-pin{width:19px;height:19px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;margin-top:1px}
+    .fc-pin.info{background:var(--dark-teal)}.fc-pin.warn{background:#e07b30}.fc-pin.risk{background:var(--cranberry)}
+    .fc-callout-body{flex:1}
+    .fc-callout-head{display:flex;justify-content:space-between;gap:1rem;align-items:baseline}
+    .fc-callout-title{font-size:13px;font-weight:600;color:var(--text-primary)}
+    .fc-callout-month{font-size:11px;color:var(--text-muted);white-space:nowrap}
+    .fc-callout-text{font-size:12px;color:var(--text-secondary);line-height:1.55;margin-top:5px;display:none}
+    .fc-callout.open .fc-callout-text{display:block}
+    .fc-pos{color:#0d6b65}.fc-neg{color:var(--cranberry)}
 </style>
 </head>
 <body>
@@ -2277,149 +2307,198 @@ function renderFin() {
 }
 
 /* ─────────────────────────────────────────────
-   FORECAST PAGE — draft workspace, not yet a live model
+   FORECAST PAGE — v1 (Jul 2026 vintage, Finance case)
+   Bridge is fully derived from pl[]; only FORECAST_NOTES is manual.
 ───────────────────────────────────────────── */
+const FORECAST = {"vintage":"Jul 2026","scenario":"Finance case","scenario_note":"80% forward GRR \u00b7 75% realisation of 2026 target \u00b7 Farmers +100 users/mo from Jul 2026","currency":"USD","last_actual":"Jul 2026","prev_ebitdac_l12m":597428,"prev_cap":-536250,"months":["Aug 2026","Sep 2026","Oct 2026","Nov 2026","Dec 2026","Jan 2027","Feb 2027","Mar 2027","Apr 2027","May 2027","Jun 2027","Jul 2027"],"pl_months":["Aug 2025","Sep 2025","Oct 2025","Nov 2025","Dec 2025","Jan 2026","Feb 2026","Mar 2026","Apr 2026","May 2026","Jun 2026","Jul 2026","Aug 2026","Sep 2026","Oct 2026","Nov 2026","Dec 2026","Jan 2027","Feb 2027","Mar 2027","Apr 2027","May 2027","Jun 2027","Jul 2027"],"pl":{"Aug 2025":{"revenue":703976,"salary":416413,"bonus":900,"marketing":33713,"travel":10342,"rent":13881,"it":49998,"consultancy":22241,"legal":0,"other":20719,"ebitda":135769},"Sep 2025":{"revenue":704201,"salary":424149,"bonus":8900,"marketing":27224,"travel":24225,"rent":15748,"it":56651,"consultancy":48595,"legal":0,"other":21843,"ebitda":76867},"Oct 2025":{"revenue":740324,"salary":437656,"bonus":33116,"marketing":66709,"travel":27519,"rent":12301,"it":57782,"consultancy":67439,"legal":0,"other":55269,"ebitda":-17466},"Nov 2025":{"revenue":717222,"salary":436971,"bonus":59923,"marketing":31987,"travel":15798,"rent":14672,"it":59964,"consultancy":58631,"legal":0,"other":61105,"ebitda":-21829},"Dec 2025":{"revenue":644005,"salary":-292375,"bonus":16300,"marketing":28786,"travel":6004,"rent":15197,"it":38680,"consultancy":68199,"legal":0,"other":55853,"ebitda":707361},"Jan 2026":{"revenue":639440,"salary":425030,"bonus":43016,"marketing":13493,"travel":56763,"rent":15939,"it":60401,"consultancy":57253,"legal":0,"other":11751,"ebitda":-44206},"Feb 2026":{"revenue":608484,"salary":376097,"bonus":19155,"marketing":46937,"travel":4145,"rent":16805,"it":58906,"consultancy":107346,"legal":0,"other":15612,"ebitda":-36519},"Mar 2026":{"revenue":647721,"salary":403490,"bonus":1199,"marketing":60206,"travel":5062,"rent":16951,"it":72962,"consultancy":68771,"legal":209,"other":25175,"ebitda":-6304},"Apr 2026":{"revenue":637101,"salary":388446,"bonus":38917,"marketing":33498,"travel":1821,"rent":15154,"it":63544,"consultancy":76600,"legal":1906,"other":30825,"ebitda":-13611},"May 2026":{"revenue":626377,"salary":422930,"bonus":19622,"marketing":35950,"travel":15374,"rent":15267,"it":63580,"consultancy":40685,"legal":6276,"other":21305,"ebitda":-14611},"Jun 2026":{"revenue":625692,"salary":81092,"bonus":3624,"marketing":38956,"travel":14737,"rent":16220,"it":45193,"consultancy":33959,"legal":8821,"other":22632,"ebitda":360458},"Jul 2026":{"revenue":634682,"salary":387500,"bonus":91319,"marketing":14915,"travel":9960,"rent":16141,"it":45212,"consultancy":35214,"legal":4794,"other":21860,"ebitda":7768},"Aug 2026":{"revenue":606398,"salary":380310,"bonus":4413,"marketing":14789,"travel":9218,"rent":16045,"it":46756,"consultancy":38690,"legal":2611,"other":21913,"ebitda":71653},"Sep 2026":{"revenue":626777,"salary":376247,"bonus":6953,"marketing":15298,"travel":19470,"rent":16111,"it":46795,"consultancy":38690,"legal":2612,"other":21967,"ebitda":82634},"Oct 2026":{"revenue":639878,"salary":373335,"bonus":100996,"marketing":15626,"travel":22008,"rent":16177,"it":45469,"consultancy":38690,"legal":2612,"other":22021,"ebitda":2944},"Nov 2026":{"revenue":641460,"salary":373335,"bonus":0,"marketing":15665,"travel":9008,"rent":16243,"it":45580,"consultancy":40505,"legal":2613,"other":22075,"ebitda":116435},"Dec 2026":{"revenue":637929,"salary":176406,"bonus":0,"marketing":15577,"travel":9008,"rent":16310,"it":45692,"consultancy":38690,"legal":2614,"other":22129,"ebitda":311504},"Jan 2027":{"revenue":647133,"salary":355684,"bonus":118263,"marketing":15807,"travel":96328,"rent":16377,"it":45804,"consultancy":38690,"legal":2615,"other":22183,"ebitda":-64617},"Feb 2027":{"revenue":642633,"salary":355684,"bonus":0,"marketing":15695,"travel":9008,"rent":16444,"it":45916,"consultancy":38690,"legal":2615,"other":22237,"ebitda":136344},"Mar 2027":{"revenue":637500,"salary":379767,"bonus":0,"marketing":15566,"travel":9368,"rent":16512,"it":46028,"consultancy":38690,"legal":2616,"other":22292,"ebitda":106661},"Apr 2027":{"revenue":640231,"salary":379767,"bonus":71383,"marketing":15635,"travel":38741,"rent":16579,"it":46141,"consultancy":38690,"legal":2617,"other":22346,"ebitda":8332},"May 2027":{"revenue":643937,"salary":387866,"bonus":0,"marketing":15727,"travel":9368,"rent":16647,"it":46254,"consultancy":38690,"legal":2617,"other":22401,"ebitda":104367},"Jun 2027":{"revenue":646629,"salary":83713,"bonus":0,"marketing":15794,"travel":9368,"rent":16715,"it":46367,"consultancy":38690,"legal":2618,"other":22456,"ebitda":410908},"Jul 2027":{"revenue":603063,"salary":387866,"bonus":91318,"marketing":14705,"travel":9368,"rent":16784,"it":46480,"consultancy":38690,"legal":2619,"other":22511,"ebitda":-27278}},"series":{"core_arr":{"Aug 2026":7098569,"Sep 2026":7343118,"Oct 2026":7500332,"Nov 2026":7519316,"Dec 2026":7476947,"Jan 2027":7587393,"Feb 2027":7533395,"Mar 2027":7471800,"Apr 2027":7504565,"May 2027":7549044,"Jun 2027":7581348,"Jul 2027":7058552},"arr_yoy":{"Aug 2026":-0.1418,"Sep 2026":-0.102,"Oct 2026":-0.0993,"Nov 2026":-0.078,"Dec 2026":0.0485,"Jan 2027":0.0077,"Feb 2027":0.0429,"Mar 2027":0.0012,"Apr 2027":0.0067,"May 2027":0.0323,"Jun 2027":0.0752,"Jul 2027":-0.014},"ebitda_m":{"Aug 2026":71653,"Sep 2026":82634,"Oct 2026":2944,"Nov 2026":116435,"Dec 2026":311504,"Jan 2027":-64617,"Feb 2027":136344,"Mar 2027":106661,"Apr 2027":8332,"May 2027":104367,"Jun 2027":410908,"Jul 2027":-27278},"ebitda_l12m":{"Aug 2026":1069563,"Sep 2026":1075329,"Oct 2026":1095739,"Nov 2026":1234002,"Dec 2026":838145,"Jan 2027":817734,"Feb 2027":990597,"Mar 2027":1103563,"Apr 2027":1125506,"May 2027":1244484,"Jun 2027":1294933,"Jul 2027":1259887},"cap_adj":{"Aug 2026":-536250,"Sep 2026":-536250,"Oct 2026":-536250,"Nov 2026":-536250,"Dec 2026":null,"Jan 2027":null,"Feb 2027":null,"Mar 2027":null,"Apr 2027":null,"May 2027":null,"Jun 2027":null,"Jul 2027":null},"ebitdac_l12m":{"Aug 2026":533313,"Sep 2026":539079,"Oct 2026":559489,"Nov 2026":697752,"Dec 2026":838145,"Jan 2027":817734,"Feb 2027":990597,"Mar 2027":1103563,"Apr 2027":1125506,"May 2027":1244484,"Jun 2027":1294933,"Jul 2027":1259887},"ebitdac_pct":{"Aug 2026":0.0681,"Sep 2026":0.0695,"Oct 2026":0.0731,"Nov 2026":0.0921,"Dec 2026":0.1107,"Jan 2027":0.1079,"Feb 2027":0.1301,"Mar 2027":0.1451,"Apr 2027":0.148,"May 2027":0.1632,"Jun 2027":0.1694,"Jul 2027":0.1655},"rule40":{"Aug 2026":-0.0053,"Sep 2026":0.0367,"Oct 2026":0.0439,"Nov 2026":0.0848,"Dec 2026":0.1592,"Jan 2027":0.1155,"Feb 2027":0.173,"Mar 2027":0.1464,"Apr 2027":0.1547,"May 2027":0.1956,"Jun 2027":0.2446,"Jul 2027":0.1514},"cash_hand":{"Aug 2026":2152064,"Sep 2026":1883267,"Oct 2026":2656917,"Nov 2026":2672727,"Dec 2026":2952365,"Jan 2027":2961979,"Feb 2027":3835756,"Mar 2027":3671914,"Apr 2027":3611219,"May 2027":3633471,"Jun 2027":3344779,"Jul 2027":3035877},"cash_bank":{"Aug 2026":1138028,"Sep 2026":869231,"Oct 2026":1642881,"Nov 2026":1658691,"Dec 2026":1938329,"Jan 2027":1947943,"Feb 2027":2821720,"Mar 2027":2657877,"Apr 2027":2597183,"May 2027":2619435,"Jun 2027":2330743,"Jul 2027":2021841},"redline":{"Aug 2026":353091,"Sep 2026":392368,"Oct 2026":344544,"Nov 2026":448356,"Dec 2026":307738,"Jan 2027":354133,"Feb 2027":349658,"Mar 2027":390250,"Apr 2027":343219,"May 2027":437782,"Jun 2027":489588,"Jul 2027":396055},"ebitda_pct":{"Aug 2026":0.1366,"Sep 2026":0.1387,"Oct 2026":0.1432,"Nov 2026":0.1628,"Dec 2026":0.1107,"Jan 2027":0.1079,"Feb 2027":0.1301,"Mar 2027":0.1451,"Apr 2027":0.148,"May 2027":0.1632,"Jun 2027":0.1694,"Jul 2027":0.1655}},"line_labels":{"revenue":"Revenue","salary":"Salary","bonus":"Bonus & sales provision","marketing":"Marketing","travel":"Travel & expenses","rent":"Office rent","it":"IT / software","consultancy":"Consultancy","legal":"Legal","other":"Other costs"}};
+
+const FORECAST_NOTES = [
+  {month:"Jun 2027", series:"ebitdac", kind:"info", title:"June EBITDA of $411K is not a good month",
+   text:"Same model quirk as every June: NO salary is forced to zero (SWITCH(MONTH(),6,0,...)) \u2014 the vacation pay accrual release. Monthly EBITDA jumps to $410,908 against a $77K average for the rest of the window. Read the trend through it, not off it."},
+  {month:"Sep 2026", series:"cash", kind:"warn", title:"Cash trough \u2014 2.2 months of payroll cover",
+   text:"Cash in bank bottoms at $869,231 against a salary redline of $392,368. This is the tightest point in the window, though materially healthier than the May-vintage forecast, which had Sep 2026 at 1.4\u00d7 cover and $555,607."},
+  {month:"Dec 2026", series:"ebitdac", kind:"warn", title:"The +$140K improvement is not real",
+   text:"Dec 2026 still carries the hardcoded \u2212NOK 1,900,000 Skattefunn credit written directly into the NO salary formula ($188,100). The Capitalization adjustment row stops at Nov 2026 and never strips it out. Corrected EBITDAC L12M is $650,045, so Nov\u2192Dec is \u2212$47,707, not +$140,393. Every month from Dec 2026 onward in this vintage is overstated by $188,100 \u2014 same bug as the May vintage, unchanged."},
+  {month:"Feb 2027", series:"cash", kind:"info", title:"+$874K cash step is the invoicing cycle",
+   text:"The January annual invoicing run collects in February. This is billing timing, not trading performance \u2014 read the trend through it, not off it."},
+  {month:"Jul 2027", series:"arr", kind:"info", title:"ARR growth turns positive Dec 2026\u2013Jun 2027, then dips again",
+   text:"Unlike the May vintage, ARR YoY is positive for seven of the twelve months (Dec 2026 through Jun 2027, peaking at +7.5% in June), before falling back to \u22121.4% in Jul 2027. Directionally better than the prior forecast, which never turned positive \u2014 worth understanding what's driving the July dip before treating this as a trend."},
+  {month:"Aug 2026", series:"r40", kind:"warn", title:"Rule of 40 here is built on EBITDA, not EBITDAC",
+   text:"The model computes Rule of 40 as Summary!$22 = ARR growth YoY + row 18, and row 18 is EBITDA % L12M \u2014 not row 21, the EBITDAC %. Your Financial KPIs tab uses EBITDAC margin. Shown as-is on Eirik's instruction; not corrected. On the EBITDAC definition, Aug\u2013Oct 2026 all read negative (\u22120.5\u2192\u22127.4, 3.7\u2192\u22123.2, 4.4\u2192\u22122.6) versus positive as published. From Dec 2026 the gap narrows to zero only because the capitalisation row stops \u2014 the same bug as callout above. Strip the $188,100 Skattefunn too and Dec 2026\u2013Jul 2027 read 13.4 / 9.1 / 14.8 / 12.2 / 13.0 / 17.1 / 22.0 / 12.7 instead of the published 15.9\u201324.5."}
+];
+
 function renderForecast() {
-  function card(title, accent, bodyHtml) {
-    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;border-top:3px solid ' + accent + ';margin-bottom:1.25rem">' +
-      '<div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:.75rem">' + title + '</div>' + bodyHtml + '</div>';
-  }
-  function sourceRow(label, status, detail) {
-    var col = status === 'have' ? 'var(--dark-teal)' : status === 'partial' ? '#b8860b' : 'var(--cranberry)';
-    var dot = status === 'have' ? '●' : status === 'partial' ? '◐' : '○';
-    return '<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12.5px">' +
-      '<span style="color:' + col + ';flex-shrink:0">' + dot + '</span>' +
-      '<div><strong>' + label + '</strong><div style="color:var(--text-muted);font-size:11.5px;margin-top:2px">' + detail + '</div></div></div>';
-  }
-  function fcUsd(v) { var s = v < 0 ? "\u2212" : "", a = Math.abs(v); if (a >= 1e6) return s + "$" + (a/1e6).toFixed(2) + "M"; if (a >= 1e3) return s + "$" + Math.round(a/1e3) + "K"; return s + "$" + Math.round(a).toLocaleString(); }
-  var _fcMonthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  function _fcForwardLabel(offset) {
-    // MRR_NO.months entries look like "Aug 2026" — parse and add (offset+1) months
-    var parts = MRR_NO.months[MRR_NO.months.length - 1].split(' ');
-    var mi = _fcMonthNames.indexOf(parts[0].slice(0,3));
-    var yr = parseInt(parts[1], 10);
-    var total = mi + offset + 1;
-    var newYr = yr + Math.floor(total / 12);
-    var newMi = total % 12;
-    return _fcMonthNames[newMi] + "'" + String(newYr).slice(2);
-  }
+  var M = FORECAST.months, SR = FORECAST.series, PL = FORECAST.pl;
+  var usd = function(v){ return (v<0?'\u2212':'') + '$' + Math.abs(Math.round(v)).toLocaleString('en-US'); };
+  var sgn = function(v){ return (v>=0?'+':'\u2212') + '$' + Math.abs(Math.round(v)).toLocaleString('en-US'); };
+  var pct = function(v){ return (v>=0?'+':'') + (v*100).toFixed(1) + '%'; };
+  var prevMonth = function(m){ var i = FORECAST.pl_months.indexOf(m); return i>0 ? FORECAST.pl_months[i-1] : null; };
+  var minus12 = function(m){ var i = FORECAST.pl_months.indexOf(m); return i>=12 ? FORECAST.pl_months[i-12] : null; };
 
-  // ── L12M run-rate forecast (v0 — assumption-based, for exploration only) ──
-  // MRR movement window: last 12 months present in MRR_NO.months. Recalculates automatically as new CB months are added.
-  var _fcMonths = MRR_NO.months.slice(-12);
-  function _fcSumMove(entity, field) {
-    return _fcMonths.reduce(function(sum, m) {
-      var mv = (entity.movements && entity.movements[m]) || {};
-      return sum + (mv[field] || 0);
-    }, 0);
-  }
-  function _fcNewLogoCount(entity) {
-    return _fcMonths.reduce(function(sum, m) {
-      var mv = (entity.movements && entity.movements[m]) || {};
-      return sum + ((mv.new || []).length);
-    }, 0);
-  }
-  var _fcNewTotal   = _fcSumMove(MRR_NO,'new_total')   + _fcSumMove(MRR_SE,'new_total')   + _fcSumMove(MRR_US,'new_total');
-  var _fcExpTotal   = _fcSumMove(MRR_NO,'expansion_total') + _fcSumMove(MRR_SE,'expansion_total') + _fcSumMove(MRR_US,'expansion_total');
-  var _fcChurnTotal = _fcSumMove(MRR_NO,'churned_total')   + _fcSumMove(MRR_SE,'churned_total')   + _fcSumMove(MRR_US,'churned_total');
-  var _fcConTotal   = _fcSumMove(MRR_NO,'contraction_total') + _fcSumMove(MRR_SE,'contraction_total') + _fcSumMove(MRR_US,'contraction_total');
-  var _fcNewLogos   = _fcNewLogoCount(MRR_NO) + _fcNewLogoCount(MRR_SE) + _fcNewLogoCount(MRR_US);
-  var _fcNetMonthly = (_fcNewTotal + _fcExpTotal + _fcChurnTotal + _fcConTotal) / 12;
+  var last = M[M.length-1], first = M[0];
+  var troughM = M.reduce(function(a,b){ return SR.cash_bank[b] < SR.cash_bank[a] ? b : a; }, M[0]);
+  var cover = SR.cash_bank[troughM] / SR.redline[troughM];
 
-  var _fcLatestMonth = MRR_NO.months[MRR_NO.months.length - 1];
-  var _fcLatestMRR = (MRR_NO.totals_usd[_fcLatestMonth] || 0) + (MRR_SE.totals_usd[_fcLatestMonth] || 0) + (MRR_US.totals_usd[_fcLatestMonth] || 0);
+  var vintageBar = '<div class="disclaimer-bar"><span><strong>Vintage ' + FORECAST.vintage + ' \u00b7 ' + FORECAST.scenario +
+    '</strong> \u2014 ' + FORECAST.scenario_note + '. Actuals through ' + FORECAST.last_actual +
+    '; all 12 months shown are forecast. Figures in ' + FORECAST.currency + '.</span></div>';
 
-  // OpEx L12M average — mirrored from the Financial KPIs tab (renderFin, Aug'25-Jul'26 window, L12M OpEx $6,662,184). Update this alongside the Financial KPIs update.
-  var _fcOpexAvg = -6662184 / 12;
-  // Starting cash — Conso Reporting B/S, "Cash and cash equivalents", Jul 2026 (latest available B/S pull). Update when a new B/S export lands.
-  var _fcStartCash = 852431;
-  var _fcCashMonth = "Jul'26";
+  var kpiCards = [
+    ['Core ARR \u00b7 ' + last, usd(SR.core_arr[last]),
+      '<span class="' + (SR.arr_yoy[last]>=0?'fc-pos':'fc-neg') + '">' + pct(SR.arr_yoy[last]) + ' YoY</span> \u00b7 from ' + usd(SR.core_arr[first]) + ' in ' + first],
+    ['EBITDAC L12M \u00b7 ' + last, usd(SR.ebitdac_l12m[last]),
+      (SR.ebitdac_pct[last]*100).toFixed(1) + '% margin \u00b7 ' +
+      '<span class="' + ((SR.ebitdac_l12m[last]-SR.ebitdac_l12m[first])>=0?'fc-pos':'fc-neg') + '">' +
+      sgn(SR.ebitdac_l12m[last]-SR.ebitdac_l12m[first]) + '</span> over the window'],
+    ['Cash trough', usd(SR.cash_bank[troughM]),
+      troughM + ' \u00b7 ' + cover.toFixed(1) + '\u00d7 monthly payroll \u00b7 +' + usd(1014036) + ' Pareto facility'],
+    ['Rule of 40 \u00b7 ' + last, (SR.rule40[last]*100).toFixed(0),
+      'low of ' + (Math.min.apply(null, M.map(function(m){return SR.rule40[m];}))*100).toFixed(0) + ' in the window']
+  ];
+  var kpiHtml = '<div class="kpi-grid">' + kpiCards.map(function(c){
+    return '<div class="kpi"><div class="kpi-label">' + c[0] + '</div><div class="kpi-value">' + c[1] +
+      '</div><div class="kpi-sub">' + c[2] + '</div></div>';
+  }).join('') + '</div>';
 
-  var _fcRows = [];
-  var _fcMRR = _fcLatestMRR, _fcCash = _fcStartCash;
-  for (var i = 1; i <= 12; i++) {
-    _fcMRR += _fcNetMonthly;
-    var _fcARR = _fcMRR * 12;
-    var _fcNetFlow = _fcMRR + _fcOpexAvg; // revenue proxied by recurring MRR only — see caveats
-    _fcCash += _fcNetFlow;
-    _fcRows.push({ mrr: _fcMRR, arr: _fcARR, flow: _fcNetFlow, cash: _fcCash });
-  }
+  var chartsHtml = '<div class="fc-chart-grid">' +
+    '<div class="chart-section full">' +
+      '<div class="chart-section-title">EBITDAC L12M vs monthly EBITDA</div>' +
+      '<div class="fc-chart-hint">Click a bar to decompose the month-on-month move.</div>' +
+      '<div class="chart-wrap"><canvas id="fc-c-ebitdac"></canvas></div>' +
+    '</div>' +
+    '</div>' +
+    '<div id="fc-bridge-host"></div>' +
+    '<div class="fc-chart-grid">' +
+      '<div class="chart-section"><div class="chart-section-title">Core ARR &amp; YoY growth</div>' +
+        '<div class="fc-chart-hint">Bars = ARR. Line = YoY growth, right axis.</div>' +
+        '<div class="chart-wrap"><canvas id="fc-c-arr"></canvas></div></div>' +
+      '<div class="chart-section"><div class="chart-section-title">Cash in bank vs salary redline</div>' +
+        '<div class="fc-chart-hint">Redline = one month of gross payroll. Trough marked.</div>' +
+        '<div class="chart-wrap"><canvas id="fc-c-cash"></canvas></div></div>' +
+      '<div class="chart-section full"><div class="chart-section-title">Rule of 40</div>' +
+        '<div class="fc-chart-hint">As computed in the model: ARR growth YoY + <strong>EBITDA</strong> margin L12M. This is not the EBITDAC definition used on the Financial KPIs tab \u2014 see the callout below.</div>' +
+        '<div class="chart-wrap"><canvas id="fc-c-r40"></canvas></div></div>' +
+    '</div>';
 
-  var h = '';
+  var notesHtml = '<div class="chart-section-title" style="margin-bottom:.6rem">Callouts</div><div class="fc-callouts">' +
+    FORECAST_NOTES.map(function(n,i){
+      return '<div class="fc-callout" onclick="this.classList.toggle(\'open\')">' +
+        '<div class="fc-pin ' + n.kind + '">' + (i+1) + '</div>' +
+        '<div class="fc-callout-body"><div class="fc-callout-head">' +
+          '<div class="fc-callout-title">' + n.title + '</div><div class="fc-callout-month">' + n.month + '</div></div>' +
+          '<div class="fc-callout-text">' + n.text + '</div></div></div>';
+    }).join('') + '</div>';
 
-  h += '<div class="fin-disclaimer"><div class="fin-disclaimer-icon">🧭</div><div class="fin-disclaimer-text"><strong>v0 — assumption-based, for exploration.</strong> Projects forward using L12M average run-rates, not the Salesforce pipeline. See caveats below before relying on this for anything external.</div></div>';
+  document.getElementById('forecast-content').innerHTML = vintageBar + kpiHtml + chartsHtml + notesHtml;
 
-  h += card('12-month projection · L12M run-rate basis', 'var(--teal)', (function(){
-    var b = '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:1rem;line-height:1.6">';
-    b += 'L12M window: <strong>' + _fcMonths[0] + ' \u2013 ' + _fcMonths[_fcMonths.length-1] + '</strong> (NO+SE+US, excl. PLG). ';
-    b += 'Average new logos: <strong>' + (_fcNewLogos/12).toFixed(1) + '/mo</strong> (' + _fcNewLogos + ' over 12 months). ';
-    b += 'Net MRR change: <strong>' + fcUsd(_fcNetMonthly) + '/mo</strong> (new ' + fcUsd(_fcNewTotal/12) + ' + expansion ' + fcUsd(_fcExpTotal/12) + ' &minus; churn ' + fcUsd(Math.abs(_fcChurnTotal/12)) + ' &minus; contraction ' + fcUsd(Math.abs(_fcConTotal/12)) + ').';
-    b += '</div>';
-    b += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">';
-    b += '<tr style="border-bottom:1px solid var(--border)"><th style="text-align:left;padding:4px 8px;color:var(--text-muted);font-weight:600">Month</th><th style="text-align:right;padding:4px 8px;color:var(--text-muted);font-weight:600">MRR</th><th style="text-align:right;padding:4px 8px;color:var(--text-muted);font-weight:600">ARR</th><th style="text-align:right;padding:4px 8px;color:var(--text-muted);font-weight:600">Net cash flow</th><th style="text-align:right;padding:4px 8px;color:var(--text-muted);font-weight:600">Cash balance</th></tr>';
-    for (var i = 0; i < 12; i++) {
-      var r = _fcRows[i];
-      b += '<tr style="border-bottom:1px solid var(--border)"><td style="padding:4px 8px">' + _fcForwardLabel(i) + '</td>' +
-        '<td style="text-align:right;padding:4px 8px">' + fcUsd(r.mrr) + '</td>' +
-        '<td style="text-align:right;padding:4px 8px">' + fcUsd(r.arr) + '</td>' +
-        '<td style="text-align:right;padding:4px 8px;color:' + (r.flow>=0?'var(--dark-teal)':'var(--cranberry)') + '">' + fcUsd(r.flow) + '</td>' +
-        '<td style="text-align:right;padding:4px 8px;font-weight:600">' + fcUsd(r.cash) + '</td></tr>';
+  // ── Auto-bridge: what drives a move in a rolling metric ──
+  function renderForecastBridge(month) {
+    var prev = prevMonth(month), out = minus12(month);
+    var host = document.getElementById('fc-bridge-host');
+    if (!prev || !out || SR.ebitdac_l12m[prev] === undefined) {
+      host.innerHTML = '<div class="fc-bridge"><div class="fc-placeholder">No prior month in the loaded window \u2014 pick a later bar.</div></div>';
+      return;
     }
-    b += '</table></div>';
-    return b;
-  })());
+    var capNow = SR.cap_adj[month] || 0, capPrev = SR.cap_adj[prev] || 0;
+    var inM = PL[month].ebitda, outM = PL[out].ebitda, capD = capNow - capPrev;
+    var net = inM - outM + capD;
 
-  h += card('Caveats — read before using this for anything', 'var(--cranberry)',
-    '<div style="font-size:12.5px;color:var(--text-secondary);line-height:1.7">' +
-    '<ul style="margin:0 0 0 1.1rem;padding:0">' +
-    '<li><strong>Run-rate only, not pipeline-weighted.</strong> Ignores the actual Salesforce pipeline (Pipeline/Best Case/Commit) entirely — just assumes the next 12 months look like the trailing 12.</li>' +
-    '<li><strong>Revenue proxied by recurring MRR.</strong> Ignores one-off implementation/setup fees, SalesRabbit, and other non-recurring P&L revenue lines — the real revenue forecast will run a bit higher than this.</li>' +
-    '<li><strong>OpEx held flat</strong> at the L12M average ($' + Math.round(Math.abs(_fcOpexAvg)).toLocaleString() + '/mo) — no growth, seasonality (e.g. the June feriepenya swing), or planned hiring/cost changes applied.</li>' +
-    '<li><strong>No collection lag.</strong> Assumes MRR converts to cash in the same month it\u2019s recognized — real collection timing (esp. annual invoices, NO/SE aging) isn\u2019t modeled yet.</li>' +
-    '<li><strong>No one-off cash events</strong> — R&D cap booking, bonus payouts, capex, etc. are not included.</li>' +
-    '<li>Single best-estimate line — no upside/downside band.</li>' +
-    '</ul></div>');
+    var keys = Object.keys(FORECAST.line_labels);
+    var NOTE = { bonus: 'quarterly commission accrual', travel: 'one-off events / retreat', salary: 'headcount, leaves, June accrual release' };
 
-  h += card('Target outputs', 'var(--teal)',
-    '<div style="font-size:12.5px;color:var(--text-secondary);line-height:1.6">' +
-    'Two numbers matter most, in this order:' +
-    '<ol style="margin:.5rem 0 0 1.1rem;padding:0">' +
-    '<li><strong>Expected MRR / revenue</strong> — 12-month best-estimate, split by entity (NO/SE/US) and in aggregate. PLG included only if the pipeline/renewal sources below turn out to cover it cleanly — otherwise excluded, consistent with Business KPIs.</li>' +
-    '<li><strong>Expected cash</strong> — consolidated group cash, which lags revenue due to invoicing terms, annual/quarterly billing, and collection time.</li>' +
-    '</ol></div>');
+    function lineDeltas(compareMonth) {
+      return keys.map(function(k){
+        var d = PL[month][k] - PL[compareMonth][k];
+        if (k !== 'revenue') d = -d;
+        return { k: k, label: FORECAST.line_labels[k], d: d };
+      }).filter(function(x){ return Math.abs(x.d) >= 200; }).sort(function(a,b){ return Math.abs(b.d) - Math.abs(a.d); });
+    }
+    var yoyDeltas = lineDeltas(out);
+    var momDeltas = lineDeltas(prev);
+    var yoyEbitdaD = PL[month].ebitda - PL[out].ebitda;
+    var momEbitdaD = PL[month].ebitda - PL[prev].ebitda;
 
-  h += card('What we already have', 'var(--dark-teal)',
+    function panel(title, deltas, ebitdaD) {
+      return '<div><div class="fc-bt">' + title + '</div><table class="fc-br">' +
+        deltas.map(function(x){
+          return '<tr><td>' + x.label + '</td><td class="n ' + (x.d>=0?'fc-pos':'fc-neg') + '">' + sgn(x.d) +
+            '</td><td class="note">' + (NOTE[x.k] || '') + '</td></tr>';
+        }).join('') +
+        '<tr class="tot"><td>EBITDA delta</td><td class="n">' + sgn(ebitdaD) + '</td><td></td></tr>' +
+      '</table></div>';
+    }
 
-    sourceRow('Historical MRR + movements', 'have', 'MRR_NO / MRR_SE / MRR_US — monthly totals plus new/expansion/churn/contraction detail, back to 2025. Run-rate baseline and historical volatility per movement type.') +
-    sourceRow('Scheduled cancellations', 'partial', 'CUSTOMER_META[].scheduled_cancellation — flags non-renewing subscriptions with a renewal date in the next 6 months (~19 customers, ~$17.8K MRR at risk as of the last pull). Only screened for customers with a known renewal_date.') +
-    sourceRow('Historical P&L (income, opex, EBITDA)', 'have', 'renderFin arrays — Operating Income, Product Revenue, OpEx, EBITDA/EBITDAC, Profit After Tax, monthly since May 2025. Opex run-rate for the cash-burn side.') +
-    sourceRow('Balance sheet incl. deferred revenue and cash', 'have', 'Conso Reporting B/S rolling export — Cash and cash equivalents (bank balance starting point) and Prepaid revenues / Deferred Revenue (GL 20480+2969+2990) by month. Currently pulled ad hoc, not yet a standing dashboard constant.') +
-    sourceRow('Sales pipeline — Salesforce Opportunity object', 'have', 'Queryable directly via SOQL — no separate "report" to find, query the object. Filter on ForecastCategoryName (Pipeline / Best Case / Commit), NOT CloseDate alone: as of this check, open pipeline in real forecast categories = 57 deals / $1.64M ARR (Pipeline) + 20 / $347K (Best Case) + 2 / $35K (Commit). A further 981 deals / $6.8M ARR sit in "Omitted" — mostly stale, not forecast-worthy. Many open deals have CloseDate long in the past (hygiene issue) — filter by ForecastCategory, treat CloseDate as directional only.') +
-    sourceRow('Renewal-type opportunities in Salesforce', 'partial', 'Type=\'Renewal\' open opportunities: 42 in Pipeline ($964K ARR) + 13 in Best Case ($174K) + 246 in Omitted ($5.8M — mostly auto-generated placeholders, not actively worked). Useful cross-reference for the renewal book, but Omitted-heavy and not a complete calendar on its own.') +
-    sourceRow('AR aging — US (QuickBooks)', 'have', 'QuickBooks has native A/R Aging Summary and Detail report tools (accrual basis, by customer, by aging bucket) — ready to use for the US entity once connected in a chat that authorizes it.') +
-    sourceRow('CAC / new bookings pace', 'have', 'CAC_DATA — monthly new deals, new ARR added, cost per acquisition. A backward-looking run-rate, not a forward pipeline.'));
+    host.innerHTML =
+      '<div class="fc-bridge">' +
+        '<div class="fc-bridge-head"><div class="fc-bridge-title">EBITDAC L12M \u00b7 ' + prev + ' \u2192 ' + month + '</div>' +
+          '<div class="fc-bridge-net ' + (net>=0?'fc-pos':'fc-neg') + '">' + sgn(net) + '</div></div>' +
+        '<div class="fc-bridge-sub">' + usd(SR.ebitdac_l12m[prev]) + ' \u2192 ' + usd(SR.ebitdac_l12m[month]) +
+          ' \u00b7 ' + month + ' EBITDA ' + usd(inM) + ' replaces ' + out + ' EBITDA ' + usd(outM) +
+          (capD ? ' \u00b7 capitalisation adj ' + sgn(capD) : '') + ' in the rolling window</div>' +
+        '<div class="fc-bridge-cols">' +
+          panel('vs ' + out + ' (same month last year)', yoyDeltas, yoyEbitdaD) +
+          panel('vs ' + prev + ' (previous month)', momDeltas, momEbitdaD) +
+        '</div>' +
+      '</div>';
+  }
 
-  h += card('What we don\u2019t have yet', 'var(--cranberry)',
-    sourceRow('Full renewal book (not just non-renewing)', 'partial', 'No complete forward renewal calendar (dates + terms for all active contracts). Chargebee\u2019s newer connectors only expose retrieve_subscription and subscription_renewal_estimate one customer at a time — no bulk list_subscriptions endpoint — so building this from Chargebee directly means one API call per customer (463 in CUSTOMER_META), not practical in one session. Best path: combine the Salesforce Renewal-type opportunities above with the existing scheduled_cancellation enrichment.') +
-    sourceRow('AR aging — NO (Tripletex) and SE (Fortnox)', 'missing', 'Neither connector exposes a ready-made aging report. Would need to build one from Tripletex\u2019s search_invoices (open invoices with due dates) for NO, and from Fortnox\u2019s SIE export or an equivalent open-invoice pull for SE.') +
-    sourceRow('One-off / known cash events', 'missing', 'E.g. R&D cap booking timing, bonus payouts, planned capex — currently manual knowledge, not in any dashboard constant.'));
+    // ── numbered pins on charts ──
+  function fcPinPlugin(seriesKey) {
+    return { id: 'fcpins' + seriesKey, afterDatasetsDraw: function(ch) {
+      var ctx = ch.ctx, xs = ch.scales.x;
+      FORECAST_NOTES.forEach(function(n,i){
+        if (n.series !== seriesKey) return;
+        var idx = M.indexOf(n.month); if (idx < 0) return;
+        var x = xs.getPixelForValue(idx), y = ch.chartArea.top + 9;
+        ctx.save();
+        ctx.fillStyle = n.kind==='risk' ? '#D63C60' : (n.kind==='warn' ? '#e07b30' : '#114B5C');
+        ctx.beginPath(); ctx.arc(x,y,8,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 10px -apple-system,sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(i+1, x, y+0.5);
+        ctx.restore();
+      });
+    }};
+  }
+  var fcGrid = { color: 'rgba(17,75,92,0.07)' };
+  var fcTick = { color: '#7a9ba3', font: { size: 10 } };
+  function fcBase(extra) {
+    return Object.assign({ responsive:true, maintainAspectRatio:false,
+      plugins: { legend: { display:true, position:'bottom', labels:{ boxWidth:10, boxHeight:10, font:{size:11}, color:'#3a5a63' } } },
+      scales: { x: { grid:{display:false}, ticks:fcTick } } }, extra);
+  }
 
-  h += card('Proposed approach (draft — not built)', 'var(--teal-light)',
-    '<div style="font-size:12.5px;color:var(--text-secondary);line-height:1.7">' +
-    '<strong>MRR forecast:</strong> start from latest closed-month MRR per entity, subtract known scheduled cancellations, add Salesforce Pipeline/Best Case/Commit ARR weighted by category (e.g. Commit ~90%, Best Case ~50%, Pipeline ~20% — weights to calibrate against actual historical win rates once available), apply a historical churn/contraction run-rate for the unscheduled portion. Output monthly for 12 months.<br><br>' +
-    '<strong>Revenue forecast:</strong> MRR forecast × 12, adjusted for periodisation timing using the same GL logic as the P&L (accounts 3995/3999), plus known one-off fees (implementation, setup) at expected close dates.<br><br>' +
-    '<strong>Cash forecast:</strong> revenue forecast, shifted by a collection lag (build from US QuickBooks A/R aging first since that\u2019s readily available; approximate NO/SE lag from Tripletex/Fortnox open invoices until a proper aging pull exists), less the OpEx run-rate from renderFin, less known one-off cash events, anchored to the actual bank balance from the B/S Cash and cash equivalents line.' +
-    '</div>');
+  var cEbitdac = new Chart(document.getElementById('fc-c-ebitdac'), { data: { labels: M, datasets: [
+    { type:'bar', label:'EBITDAC L12M', data: M.map(function(m){return SR.ebitdac_l12m[m];}), backgroundColor:'#A7D6D4', borderColor:'#1EAFAA', borderWidth:1, order:2 },
+    { type:'line', label:'EBITDA monthly', data: M.map(function(m){return PL[m].ebitda;}), borderColor:'#D63C60', backgroundColor:'#D63C60', borderWidth:2, pointRadius:3, tension:.25, order:1 }
+  ]}, options: fcBase({
+    onClick: function(e, el) { if (el.length) renderForecastBridge(M[el[0].index]); },
+    scales: { x: { grid:{display:false}, ticks:fcTick },
+      y: { grid:fcGrid, ticks:Object.assign({ callback:function(v){return '$'+(v/1000).toFixed(0)+'k';} }, fcTick) } }
+  }), plugins: [fcPinPlugin('ebitdac')] });
 
-  h += card('Open questions before building this out', '#b8860b',
-    '<div style="font-size:12.5px;color:var(--text-secondary);line-height:1.7">' +
-    '<ul style="margin:0 0 0 1.1rem;padding:0">' +
-    '<li>Pipeline weighting by ForecastCategory (Pipeline/Best Case/Commit) — use flat assumptions to start, or calibrate against last 12 months\u2019 actual close rates per category first?</li>' +
-    '<li>For NO/SE AR aging: worth the effort to script something from Tripletex/Fortnox open invoices now, or wait and use US-only (QuickBooks) collection-lag as a proxy for the whole group initially?</li>' +
-    '<li>Should the ~246 Omitted-category Renewal opportunities in Salesforce get cleaned up / worked, since they represent $5.8M ARR sitting outside any forecast category?</li>' +
-    '</ul></div>');
+  new Chart(document.getElementById('fc-c-arr'), { data: { labels: M, datasets: [
+    { type:'bar', label:'Core ARR', data: M.map(function(m){return SR.core_arr[m];}), backgroundColor:'#DAEDEC', borderColor:'#1EAFAA', borderWidth:1, yAxisID:'y' },
+    { type:'line', label:'YoY growth', data: M.map(function(m){return SR.arr_yoy[m]*100;}), borderColor:'#114B5C', borderWidth:2, pointRadius:2, tension:.25, yAxisID:'y1' }
+  ]}, options: fcBase({ scales: { x:{grid:{display:false},ticks:fcTick},
+    y: { grid:fcGrid, ticks:Object.assign({ callback:function(v){return '$'+(v/1e6).toFixed(1)+'M';} }, fcTick) },
+    y1: { position:'right', grid:{display:false}, ticks:Object.assign({ callback:function(v){return v.toFixed(0)+'%';} }, fcTick) } }
+  }), plugins: [fcPinPlugin('arr')] });
 
-  document.getElementById('forecast-content').innerHTML = h;
+  new Chart(document.getElementById('fc-c-cash'), { data: { labels: M, datasets: [
+    { type:'line', label:'Cash in bank', data: M.map(function(m){return SR.cash_bank[m];}), borderColor:'#1EAFAA', backgroundColor:'rgba(30,175,170,0.14)', fill:true, borderWidth:2, pointRadius:2, tension:.25 },
+    { type:'line', label:'Salary redline', data: M.map(function(m){return SR.redline[m];}), borderColor:'#D63C60', borderWidth:2, borderDash:[5,4], pointRadius:0, tension:.25 }
+  ]}, options: fcBase({ scales: { x:{grid:{display:false},ticks:fcTick},
+    y: { grid:fcGrid, beginAtZero:true, ticks:Object.assign({ callback:function(v){return '$'+(v/1000).toFixed(0)+'k';} }, fcTick) } }
+  }), plugins: [fcPinPlugin('cash')] });
+
+  new Chart(document.getElementById('fc-c-r40'), { data: { labels: M, datasets: [
+    { type:'line', label:'Rule of 40', data: M.map(function(m){return SR.rule40[m]*100;}), borderColor:'#114B5C', backgroundColor:'rgba(17,75,92,0.08)', fill:true, borderWidth:2, pointRadius:3, tension:.25 },
+    { type:'line', label:'Target (40)', data: M.map(function(){return 40;}), borderColor:'#A7D6D4', borderWidth:1.5, borderDash:[4,4], pointRadius:0 }
+  ]}, options: fcBase({ scales: { x:{grid:{display:false},ticks:fcTick},
+    y: { grid:fcGrid, suggestedMin:-10, suggestedMax:45, ticks:Object.assign({ callback:function(v){return v.toFixed(0);} }, fcTick) } }
+  }), plugins: [fcPinPlugin('r40')] });
+
+  renderForecastBridge(M[M.length-1]);
 }
 
 
@@ -4398,7 +4477,7 @@ window.addEventListener('load', () => renderMRR({ uploadDate: '16 Jun 2026' }, n
   <!-- ══ FORECAST PAGE ══ -->
   <div id="page-forecast" class="page">
     <div class="page-title">Forecast</div>
-    <div class="page-sub">Draft workspace — not yet a live model. Structure and data-source mapping for the MRR / revenue / cash forecast, to be built out.</div>
+    <div class="page-sub">Next 12 months from the Group forecast model. Rolling metrics are decomposable — click any bar on the EBITDAC chart to see exactly what moved it.</div>
     <div id="forecast-content" style="margin-top:1.25rem"></div>
   </div>
 
