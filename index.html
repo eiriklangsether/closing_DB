@@ -2518,12 +2518,12 @@ function renderForecast() {
 
 const CASH_FORECAST = {
   vintage: "2026-09-03",
-  note: "13-week direct build, live-pulled from Tripletex/Fortnox/Chargebee/QuickBooks + Forecast_July_2026_finance.xlsx. Credit facility excluded from NO cash by design.",
+  note: "13-week direct build, live-pulled from Tripletex/Fortnox/Chargebee/QuickBooks + Forecast_July_2026_finance.xlsx. Credit facility excluded from NO cash by design. NO tax timing reflects the 2026 skattetrekkskonto reform: forskuddstrekk paid monthly (1st business day after payroll), AGA/finansskatt confirmed still bi-monthly.",
   weeks: ["3-6 Sep","W1","W2","W3","W4","W5","W6","W7","W8","W9","W10","W11","W12","W13"],
   week_end: ["2026-09-06","2026-09-13","2026-09-20","2026-09-27","2026-10-04","2026-10-11","2026-10-18","2026-10-25","2026-11-01","2026-11-08","2026-11-15","2026-11-22","2026-11-29","2026-12-06"],
   NO: {
     ccy: "NOK",
-    cash: [820648,758706,-2838842,-316777,-99664,-116196,-1542058,-1790836,-532684,3502341,-62993,-164076,2840025,3698297],
+    cash: [820648,758706,-2028953,493112,710225,693693,-1542058,-1790836,-532684,3502341,1556785,645813,3649914,4508186],
     redline: 2713695,
     redline_label: "1 month gross payroll + AGA",
     facility_limit: 20000000,
@@ -2542,7 +2542,7 @@ const CASH_FORECAST = {
     redline: 83745,
     redline_label: "1 month payroll (post-Sep termination)"
   },
-  GROUP_USD: [354515,438100,59777,337737,448971,441587,251399,217299,329167,723982,321196,434786,729276,803795]
+  GROUP_USD: [354515,438100,139956,417916,529150,521767,251399,217299,329167,723982,481554,514965,809455,883974]
 };
 
 function renderCash() {
