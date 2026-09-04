@@ -507,6 +507,7 @@
     <button class="nav-tab" onclick="switchPage('fin', this)">Financial KPIs</button>
     <button class="nav-tab" onclick="switchPage('meta', this)">Customer metadata</button>
     <button class="nav-tab" onclick="switchPage('forecast', this)">Forecast</button>
+    <button class="nav-tab" onclick="switchPage('cash', this)">Cash Forecast</button>
     <button class="nav-tab" onclick="switchPage('rawdata', this)">Raw data</button>
     <button class="nav-tab" onclick="switchPage('changelog', this)">Change log</button>
   </div>
@@ -538,6 +539,17 @@
     <div class="page-sub">Prior-period restatements only. Current-month changes not recorded until the month is closed.</div>
     <div id="changelog-content" style="margin-top:1.5rem"></div>
   </div>
+  <!-- ══ CASH FORECAST PAGE ══ -->
+  <div id="page-cash" class="page">
+    <div class="page-title">Cash forecast</div>
+    <div class="page-sub">13-week direct cash forecast by entity, built bottom-up from live Tripletex, Fortnox, Chargebee and QuickBooks pulls plus the Forecast file. Not derived from the P&amp;L forecast above.</div>
+    <div class="disclaimer-bar">
+      <span class="disclaimer-icon">⚠</span>
+      <span>Cash shown is bank balance only — the Pareto credit facility (NO) is deliberately excluded from this line, not blended in. NO cash going negative in a given week is expected: the kassakreditt (revolving overdraft) covers it automatically up to the facility limit. See the facility stat card below for headroom.</span>
+    </div>
+    <div id="cash-content" style="margin-top:1.25rem"></div>
+  </div>
+
   <!-- ══ RENEWALS PAGE ══ -->
   <div id="page-renewals" class="page">
     <div class="page-title">Renewal pipeline</div>
@@ -559,6 +571,7 @@ function switchPage(p, btn) {
   if (p === 'meta' && (!document.getElementById('metaBody') || document.getElementById('metaBody').innerHTML === '')) renderMeta();
   if (p === 'fin'  && document.getElementById('fin-content').innerHTML === '') renderFin();
   if (p === 'forecast' && document.getElementById('forecast-content').innerHTML === '') renderForecast();
+  if (p === 'cash' && document.getElementById('cash-content').innerHTML === '') renderCash();
   if (p === 'rawdata' && document.getElementById('rawdata-content').innerHTML === '') renderRawData();
   if (btn) btn.classList.add('active');
 }
@@ -2502,6 +2515,93 @@ function renderForecast() {
 }
 
 
+
+const CASH_FORECAST = {
+  vintage: "2026-09-03",
+  note: "13-week direct build, live-pulled from Tripletex/Fortnox/Chargebee/QuickBooks + Forecast_July_2026_finance.xlsx. Credit facility excluded from NO cash by design.",
+  weeks: ["3-6 Sep","W1","W2","W3","W4","W5","W6","W7","W8","W9","W10","W11","W12","W13"],
+  week_end: ["2026-09-06","2026-09-13","2026-09-20","2026-09-27","2026-10-04","2026-10-11","2026-10-18","2026-10-25","2026-11-01","2026-11-08","2026-11-15","2026-11-22","2026-11-29","2026-12-06"],
+  NO: {
+    ccy: "NOK",
+    cash: [820648,758706,-2838842,-316777,-99664,-116196,-1542058,-1790836,-532684,3502341,-62993,-164076,2840025,3698297],
+    redline: 2713695,
+    redline_label: "1 month gross payroll + AGA",
+    facility_limit: 20000000,
+    facility_drawn: 8537831,
+    facility_headroom: 11462169
+  },
+  SE: {
+    ccy: "SEK",
+    cash: [1204625,1038265,919637,906994,905871,887086,762315,743530,741643,729001,610373,597730,594518,582222],
+    redline: 105985,
+    redline_label: "1 month gross payroll"
+  },
+  US: {
+    ccy: "USD",
+    cash: [146063,253348,243708,273319,363177,359415,323562,316075,303585,300268,262977,387909,385332,376181],
+    redline: 83745,
+    redline_label: "1 month payroll (post-Sep termination)"
+  },
+  GROUP_USD: [354515,438100,59777,337737,448971,441587,251399,217299,329167,723982,321196,434786,729276,803795]
+};
+
+function renderCash() {
+  var CF = CASH_FORECAST;
+  var W = CF.weeks;
+  var el = document.getElementById('cash-content');
+
+  function fmtCcy(v, ccy) {
+    var sign = v < 0 ? '-' : '';
+    var abs = Math.abs(v);
+    var short = abs >= 1e6 ? (abs/1e6).toFixed(1)+'M' : abs >= 1e3 ? (abs/1e3).toFixed(0)+'k' : abs.toFixed(0);
+    return sign + ccy + ' ' + short;
+  }
+
+  var facHtml = '<div class="chart-section full" style="display:flex;gap:2rem;flex-wrap:wrap;align-items:center">' +
+    '<div><div class="chart-section-title" style="margin-bottom:.2rem">Pareto facility (NO) \u2014 kept outside cash, shown separately</div>' +
+    '<div style="font-size:13px;color:#7a9ba3">Limit ' + fmtCcy(CF.NO.facility_limit,'NOK') + ' &middot; Drawn ' + fmtCcy(CF.NO.facility_drawn,'NOK') +
+    ' &middot; Headroom ' + fmtCcy(CF.NO.facility_headroom,'NOK') + '</div></div></div>';
+
+  var cardsHtml = '<div class="charts-row">' +
+    '<div class="chart-section"><div class="chart-section-title">NO \u2014 bank cash vs redline (NOK)</div>' +
+      '<div class="chart-wrap"><canvas id="cf-c-no" role="img" aria-label="NO weekly bank cash versus salary redline"></canvas></div></div>' +
+    '<div class="chart-section"><div class="chart-section-title">SE \u2014 bank cash vs redline (SEK)</div>' +
+      '<div class="chart-wrap"><canvas id="cf-c-se" role="img" aria-label="SE weekly bank cash versus salary redline"></canvas></div></div>' +
+    '</div>' +
+    '<div class="charts-row" style="margin-top:14px">' +
+    '<div class="chart-section"><div class="chart-section-title">US \u2014 bank cash vs redline (USD)</div>' +
+      '<div class="chart-wrap"><canvas id="cf-c-us" role="img" aria-label="US weekly bank cash versus salary redline"></canvas></div></div>' +
+    '<div class="chart-section"><div class="chart-section-title">Group consolidated (USD, fixed FX)</div>' +
+      '<div class="chart-wrap"><canvas id="cf-c-grp" role="img" aria-label="Group consolidated weekly cash in USD"></canvas></div></div>' +
+    '</div>';
+
+  el.innerHTML = facHtml + cardsHtml;
+
+  var cfGrid = { color: 'rgba(17,75,92,0.07)' };
+  var cfTick = { color: '#7a9ba3', font: { size: 10 } };
+  function cfBase(ccy, extra) {
+    return Object.assign({ responsive:true, maintainAspectRatio:false,
+      plugins: { legend: { display:true, position:'bottom', labels:{ boxWidth:10, boxHeight:10, font:{size:11}, color:'#3a5a63' } } },
+      scales: { x: { grid:{display:false}, ticks:cfTick },
+        y: { grid:cfGrid, ticks: Object.assign({ callback:function(v){ return fmtCcy(v, ccy); } }, cfTick) } }
+    }, extra);
+  }
+
+  function entityChart(canvasId, entity) {
+    new Chart(document.getElementById(canvasId), { data: { labels: W, datasets: [
+      { type:'line', label:'Bank cash', data: entity.cash, borderColor:'#1EAFAA', backgroundColor:'rgba(30,175,170,0.14)', fill:true, borderWidth:2, pointRadius:2, tension:.25 },
+      { type:'line', label:entity.redline_label, data: W.map(function(){return entity.redline;}), borderColor:'#D63C60', borderWidth:2, borderDash:[5,4], pointRadius:0, tension:0 }
+    ]}, options: cfBase(entity.ccy) });
+  }
+
+  entityChart('cf-c-no', CF.NO);
+  entityChart('cf-c-se', CF.SE);
+  entityChart('cf-c-us', CF.US);
+
+  new Chart(document.getElementById('cf-c-grp'), { data: { labels: W, datasets: [
+    { type:'line', label:'Group cash', data: CF.GROUP_USD, borderColor:'#114B5C', backgroundColor:'rgba(17,75,92,0.10)', fill:true, borderWidth:2.5, pointRadius:2, tension:.25 }
+  ]}, options: cfBase('USD') });
+}
 
 const CAC_DATA = [
   // ─────────────────────────────────────────────────────────────
